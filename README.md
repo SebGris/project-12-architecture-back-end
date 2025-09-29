@@ -12,7 +12,8 @@ Système CRM sécurisé développé en ligne de commande pour Epic Events, perme
 
 - **Python 3.10+**
 - **PostgreSQL 18**
-- **SQLAlchemy** (ORM)
+- **SQLAlchemy** (ORM) - Interface Python pour PostgreSQL
+- **psycopg2** - Driver PostgreSQL pour Python
 - **Alembic** (Migrations)
 - **Click** (CLI)
 - **Sentry** (Monitoring des erreurs)
@@ -70,7 +71,24 @@ GRANT ALL PRIVILEGES ON DATABASE epic_events_crm TO crm_user;
 \q
 ```
 
-5. **Configurer les variables d'environnement**
+5. **Installer SQLAlchemy et le driver PostgreSQL**
+
+SQLAlchemy est l'ORM (Object-Relational Mapping) qui permet d'interagir avec PostgreSQL depuis Python :
+
+```bash
+# Installer SQLAlchemy
+pip install sqlalchemy
+
+# Installer psycopg2 (driver PostgreSQL pour Python)
+pip install psycopg2
+
+# Alternative pour le développement (plus simple à installer)
+# pip install psycopg2-binary
+```
+
+> **Note** : `psycopg2-binary` est plus facile à installer car il n'a pas besoin de compiler, mais `psycopg2` est recommandé pour la production.
+
+6. **Configurer les variables d'environnement**
 
 Créer un fichier `.env` à la racine :
 ```env
@@ -79,13 +97,35 @@ SENTRY_DSN=votre_dsn_sentry
 SECRET_KEY=votre_cle_secrete
 ```
 
-6. **Initialiser la base de données**
+7. **Initialiser la base de données**
 ```bash
 # Initialiser Alembic
 alembic init alembic
 
 # Appliquer les migrations
 alembic upgrade head
+```
+
+### Exemple de connexion SQLAlchemy
+
+```python
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+# Créer le moteur de connexion
+engine = create_engine('postgresql://crm_user:MotDePasseFort123!@localhost:5432/epic_events_crm')
+
+# Créer une session
+Session = sessionmaker(bind=engine)
+session = Session()
+
+# Tester la connexion
+try:
+    connection = engine.connect()
+    print("✅ Connexion à PostgreSQL réussie!")
+    connection.close()
+except Exception as e:
+    print(f"❌ Erreur de connexion: {e}")
 ```
 
 ## 🚀 Utilisation
@@ -349,6 +389,8 @@ SENTRY_DSN=https://...@sentry.io/...
 
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
+- [SQLAlchemy PostgreSQL Tutorial](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html)
+- [psycopg2 Documentation](https://www.psycopg.org/docs/)
 - [SqlAlchemy, l'ORM Python - Partie 1](https://blog.stephane-robert.info/docs/developper/programmation/python/sqlachemy-1/)
 - [Click Documentation](https://click.palletsprojects.com/)
 - [OWASP Security Guidelines](https://owasp.org/)
