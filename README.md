@@ -6,16 +6,15 @@ Système CRM sécurisé développé en ligne de commande pour Epic Events, perme
 
 **Projet OpenClassrooms N°12** - Formation Développeur d'Application Python
 
-> **Note** : Ce projet utilise PostgreSQL 18 (dernière version sortie le 25 septembre 2025), offrant des performances optimisées et les dernières fonctionnalités de sécurité.
+> **Note** : Ce projet utilise SQLite 3, une base de données légère et intégrée, parfaite pour le développement et les projets de taille moyenne.
 
 ## 🛠️ Technologies
 
-- **Python 3.10+**
-- **PostgreSQL 18**
-- **SQLAlchemy** (ORM) - Interface Python pour PostgreSQL
-- **psycopg2** - Driver PostgreSQL pour Python
+- **Python 3.13**
+- **SQLite 3** (Base de données intégrée)
+- **SQLAlchemy** (ORM) - Interface Python pour SQLite
 - **Alembic** (Migrations)
-- **Click** (CLI)
+- **Click** (CLI) typer
 - **Sentry** (Monitoring des erreurs)
 - **bcrypt** (Hachage des mots de passe)
 
@@ -23,20 +22,12 @@ Système CRM sécurisé développé en ligne de commande pour Epic Events, perme
 
 ### Prérequis
 
-- Python 3.10 ou supérieur
-- PostgreSQL 18 installé et configuré
+- Python 3.13 ou supérieur
 - Git
-- **PATH configuré** pour PostgreSQL et Python (voir section [Aide-mémoire](#-aide-mémoire))
 
 ### Étapes d'installation
 
-1. **Cloner le repository**
-```bash
-git clone https://github.com/votre-username/epic-events-crm.git
-cd epic-events-crm
-```
-
-2. **Créer et activer l'environnement virtuel**
+1. **Créer et activer l'environnement virtuel**
 ```bash
 # Windows
 python -m venv venv
@@ -47,57 +38,29 @@ python -m venv venv
 source venv/bin/activate
 ```
 
-3. **Installer les dépendances**
-```bash
-pip install -r requirements.txt
-```
+2. **Installer SQLAlchemy**
 
-4. **Configurer la base de données**
-```bash
-# Se connecter à PostgreSQL
-psql -U postgres
-```
-Mot de passe : Proj12_!2025
-```bash
-# Créer la base de données pour le CRM
-CREATE DATABASE epic_events_crm;
-# Créer un utilisateur dédié pour l'application
-CREATE USER crm_user WITH PASSWORD 'MotDePasseFort123!';
-# Donner tous les privilèges sur la base epic_events_crm
-GRANT ALL PRIVILEGES ON DATABASE epic_events_crm TO crm_user;
-# Se connecter à la base epic_events_crm
-\c epic_events_crm
-# Quitter psql
-\q
-```
-
-5. **Installer SQLAlchemy et le driver PostgreSQL**
-
-SQLAlchemy est l'ORM (Object-Relational Mapping) qui permet d'interagir avec PostgreSQL depuis Python :
+SQLAlchemy est l'ORM (Object-Relational Mapping) qui permet d'interagir avec SQLite depuis Python :
 
 ```bash
 # Installer SQLAlchemy
 pip install sqlalchemy
 
-# Installer psycopg2 (driver PostgreSQL pour Python)
-pip install psycopg2
-
-# Alternative pour le développement (plus simple à installer)
-# pip install psycopg2-binary
+# SQLite est inclus dans Python - aucun driver supplémentaire nécessaire
 ```
 
-> **Note** : `psycopg2-binary` est plus facile à installer car il n'a pas besoin de compiler, mais `psycopg2` est recommandé pour la production.
+> **Note** : SQLite est inclus par défaut dans Python, aucune installation supplémentaire n'est nécessaire !
 
-6. **Configurer les variables d'environnement**
+3. **Configurer les variables d'environnement**
 
 Créer un fichier `.env` à la racine :
 ```env
-DATABASE_URL=postgresql://crm_user:votre_mot_de_passe@localhost:5432/epic_events_crm
+DATABASE_URL=sqlite:///epic_events_crm.db
 SENTRY_DSN=votre_dsn_sentry
 SECRET_KEY=votre_cle_secrete
 ```
 
-7. **Initialiser la base de données**
+4. **Initialiser la base de données**
 ```bash
 # Initialiser Alembic
 alembic init alembic
@@ -112,8 +75,8 @@ alembic upgrade head
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Créer le moteur de connexion
-engine = create_engine('postgresql://crm_user:MotDePasseFort123!@localhost:5432/epic_events_crm')
+# Créer le moteur de connexion SQLite
+engine = create_engine('sqlite:///epic_events_crm.db')
 
 # Créer une session
 Session = sessionmaker(bind=engine)
@@ -122,7 +85,7 @@ session = Session()
 # Tester la connexion
 try:
     connection = engine.connect()
-    print("✅ Connexion à PostgreSQL réussie!")
+    print("✅ Connexion à SQLite réussie!")
     connection.close()
 except Exception as e:
     print(f"❌ Erreur de connexion: {e}")
@@ -165,28 +128,29 @@ python src/main.py event create
 
 ```
 epic_events_crm/
-├── .env                    # Variables d'environnement
+├── epic_events_crm.db     # Base de données SQLite
+├── .env                   # Variables d'environnement
 ├── .gitignore             
 ├── README.md              
 ├── requirements.txt       
-├── alembic.ini            # Configuration Alembic
-├── alembic/               # Migrations
+├── alembic.ini           # Configuration Alembic
+├── alembic/              # Migrations
 │   └── versions/
 ├── src/
 │   ├── __init__.py
-│   ├── main.py            # Point d'entrée
-│   ├── config.py          # Configuration
+│   ├── main.py           # Point d'entrée
+│   ├── config.py         # Configuration
 │   ├── database/
 │   │   ├── __init__.py
-│   │   ├── connection.py  # Connexion DB
-│   │   └── models.py      # Modèles SQLAlchemy
+│   │   ├── connection.py # Connexion DB
+│   │   └── models.py     # Modèles SQLAlchemy
 │   ├── cli/
 │   │   ├── __init__.py
-│   │   ├── commands.py    # Commandes Click
-│   │   └── validators.py  # Validation des entrées
+│   │   ├── commands.py   # Commandes Click
+│   │   └── validators.py # Validation des entrées
 │   ├── auth/
 │   │   ├── __init__.py
-│   │   ├── security.py    # Hachage, JWT
+│   │   ├── security.py   # Hachage, JWT
 │   │   └── permissions.py # Gestion des droits
 │   ├── services/
 │   │   ├── __init__.py
@@ -196,7 +160,7 @@ epic_events_crm/
 │   │   └── event_service.py
 │   └── utils/
 │       ├── __init__.py
-│       └── logger.py      # Configuration Sentry
+│       └── logger.py     # Configuration Sentry
 └── tests/
     ├── __init__.py
     ├── test_auth.py
@@ -233,110 +197,29 @@ pytest tests/test_auth.py
 
 ## 💻 Aide-mémoire
 
-### Configuration du PATH (Windows 10)
+### Gestion de la base SQLite
 
-Pour utiliser PostgreSQL et Python depuis n'importe quel terminal, vous devez ajouter leurs répertoires au PATH système :
-
-#### Ajouter PostgreSQL au PATH
 ```bash
-# Le chemin à ajouter (adapter selon votre version) :
-C:\Program Files\PostgreSQL\18\bin
+# Ouvrir la base avec l'outil sqlite3 (inclus avec Python)
+sqlite3 epic_events_crm.db
+
+# Commandes SQLite utiles:
+.tables                    # Lister les tables
+.schema table_name         # Voir la structure d'une table
+.dump                      # Exporter toute la base
+.backup backup.db          # Sauvegarder la base
+.quit                      # Quitter
 ```
 
-**Étapes :**
-1. Appuyer sur **Win + R**, taper `sysdm.cpl` et Entrée
-2. Cliquer sur l'onglet **Paramètres système avancés**
-3. Cliquer sur **Variables d'environnement**
-4. Dans **Variables système**, trouver **Path** et cliquer **Modifier**
-5. Cliquer **Nouveau** et ajouter : `C:\Program Files\PostgreSQL\18\bin`
-6. Cliquer **OK** sur toutes les fenêtres
-7. **IMPORTANT** : Fermer et rouvrir le terminal pour appliquer les changements
+### Commandes SQLite courantes
 
-#### Vérifier que le PATH est configuré
-```bash
-# PowerShell ou CMD
-echo %PATH%
-
-# Tester PostgreSQL
-psql --version
-
-# Tester Python
-python --version
-```
-
-#### Ajouter Python au PATH (si nécessaire)
-```bash
-# Chemins Python typiques à ajouter :
-C:\Users\VotreNom\AppData\Local\Programs\Python\Python310
-C:\Users\VotreNom\AppData\Local\Programs\Python\Python310\Scripts
-```
-
-#### Variables d'environnement utiles
-```bash
-# Voir toutes les variables d'environnement
-set
-
-# Voir une variable spécifique
-echo %POSTGRESQL_HOME%
-
-# Créer une variable d'environnement (temporaire)
-set PGUSER=postgres
-
-# PowerShell - Voir le PATH formaté
-$env:Path -split ';'
-```
-
-### Vérification du port PostgreSQL (5432)
-
-#### Windows 10
-```bash
-# PowerShell (Admin)
-netstat -an | findstr :5432
-
-# Voir quel processus utilise le port
-netstat -aon | findstr :5432
-
-# Détails sur le processus (remplacer PID par le numéro obtenu)
-tasklist | findstr PID
-```
-
-### Commandes PostgreSQL utiles
-
-```bash
-# Vérifier la version installée
-psql --version
-postgres --version
-
-# Connexion
-psql -U postgres -d epic_events_crm
-
-# Dans psql:
-SELECT version();      # Version détaillée de PostgreSQL
-\l                 # Lister les bases de données
-\c database_name   # Se connecter à une base
-\dt                # Lister les tables
-\d table_name      # Décrire une table
-\q                 # Quitter
-
-# Backup de la base
-pg_dump -U postgres epic_events_crm > backup.sql
-
-# Restaurer une base
-psql -U postgres epic_events_crm < backup.sql
-```
-
-### Gestion du service PostgreSQL
-
-#### Windows
-```bash
-# Démarrer PostgreSQL
-net start postgresql-x64-18
-
-# Arrêter PostgreSQL
-net stop postgresql-x64-18
-
-# Vérifier le statut (PowerShell)
-Get-Service -Name "postgresql*"
+```sql
+-- Dans sqlite3:
+.help                      -- Aide
+.databases                 -- Lister les bases attachées
+.headers on               -- Afficher les en-têtes de colonnes
+.mode column              -- Mode d'affichage en colonnes
+SELECT name FROM sqlite_master WHERE type='table';  -- Lister les tables
 ```
 
 ### Python - Environnement virtuel
@@ -352,29 +235,31 @@ pip freeze > requirements.txt
 
 ### Résolution de problèmes courants
 
-#### Port 5432 déjà utilisé
+#### Base de données verrouillée
 ```bash
-# 1. Identifier le processus
-netstat -aon | findstr :5432
-
-# 2. Si c'est une ancienne instance PostgreSQL, la tuer (Windows)
-taskkill /PID numero_pid /F
-
-# 3. Ou changer le port dans postgresql.conf
+# Si la base SQLite est verrouillée, s'assurer qu'aucune connexion n'est ouverte
+# Redémarrer l'application si nécessaire
 ```
 
-#### Erreur de connexion PostgreSQL
+#### Fichier de base de données non trouvé
 ```bash
-# Vérifier que le service est démarré
-# Vérifier pg_hba.conf pour les méthodes d'authentification
-# Vérifier postgresql.conf pour listen_addresses
+# Vérifier que le chemin dans DATABASE_URL est correct
+# SQLite créera automatiquement le fichier s'il n'existe pas
 ```
 
-#### Erreur "FATAL: password authentication failed"
-```sql
--- Réinitialiser le mot de passe
-ALTER USER postgres PASSWORD 'nouveau_mot_de_passe';
+#### Problèmes de permissions
+```bash
+# S'assurer que le répertoire est accessible en écriture
+# Vérifier les permissions du fichier .db
 ```
+
+### Avantages de SQLite pour ce projet
+
+- **Installation simple** : Aucune configuration serveur nécessaire
+- **Portable** : Un seul fichier contient toute la base
+- **Rapide** : Excellent pour le développement et les petites applications
+- **Fiable** : Base de données mature et stable
+- **Sauvegarde facile** : Copier le fichier .db suffit
 
 ## 🐛 Debugging avec Sentry
 
@@ -387,11 +272,10 @@ SENTRY_DSN=https://...@sentry.io/...
 
 ## 📚 Documentation
 
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [SQLite Documentation](https://www.sqlite.org/docs.html)
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
-- [SQLAlchemy PostgreSQL Tutorial](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html)
-- [psycopg2 Documentation](https://www.psycopg.org/docs/)
-- [SqlAlchemy, l'ORM Python - Partie 1](https://blog.stephane-robert.info/docs/developper/programmation/python/sqlachemy-1/)
+- [SQLAlchemy SQLite Tutorial](https://docs.sqlalchemy.org/en/20/dialects/sqlite.html)
+- [Python SQLite3 Module](https://docs.python.org/3/library/sqlite3.html)
 - [Click Documentation](https://click.palletsprojects.com/)
 - [OWASP Security Guidelines](https://owasp.org/)
 
