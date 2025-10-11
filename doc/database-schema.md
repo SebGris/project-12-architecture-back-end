@@ -14,6 +14,7 @@ Le système CRM Epic Events utilise **4 tables principales** avec des relations 
 ├──────────────────────────┤
 │ PK │ id (INTEGER)        │
 │    │ username (VARCHAR)  │──┐
+│    │ email (UNIQUE)      │  │
 │    │ password_hash       │  │
 │    │ first_name          │  │
 │    │ last_name           │  │
@@ -87,6 +88,7 @@ Table centrale pour l'authentification et les permissions RBAC.
 |---------|------|-------------|-------------|
 | **id** | INTEGER | PK, AUTOINCREMENT | Identifiant unique |
 | **username** | VARCHAR(50) | UNIQUE, NOT NULL, INDEX | Login unique (3-50 caractères) |
+| **email** | VARCHAR(255) | UNIQUE, NOT NULL, INDEX | Email professionnel unique |
 | **password_hash** | VARCHAR(255) | NOT NULL | Hash bcrypt du mot de passe |
 | **first_name** | VARCHAR(50) | NOT NULL | Prénom (2-50 caractères) |
 | **last_name** | VARCHAR(50) | NOT NULL | Nom de famille (2-50 caractères) |
@@ -373,6 +375,7 @@ erDiagram
     USERS {
         int id PK
         varchar username UK
+        varchar email UK
         varchar password_hash
         varchar first_name
         varchar last_name
