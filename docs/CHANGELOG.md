@@ -4,6 +4,14 @@ Ce fichier résume les modifications apportées au projet pour faciliter le suiv
 
 ---
 
+## 2025-10-11 : Ajout du champ email dans User
+
+**Modèle User** : Ajout du champ `email` (VARCHAR(255), unique) au modèle User pour permettre la communication professionnelle, la récupération de mot de passe et les intégrations externes. Conforme aux standards des CRM d'entreprise.
+
+📄 Documentation détaillée : Email est un champ essentiel dans tout CRM professionnel
+
+---
+
 ## 2025-10-11 : Séparation des noms dans les modèles User et Client
 
 **Modèles User et Client** : Remplacement du champ `full_name` par deux champs séparés `first_name` et `last_name` pour améliorer la recherche, le tri et la validation, conformément aux standards de l'industrie.
