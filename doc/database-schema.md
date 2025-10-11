@@ -17,6 +17,7 @@ Le système CRM Epic Events utilise **4 tables principales** avec des relations 
 │    │ password_hash       │  │
 │    │ first_name          │  │
 │    │ last_name           │  │
+│    │ phone               │  │
 │    │ department (ENUM)   │  │
 │    │ created_at          │  │
 │    │ updated_at          │  │
@@ -89,6 +90,7 @@ Table centrale pour l'authentification et les permissions RBAC.
 | **password_hash** | VARCHAR(255) | NOT NULL | Hash bcrypt du mot de passe |
 | **first_name** | VARCHAR(50) | NOT NULL | Prénom (2-50 caractères) |
 | **last_name** | VARCHAR(50) | NOT NULL | Nom de famille (2-50 caractères) |
+| **phone** | VARCHAR(20) | NOT NULL | Téléphone (format E.164) |
 | **department** | ENUM | NOT NULL, INDEX | COMMERCIAL, GESTION, ou SUPPORT |
 | **created_at** | DATETIME | NOT NULL, DEFAULT NOW | Date de création |
 | **updated_at** | DATETIME | NOT NULL, DEFAULT NOW | Date de dernière modification |
@@ -374,6 +376,7 @@ erDiagram
         varchar password_hash
         varchar first_name
         varchar last_name
+        varchar phone
         enum department
         datetime created_at
         datetime updated_at
