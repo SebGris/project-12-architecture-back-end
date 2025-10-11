@@ -15,7 +15,8 @@ Le système CRM Epic Events utilise **4 tables principales** avec des relations 
 │ PK │ id (INTEGER)        │
 │    │ username (VARCHAR)  │──┐
 │    │ password_hash       │  │
-│    │ full_name           │  │
+│    │ first_name          │  │
+│    │ last_name           │  │
 │    │ department (ENUM)   │  │
 │    │ created_at          │  │
 │    │ updated_at          │  │
@@ -29,7 +30,8 @@ Le système CRM Epic Events utilise **4 tables principales** avec des relations 
 │        CLIENTS           │ │
 ├──────────────────────────┤ │
 │ PK │ id (INTEGER)        │ │
-│    │ full_name           │ │
+│    │ first_name          │ │
+│    │ last_name           │ │
 │    │ email (UNIQUE)      │ │
 │    │ phone               │ │
 │    │ company_name        │ │
@@ -85,7 +87,8 @@ Table centrale pour l'authentification et les permissions RBAC.
 | **id** | INTEGER | PK, AUTOINCREMENT | Identifiant unique |
 | **username** | VARCHAR(50) | UNIQUE, NOT NULL, INDEX | Login unique (3-50 caractères) |
 | **password_hash** | VARCHAR(255) | NOT NULL | Hash bcrypt du mot de passe |
-| **full_name** | VARCHAR(100) | NOT NULL | Nom complet (2-100 caractères) |
+| **first_name** | VARCHAR(50) | NOT NULL | Prénom (2-50 caractères) |
+| **last_name** | VARCHAR(50) | NOT NULL | Nom de famille (2-50 caractères) |
 | **department** | ENUM | NOT NULL, INDEX | COMMERCIAL, GESTION, ou SUPPORT |
 | **created_at** | DATETIME | NOT NULL, DEFAULT NOW | Date de création |
 | **updated_at** | DATETIME | NOT NULL, DEFAULT NOW | Date de dernière modification |
@@ -107,7 +110,8 @@ Table des clients de l'entreprise, chacun assigné à un commercial.
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
 | **id** | INTEGER | PK, AUTOINCREMENT | Identifiant unique |
-| **full_name** | VARCHAR(100) | NOT NULL | Nom complet du client |
+| **first_name** | VARCHAR(50) | NOT NULL | Prénom du client |
+| **last_name** | VARCHAR(50) | NOT NULL | Nom de famille du client |
 | **email** | VARCHAR(100) | UNIQUE, NOT NULL, INDEX | Email unique |
 | **phone** | VARCHAR(20) | NULL | Téléphone (format E.164) |
 | **company_name** | VARCHAR(100) | NOT NULL | Nom de l'entreprise |
@@ -210,8 +214,8 @@ CHECK (attendees >= 0 OR attendees IS NULL)  -- Nombre de participants positif
 
 1. COMMERCIAL crée un CLIENT
    ↓
-   INSERT INTO clients (full_name, email, sales_contact_id, ...)
-   VALUES ('Kevin Casey', 'kevin@startup.io', <commercial_user_id>, ...)
+   INSERT INTO clients (first_name, last_name, email, sales_contact_id, ...)
+   VALUES ('Kevin', 'Casey', 'kevin@startup.io', <commercial_user_id>, ...)
 
 2. GESTION crée un CONTRAT pour le client
    ↓
@@ -368,7 +372,8 @@ erDiagram
         int id PK
         varchar username UK
         varchar password_hash
-        varchar full_name
+        varchar first_name
+        varchar last_name
         enum department
         datetime created_at
         datetime updated_at
@@ -376,7 +381,8 @@ erDiagram
 
     CLIENTS {
         int id PK
-        varchar full_name
+        varchar first_name
+        varchar last_name
         varchar email UK
         varchar phone
         varchar company_name
