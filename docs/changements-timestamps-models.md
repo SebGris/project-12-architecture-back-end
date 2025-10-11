@@ -35,10 +35,10 @@ updated_at: Mapped[datetime] = mapped_column(
 
 ```python
 created_at: Mapped[datetime] = mapped_column(
-    DateTime, server_default=func.now()
+    DateTime(timezone=True), server_default=func.now()
 )
 updated_at: Mapped[datetime] = mapped_column(
-    DateTime, server_default=func.now(), onupdate=func.now()
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
 )
 ```
 
@@ -48,6 +48,7 @@ updated_at: Mapped[datetime] = mapped_column(
 2. **Cohérence garantie** : Le timestamp est créé au moment de l'insertion dans la base de données, pas au moment de la création de l'objet Python
 3. **Évite les bugs de référence de fonction** : Plus besoin d'appeler la fonction avec des parenthèses
 4. **Conforme aux bonnes pratiques SQLAlchemy** : L'utilisation de `func.now()` est la méthode recommandée
+5. **Support des fuseaux horaires** : `DateTime(timezone=True)` stocke les timestamps avec timezone (UTC), évitant les erreurs de comparaison entre datetime "naïf" et "aware"
 
 ## Fichiers Modifiés
 
@@ -57,6 +58,7 @@ updated_at: Mapped[datetime] = mapped_column(
 
 **Changements:**
 - Ajout de l'import `func` depuis `sqlalchemy`
+- Remplacement de `DateTime` par `DateTime(timezone=True)`
 - Remplacement de `default=datetime.utcnow` par `server_default=func.now()`
 - Remplacement de `onupdate=datetime.utcnow` par `onupdate=func.now()`
 
@@ -66,6 +68,7 @@ updated_at: Mapped[datetime] = mapped_column(
 
 **Changements:**
 - Ajout de l'import `func` depuis `sqlalchemy`
+- Remplacement de `DateTime` par `DateTime(timezone=True)`
 - Remplacement de `default=datetime.utcnow` par `server_default=func.now()`
 - Remplacement de `onupdate=datetime.utcnow` par `onupdate=func.now()`
 
@@ -75,15 +78,17 @@ updated_at: Mapped[datetime] = mapped_column(
 
 **Changements:**
 - Ajout de l'import `func` dans la liste des imports SQLAlchemy
+- Remplacement de `DateTime` par `DateTime(timezone=True)`
 - Remplacement de `default=datetime.utcnow` par `server_default=func.now()`
 - Remplacement de `onupdate=datetime.utcnow` par `onupdate=func.now()`
 
 ### 4. [src/models/event.py](../src/models/event.py)
 
-**Lignes modifiées:** 4, 22-25
+**Lignes modifiées:** 4, 17-18, 22-25
 
 **Changements:**
 - Ajout de l'import `func` depuis `sqlalchemy`
+- Remplacement de `DateTime` par `DateTime(timezone=True)` pour tous les champs datetime (`event_start`, `event_end`, `created_at`, `updated_at`)
 - Remplacement de `default=datetime.utcnow` par `server_default=func.now()`
 - Remplacement de `onupdate=datetime.utcnow` par `onupdate=func.now()`
 
@@ -95,7 +100,7 @@ updated_at: Mapped[datetime] = mapped_column(
 
 ```bash
 # Générer une nouvelle migration
-poetry run alembic revision --autogenerate -m "Fix timestamps to use server_default"
+poetry run alembic revision --autogenerate -m "Fix timestamps with timezone support and server_default"
 
 # Vérifier la migration générée avant de l'appliquer
 # Puis appliquer la migration
@@ -106,13 +111,16 @@ poetry run alembic upgrade head
 
 Après l'application de la migration, vérifier que :
 
-1. Les nouveaux enregistrements reçoivent automatiquement un `created_at` correct
+1. Les nouveaux enregistrements reçoivent automatiquement un `created_at` correct avec timezone
 2. Le champ `updated_at` se met à jour automatiquement lors des modifications
 3. Les timestamps sont cohérents avec l'heure du serveur de base de données
-4. Pas de régression sur les enregistrements existants (si applicable)
+4. Les timestamps incluent l'information de fuseau horaire (UTC)
+5. Les comparaisons entre datetime fonctionnent sans erreur "can't compare offset-naive and offset-aware datetimes"
+6. Pas de régression sur les enregistrements existants (si applicable)
 
 ## Références
 
+- [Discussion sur DateTime avec timezone](https://github.com/sqlalchemy/sqlalchemy/discussions/10189)
 - [SQLAlchemy Server Defaults](https://docs.sqlalchemy.org/en/20/core/defaults.html#server-invoked-ddl-explicit-default-expressions)
 - [SQLAlchemy func Documentation](https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.func)
 - [Python datetime.utcnow() Deprecation](https://docs.python.org/3/library/datetime.html#datetime.datetime.utcnow)
