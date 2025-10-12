@@ -357,7 +357,7 @@ def upgrade():
 
 - **ORM**: SQLAlchemy 2.0+ (Mapped, Declarative Base)
 - **Migrations**: Alembic (versionning de schéma)
-- **Base de données**: SQLite (dev/test) / PostgreSQL (production possible)
+- **Base de données**: SQLite
 - **Hashing**: passlib + bcrypt (mots de passe)
 - **Validation**: Pydantic v2 (schémas de données)
 

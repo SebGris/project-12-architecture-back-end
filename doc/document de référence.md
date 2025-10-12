@@ -8,7 +8,7 @@ stocker et de manipuler de manière sécurisée les informations de nos clients,
 
 ## Technologies utilisées
 - Python
-- PostgreSQL
+- SQLite
 - Sentry
 
 ## Structure du code

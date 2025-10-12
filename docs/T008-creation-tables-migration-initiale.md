@@ -470,8 +470,6 @@ ImportError: cannot import name 'User' from 'src.models.user'
 
 **Solution SQLite** : SQLite ne supporte pas nativement les ENUM, ils sont stockés comme VARCHAR. C'est normal et géré par SQLAlchemy.
 
-**Solution PostgreSQL** : Si vous migrez vers PostgreSQL plus tard, l'ENUM sera créé correctement.
-
 ### Problème 4 : Erreur de clé étrangère
 
 **Symptôme** :
