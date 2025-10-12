@@ -8,7 +8,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.13"
-click = "^8.3.0"
+typer = "^0.17.0"
 rich = "^14.1.0"
 sqlalchemy = "^2.0.43"
 alembic = "^1.16.5"
