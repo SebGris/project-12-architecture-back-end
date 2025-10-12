@@ -4,11 +4,36 @@ Ce fichier résume les modifications apportées au projet pour faciliter le suiv
 
 ---
 
+## 2025-10-12 : Tests unitaires pour la création des utilisateurs
+
+**Tests** : Création de 8 tests unitaires pour valider le modèle User et la création des utilisateurs. Tests avec base de données SQLite en mémoire, vérification du hashing bcrypt, contraintes UNIQUE et timestamps automatiques.
+
+📄 Fichier de test : [tests/unit/test_user_creation.py](../tests/unit/test_user_creation.py)
+
+**Tests implémentés** :
+- ✅ `test_create_user_success` - Création d'un utilisateur avec tous les champs
+- ✅ `test_password_is_hashed` - Vérification du hashing bcrypt
+- ✅ `test_password_verification` - Validation des mots de passe (bon/mauvais)
+- ✅ `test_create_multiple_users` - Création de plusieurs utilisateurs
+- ✅ `test_username_must_be_unique` - Contrainte UNIQUE sur username
+- ✅ `test_email_must_be_unique` - Contrainte UNIQUE sur email
+- ✅ `test_user_has_timestamps` - Timestamps automatiques (created_at, updated_at)
+- ✅ `test_user_repr` - Représentation string du modèle
+
+**Résultats** :
+- 8/8 tests passés avec succès
+- Couverture de code : 84% (objectif 80% atteint)
+- Pattern GIVEN-WHEN-THEN pour la clarté
+- Utilisation de fixtures pytest pour isolation des tests
+
+---
+
 ## 2025-10-12 : Création des utilisateurs de test (Seed Database)
 
 **Base de données** : Création d'un script de seed (`seed_database.py`) pour peupler la base de données avec 5 utilisateurs de test répartis dans les 3 départements (1 GESTION, 2 COMMERCIAL, 2 SUPPORT). Implémentation du hashing sécurisé des mots de passe avec bcrypt. Script de test (`test_password_hash.py`) pour vérifier la sécurité du hashing.
 
 📄 Documentation détaillée : [T009-seed-database-users.md](T009-seed-database-users.md)
+📄 Référence rapide : [IDENTIFIANTS-TEST.md](IDENTIFIANTS-TEST.md)
 
 **Utilisateurs créés** :
 - `admin` (GESTION) - Alice Dubois - admin@epicevents.com
