@@ -4,6 +4,26 @@ Ce fichier résume les modifications apportées au projet pour faciliter le suiv
 
 ---
 
+## 2025-10-12 : Création des utilisateurs de test (Seed Database)
+
+**Base de données** : Création d'un script de seed (`seed_database.py`) pour peupler la base de données avec 5 utilisateurs de test répartis dans les 3 départements (1 GESTION, 2 COMMERCIAL, 2 SUPPORT). Implémentation du hashing sécurisé des mots de passe avec bcrypt. Script de test (`test_password_hash.py`) pour vérifier la sécurité du hashing.
+
+📄 Documentation détaillée : [T009-seed-database-users.md](T009-seed-database-users.md)
+
+**Utilisateurs créés** :
+- `admin` (GESTION) - Alice Dubois - admin@epicevents.com
+- `commercial1` (COMMERCIAL) - John Smith - john.smith@epicevents.com
+- `commercial2` (COMMERCIAL) - Marie Martin - marie.martin@epicevents.com
+- `support1` (SUPPORT) - Pierre Durand - pierre.durand@epicevents.com
+- `support2` (SUPPORT) - Sophie Bernard - sophie.bernard@epicevents.com
+
+**Sécurité** :
+- Mots de passe hashés avec bcrypt (algorithme résistant aux attaques par force brute)
+- Salage automatique intégré (chaque hash est unique)
+- Tests de vérification réussis pour tous les utilisateurs
+
+---
+
 ## 2025-10-12 : Guide des outils d'administration SQLite
 
 **Documentation** : Création d'un guide complet comparant les outils d'administration pour SQLite (DB Browser, VS Code extensions, SQLite CLI, DBeaver, viewers en ligne). Recommandation de DB Browser for SQLite comme outil principal pour l'exploration visuelle de la base de données.

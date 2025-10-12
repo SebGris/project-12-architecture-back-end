@@ -2,7 +2,10 @@
 Script de vérification de la base de données Epic Events.
 Affiche la structure des tables créées par Alembic.
 """
+
 from sqlalchemy import create_engine, inspect
+from sqlalchemy.orm import sessionmaker
+from src.models.user import User
 
 # Connexion à la base de données
 engine = create_engine("sqlite:///epic_events.db")
@@ -33,6 +36,21 @@ for table in tables:
             print(
                 f"    -> {fk['constrained_columns'][0]} -> {fk['referred_table']}.{fk['referred_columns'][0]}"
             )
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
+print("\n" + "=" * 50)
+print("UTILISATEURS DANS LA BASE DE DONNÉES")
+print("=" * 50)
+
+users = session.query(User).all()
+for user in users:
+    print(
+        f"  - {user.username:<15} | {user.email:<30} | {user.department.value}"
+    )
+
+session.close()
 
 print("\n" + "=" * 50)
 print("Verification terminee avec succes!")
