@@ -28,7 +28,9 @@ def db_session():
 
     yield session
 
+    # Nettoyage complet des ressources
     session.close()
+    engine.dispose()
 
 
 def test_create_user_success(db_session):
