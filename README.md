@@ -14,7 +14,7 @@ Système CRM sécurisé développé en ligne de commande pour Epic Events, perme
 - **SQLite 3** (Base de données intégrée)
 - **SQLAlchemy** (ORM) - Interface Python pour SQLite
 - **Alembic** (Migrations)
-- **Click** (CLI) typer
+- **Typer** (CLI)
 - **Sentry** (Monitoring des erreurs)
 - **bcrypt** (Hachage des mots de passe)
 
