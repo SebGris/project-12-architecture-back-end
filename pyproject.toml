@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Système CRM sécurisé développé en ligne de commande pour Epic Events"
 authors = ["Sébastien Grison <74866413+SebGris@users.noreply.github.com>"]
 readme = "README.md"
-package-mode = false
+packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.13"
@@ -19,6 +19,8 @@ sentry-sdk = "^2.40.0"
 python-dotenv = "^1.1.1"
 bcrypt = ">=4.0.0"
 
+[tool.poetry.scripts]
+epicevents = "src.cli.main:app"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Ce guide compare les différents outils disponibles pour administrer votre base de données SQLite `epic_events.db`.
+Ce guide compare les différents outils disponibles pour administrer votre base de données SQLite `epic_events_crm.db`.
 
 ---
 
@@ -71,7 +71,7 @@ Ce guide compare les différents outils disponibles pour administrer votre base 
    ```
    D:\Users\sebas\Documents\VS Code\OpenClassrooms\project-12-architecture-back-end\
    ```
-4. Sélectionnez `epic_events.db`
+4. Sélectionnez `epic_events_crm.db`
 5. La base s'ouvre avec 4 onglets principaux
 
 ---
@@ -358,7 +358,7 @@ Pour compresser et optimiser la base :
 1. Dans VS Code : Ctrl+Shift+X
 2. Rechercher : **"SQLite Viewer"** (par `alexcvzz`) ou **"SQLite"** (par `qwtel`)
 3. Installer
-4. Clic droit sur `epic_events.db` → "Open Database"
+4. Clic droit sur `epic_events_crm.db` → "Open Database"
 
 ---
 
@@ -383,7 +383,7 @@ Pour compresser et optimiser la base :
 **Commandes utiles** :
 ```bash
 # Ouvrir la base
-sqlite3 epic_events.db
+sqlite3 epic_events_crm.db
 
 # Commandes internes (commencent par un point)
 .help                            # Aide

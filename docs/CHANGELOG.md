@@ -4,6 +4,30 @@ Ce fichier résume les modifications apportées au projet pour faciliter le suiv
 
 ---
 
+## 2025-10-12 : Correction du point d'entrée et mise à jour de la documentation
+
+**Infrastructure & Documentation** : Création du fichier manquant `src/cli/main.py` pour correspondre à la configuration du point d'entrée défini dans `pyproject.toml`. Mise à jour complète du README pour refléter l'utilisation correcte de Poetry et de la commande `epicevents`.
+
+📄 Fichiers modifiés :
+- [src/cli/main.py](../src/cli/main.py) (nouveau)
+- [README.md](../README.md)
+
+**Modifications apportées** :
+- ✅ Création de `src/cli/main.py` comme point d'entrée principal (référencé dans `pyproject.toml:23`)
+- ✅ Suppression des références incorrectes à `python src/main.py` dans le README
+- ✅ Ajout d'instructions claires pour l'utilisation de Poetry (`poetry install`, `poetry shell`, `poetry run`)
+- ✅ Mise à jour de la section "Utilisation" avec les commandes réelles (`epicevents create-user`, `epicevents hello`)
+- ✅ Correction de la section "Architecture" pour refléter la structure réelle des fichiers
+- ✅ Ajout d'une section complète "Gestion avec Poetry" dans l'aide-mémoire
+- ✅ Simplification des instructions d'installation (Poetry remplace pip + venv)
+
+**Impact** :
+- La commande `epicevents` fonctionne maintenant correctement après `poetry install`
+- Documentation cohérente avec la structure réelle du projet
+- Flux de développement clarifié pour les nouveaux contributeurs
+
+---
+
 ## 2025-10-12 : Tests unitaires pour la création des utilisateurs
 
 **Tests** : Création de 8 tests unitaires pour valider le modèle User et la création des utilisateurs. Tests avec base de données SQLite en mémoire, vérification du hashing bcrypt, contraintes UNIQUE et timestamps automatiques.
@@ -59,7 +83,7 @@ Ce fichier résume les modifications apportées au projet pour faciliter le suiv
 
 ## 2025-10-12 : Création des tables de la base de données
 
-**Base de données** : Application de la migration initiale Alembic pour créer les 4 tables du système CRM (users, clients, contracts, events) dans la base de données SQLite `epic_events.db`. Toutes les relations (clés étrangères), contraintes (unique, not null) et index sont correctement créés.
+**Base de données** : Application de la migration initiale Alembic pour créer les 4 tables du système CRM (users, clients, contracts, events) dans la base de données SQLite `epic_events_crm.db`. Toutes les relations (clés étrangères), contraintes (unique, not null) et index sont correctement créés.
 
 📄 Documentation détaillée : [T008-creation-tables-migration-initiale.md](T008-creation-tables-migration-initiale.md)
 

@@ -23,37 +23,34 @@ Système CRM sécurisé développé en ligne de commande pour Epic Events, perme
 ### Prérequis
 
 - Python 3.13 ou supérieur
+- Poetry (gestionnaire de dépendances)
 - Git
 
 ### Étapes d'installation
 
-1. **Créer et activer l'environnement virtuel**
+1. **Cloner le dépôt**
 ```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-
-# Linux/Mac
-python -m venv venv
-source venv/bin/activate
+git clone <url-du-repo>
+cd project-12-architecture-back-end
 ```
 
-2. **Installer SQLAlchemy**
-
-SQLAlchemy est l'ORM (Object-Relational Mapping) qui permet d'interagir avec SQLite depuis Python :
-
+2. **Installer les dépendances avec Poetry**
 ```bash
-# Installer SQLAlchemy
-pip install sqlalchemy
+# Installer Poetry si nécessaire
+pip install poetry
 
-# SQLite est inclus dans Python - aucun driver supplémentaire nécessaire
+# Installer les dépendances du projet
+poetry install
+
+# Activer l'environnement virtuel
+poetry shell
 ```
 
 > **Note** : SQLite est inclus par défaut dans Python, aucune installation supplémentaire n'est nécessaire !
 
 3. **Configurer les variables d'environnement**
 
-Créer un fichier `.env` à la racine :
+Créer un fichier `.env` à la racine (vous pouvez copier `.env.example`) :
 ```env
 DATABASE_URL=sqlite:///epic_events_crm.db
 SENTRY_DSN=votre_dsn_sentry
@@ -62,11 +59,8 @@ SECRET_KEY=votre_cle_secrete
 
 4. **Initialiser la base de données**
 ```bash
-# Initialiser Alembic
-alembic init alembic
-
 # Appliquer les migrations
-alembic upgrade head
+poetry run alembic upgrade head
 ```
 
 ### Exemple de connexion SQLAlchemy
@@ -93,26 +87,38 @@ except Exception as e:
 
 ## 🚀 Utilisation
 
+### Installation de la commande
+
+Après avoir installé les dépendances avec Poetry, la commande `epicevents` est automatiquement disponible dans votre environnement virtuel :
+
+```bash
+# Activer l'environnement Poetry
+poetry shell
+
+# La commande epicevents est maintenant disponible
+epicevents --help
+```
+
 ### Commandes principales
 
 ```bash
-# Lancer l'application
-python src/main.py
-
 # Créer un utilisateur
-python src/main.py user create
+epicevents create-user
 
-# Connexion
-python src/main.py login
+# Saluer quelqu'un (commande de test)
+epicevents hello "Nom"
+```
 
-# Créer un client
-python src/main.py client create
+### Alternative en mode développement
 
-# Lister les contrats
-python src/main.py contract list
+Si vous ne voulez pas utiliser Poetry shell, vous pouvez exécuter les commandes directement :
 
-# Créer un événement
-python src/main.py event create
+```bash
+# Avec Poetry run
+poetry run epicevents create-user
+
+# Ou en tant que module Python
+poetry run python -m src.cli.main
 ```
 
 ## 🔐 Sécurité
@@ -138,29 +144,21 @@ epic_events_crm/
 │   └── versions/
 ├── src/
 │   ├── __init__.py
-│   ├── main.py           # Point d'entrée
-│   ├── config.py         # Configuration
-│   ├── database/
+│   ├── database.py       # Configuration DB
+│   ├── models/           # Modèles SQLAlchemy
 │   │   ├── __init__.py
-│   │   ├── connection.py # Connexion DB
-│   │   └── models.py     # Modèles SQLAlchemy
-│   ├── cli/
+│   │   ├── user.py
+│   │   ├── client.py
+│   │   ├── contract.py
+│   │   └── event.py
+│   ├── cli/              # Interface en ligne de commande
 │   │   ├── __init__.py
-│   │   ├── commands.py   # Commandes Click
-│   │   └── validators.py # Validation des entrées
-│   ├── auth/
-│   │   ├── __init__.py
-│   │   ├── security.py   # Hachage, JWT
-│   │   └── permissions.py # Gestion des droits
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── user_service.py
-│   │   ├── client_service.py
-│   │   ├── contract_service.py
-│   │   └── event_service.py
-│   └── utils/
+│   │   ├── main.py       # Point d'entrée (référencé dans pyproject.toml)
+│   │   └── commands.py   # Définition des commandes Typer
+│   └── services/         # Logique métier
 │       ├── __init__.py
-│       └── logger.py     # Configuration Sentry
+│       ├── user_service.py
+│       └── auth_service.py
 └── tests/
     ├── __init__.py
     ├── test_auth.py
@@ -197,6 +195,31 @@ pytest tests/test_auth.py
 
 ## 💻 Aide-mémoire
 
+### Gestion avec Poetry
+
+```bash
+# Installer les dépendances
+poetry install
+
+# Activer l'environnement virtuel
+poetry shell
+
+# Ajouter une dépendance
+poetry add nom-du-package
+
+# Ajouter une dépendance de développement
+poetry add --group dev nom-du-package
+
+# Mettre à jour les dépendances
+poetry update
+
+# Exécuter une commande sans activer le shell
+poetry run epicevents create-user
+
+# Quitter l'environnement virtuel
+exit
+```
+
 ### Gestion de la base SQLite
 
 ```bash
@@ -222,15 +245,17 @@ sqlite3 epic_events_crm.db
 SELECT name FROM sqlite_master WHERE type='table';  -- Lister les tables
 ```
 
-### Python - Environnement virtuel
+### Lancer les tests avec Poetry
 
 ```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-deactivate
-# Geler les dépendances
-pip freeze > requirements.txt
+# Dans le shell Poetry
+pytest
+
+# Ou sans activer le shell
+poetry run pytest
+
+# Tests avec couverture
+poetry run pytest --cov=src tests/
 ```
 
 ### Résolution de problèmes courants
@@ -276,7 +301,7 @@ SENTRY_DSN=https://...@sentry.io/...
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
 - [SQLAlchemy SQLite Tutorial](https://docs.sqlalchemy.org/en/20/dialects/sqlite.html)
 - [Python SQLite3 Module](https://docs.python.org/3/library/sqlite3.html)
-- [Click Documentation](https://click.palletsprojects.com/)
+- [Typer Documentation](https://typer.tiangolo.com/)
 - [OWASP Security Guidelines](https://owasp.org/)
 
 ## 📄 Licence

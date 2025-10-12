@@ -26,7 +26,7 @@ Cette commande crée :
 
 ```ini
 # Localiser la ligne sqlalchemy.url et la modifier (driver://user:pass@localhost/dbname) :
-sqlalchemy.url = sqlite:///epic_events.db
+sqlalchemy.url = sqlite:///epic_events_crm.db
 ```
 
 **Alternative dynamique (recommandé)** : Charger l'URL depuis `.env`
@@ -41,7 +41,7 @@ import os
 load_dotenv()
 
 # Dans la section config
-config.set_main_option('sqlalchemy.url', os.getenv('DATABASE_URL', 'sqlite:///epic_events.db'))
+config.set_main_option('sqlalchemy.url', os.getenv('DATABASE_URL', 'sqlite:///epic_events_crm.db'))
 ```
 
 ### 3. Configurer les métadonnées des modèles
@@ -99,7 +99,7 @@ project-12-architecture-back-end/
 │   ├── README                          # Documentation Alembic
 │   └── versions/                       # Dossier pour les fichiers de migration
 │       └── (vide pour l'instant)
-└── epic_events.db                      # Créé après alembic upgrade head
+└── epic_events_crm.db                      # Créé après alembic upgrade head
 ```
 
 ## Commandes Alembic utiles

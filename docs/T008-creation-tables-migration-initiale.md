@@ -35,7 +35,7 @@ from src.models import Base
 Ouvrez [alembic.ini](../alembic.ini) et vérifiez la ligne 87 :
 
 ```ini
-sqlalchemy.url = sqlite:///epic_events.db
+sqlalchemy.url = sqlite:///epic_events_crm.db
 ```
 
 **Note** : Ce fichier SQLite sera créé à la racine du projet lors de l'application de la migration.
@@ -227,7 +227,7 @@ INFO  [alembic.runtime.migration] Running upgrade  -> abc123def456, Initial migr
 
 ### Ce qui se passe en coulisses
 
-1. **Création du fichier de base de données** : `epic_events.db` est créé à la racine
+1. **Création du fichier de base de données** : `epic_events_crm.db` est créé à la racine
 2. **Création de la table alembic_version** : Alembic garde un historique des migrations appliquées
 3. **Exécution du script de migration** : Les 4 tables sont créées avec leurs colonnes, contraintes et relations
 
@@ -243,7 +243,7 @@ Créez un petit script temporaire `check_db.py` à la racine du projet :
 from sqlalchemy import create_engine, inspect
 
 # Connexion à la base de données
-engine = create_engine("sqlite:///epic_events.db")
+engine = create_engine("sqlite:///epic_events_crm.db")
 inspector = inspect(engine)
 
 # Lister toutes les tables
@@ -342,7 +342,7 @@ Colonnes de la table 'clients':
 
 1. Ouvrez DB Browser for SQLite
 2. Cliquez sur "Open Database"
-3. Sélectionnez `epic_events.db` dans votre projet
+3. Sélectionnez `epic_events_crm.db` dans votre projet
 4. Onglet "Database Structure" : Voir toutes les tables et leurs colonnes
 5. Onglet "Browse Data" : Voir les données (vide pour l'instant)
 6. Onglet "Execute SQL" : Exécuter des requêtes SQL
@@ -360,7 +360,7 @@ Colonnes de la table 'clients':
 **Commandes** :
 ```bash
 # Ouvrir la base de données
-sqlite3 epic_events.db
+sqlite3 epic_events_crm.db
 
 # Lister les tables
 .tables
@@ -449,7 +449,7 @@ INFO  [alembic.autogenerate.compare] Detected no changes.
 
 **Solution** :
 - Vérifiez les imports dans `env.py`
-- Supprimez `epic_events.db` et réessayez
+- Supprimez `epic_events_crm.db` et réessayez
 - Vérifiez que `target_metadata = Base.metadata` est bien défini
 
 ### Problème 2 : ImportError lors de la génération
@@ -488,7 +488,7 @@ sqlalchemy.exc.IntegrityError: FOREIGN KEY constraint failed
 
 ### Nouveaux fichiers
 - `migrations/versions/abc123def456_initial_migration_create_users_clients.py` (nom exact varie)
-- `epic_events.db` (base de données SQLite)
+- `epic_events_crm.db` (base de données SQLite)
 
 ### Fichiers non modifiés
 - `alembic.ini`
@@ -575,7 +575,7 @@ events (Événements organisés pour les contrats)
 ✅ Le fichier de migration contient la création des 4 tables (users, clients, contracts, events)
 ✅ Les clés étrangères sont correctement définies
 ✅ La commande `alembic upgrade head` s'exécute sans erreur
-✅ Le fichier `epic_events.db` existe à la racine du projet
+✅ Le fichier `epic_events_crm.db` existe à la racine du projet
 ✅ Les tables sont visibles avec `.tables` dans SQLite CLI
 ✅ La table `alembic_version` contient la révision actuelle
 

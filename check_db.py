@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from src.models.user import User
 
 # Connexion à la base de données
-engine = create_engine("sqlite:///epic_events.db")
+engine = create_engine("sqlite:///epic_events_crm.db")
 inspector = inspect(engine)
 
 # Lister toutes les tables

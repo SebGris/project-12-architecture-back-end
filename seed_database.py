@@ -154,7 +154,7 @@ def main():
     print("=" * 60)
 
     # Connexion à la base de données
-    engine = create_engine("sqlite:///epic_events.db")
+    engine = create_engine("sqlite:///epic_events_crm.db")
     Session = sessionmaker(bind=engine)
     session = Session()
 

@@ -194,7 +194,7 @@ def main():
     print("=" * 60)
 
     # Connexion à la base de données
-    engine = create_engine("sqlite:///epic_events.db")
+    engine = create_engine("sqlite:///epic_events_crm.db")
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -348,7 +348,7 @@ poetry run python check_db.py
 ### Option B : Utiliser DB Browser for SQLite
 
 1. Ouvrez DB Browser for SQLite
-2. Ouvrez `epic_events.db`
+2. Ouvrez `epic_events_crm.db`
 3. Onglet **"Browse Data"** → Sélectionnez la table **"users"**
 4. Vous devriez voir les 5 utilisateurs
 
@@ -398,7 +398,7 @@ def test_password_verification():
     """Test de vérification des mots de passe."""
 
     # Connexion à la base
-    engine = create_engine("sqlite:///epic_events.db")
+    engine = create_engine("sqlite:///epic_events_crm.db")
     Session = sessionmaker(bind=engine)
     session = Session()
 
