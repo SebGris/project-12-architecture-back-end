@@ -4,6 +4,30 @@ Ce fichier résume les modifications apportées au projet pour faciliter le suiv
 
 ---
 
+## 2025-10-12 : Guide des outils d'administration SQLite
+
+**Documentation** : Création d'un guide complet comparant les outils d'administration pour SQLite (DB Browser, VS Code extensions, SQLite CLI, DBeaver, viewers en ligne). Recommandation de DB Browser for SQLite comme outil principal pour l'exploration visuelle de la base de données.
+
+📄 Documentation détaillée : [guide-outils-administration-sqlite.md](guide-outils-administration-sqlite.md)
+
+---
+
+## 2025-10-12 : Création des tables de la base de données
+
+**Base de données** : Application de la migration initiale Alembic pour créer les 4 tables du système CRM (users, clients, contracts, events) dans la base de données SQLite `epic_events.db`. Toutes les relations (clés étrangères), contraintes (unique, not null) et index sont correctement créés.
+
+📄 Documentation détaillée : [T008-creation-tables-migration-initiale.md](T008-creation-tables-migration-initiale.md)
+
+**Tables créées** :
+- `users` : 10 colonnes, 2 contraintes UNIQUE (username, email)
+- `clients` : 9 colonnes, 1 FK vers users (sales_contact_id)
+- `contracts` : 7 colonnes, 2 FK vers clients et users
+- `events` : 11 colonnes, 2 FK vers contracts et users
+
+**Script de vérification** : Création de `check_db.py` pour inspecter la structure de la base via SQLAlchemy.
+
+---
+
 ## 2025-10-11 : Ajout du champ email dans User
 
 **Modèle User** : Ajout du champ `email` (VARCHAR(255), unique) au modèle User pour permettre la communication professionnelle, la récupération de mot de passe et les intégrations externes. Conforme aux standards des CRM d'entreprise.
