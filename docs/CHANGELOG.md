@@ -4,6 +4,35 @@ Ce fichier résume les modifications apportées au projet pour faciliter le suiv
 
 ---
 
+## 2025-10-13 : Amélioration de la gestion des exceptions dans les commandes CLI
+
+**CLI & Sécurité** : Refonte complète de la gestion des erreurs dans la commande `create_user` pour éviter les fuites de connexion à la base de données et améliorer la robustesse du code. Ajout de la gestion appropriée des exceptions spécifiques et des codes de sortie.
+
+📄 Fichier modifié : [src/cli/commands.py](../src/cli/commands.py)
+
+**Modifications apportées** :
+- ✅ Initialisation de `db = None` avant le bloc try pour éviter les erreurs dans le finally
+- ✅ Remplacement de `return` par `typer.Exit(code=1)` dans le bloc try imbriqué pour garantir l'exécution du finally
+- ✅ Ajout de la gestion spécifique de `typer.Abort` pour Ctrl+C
+- ✅ Ajout de la gestion spécifique de `IntegrityError` pour les violations de contraintes DB (doublons username/email)
+- ✅ Conservation du `except Exception` pour les erreurs inattendues
+- ✅ Vérification `if db is not None` dans le finally pour éviter les erreurs si la connexion échoue
+- ✅ Amélioration de la commande `hello` pour utiliser `console.print()` avec style cohérent
+
+**Problèmes corrigés** :
+- 🐛 Fuite de connexion à la base de données quand le département était invalide (le `return` empêchait l'exécution du `finally`)
+- 🐛 Pas de gestion du Ctrl+C pendant les prompts utilisateur
+- 🐛 Messages d'erreur génériques pour les violations de contraintes DB
+- 🐛 Risque d'erreur si `get_db_session()` lève une exception
+
+**Impact** :
+- Garantie de fermeture de la connexion DB dans tous les scénarios (succès, erreur, annulation)
+- Meilleure expérience utilisateur avec des messages d'erreur spécifiques
+- Code plus robuste et conforme aux bonnes pratiques de gestion des ressources
+- Codes de sortie appropriés pour l'intégration avec des scripts shell
+
+---
+
 ## 2025-10-12 : Correction du point d'entrée et mise à jour de la documentation
 
 **Infrastructure & Documentation** : Création du fichier manquant `src/cli/main.py` pour correspondre à la configuration du point d'entrée défini dans `pyproject.toml`. Mise à jour complète du README pour refléter l'utilisation correcte de Poetry et de la commande `epicevents`.
