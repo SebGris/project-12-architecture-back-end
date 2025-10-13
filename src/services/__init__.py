@@ -2,5 +2,4 @@
 
 from .user_service import UserService
 
-# Create singleton instances
-user_service = UserService()
+__all__ = ["UserService"]

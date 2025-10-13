@@ -2,12 +2,13 @@ import typer
 from rich.console import Console
 from sqlalchemy.exc import IntegrityError
 
-from src.services import user_service
+from src.services import UserService
 from src.database import get_db_session
 from src.models.user import Department
 
 app = typer.Typer()
 console = Console()
+user_service = UserService()
 
 
 @app.command()
@@ -30,7 +31,7 @@ def create_user():
         phone = typer.prompt("Phone")
         password = typer.prompt("Password", hide_input=True)
         department_str = typer.prompt(
-            "Department (COMMERCIAL, GESTION, SUPPORT)"
+            "Department (COMMERCIAL, GESTION, SUPPORT)", default="SUPPORT"
         ).upper()
 
         # Convert department string to enum

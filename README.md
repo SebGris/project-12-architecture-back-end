@@ -248,9 +248,6 @@ SELECT name FROM sqlite_master WHERE type='table';  -- Lister les tables
 ### Lancer les tests avec Poetry
 
 ```bash
-# Dans le shell Poetry
-pytest
-
 # Ou sans activer le shell
 poetry run pytest
 
