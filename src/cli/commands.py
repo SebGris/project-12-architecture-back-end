@@ -1,75 +1,75 @@
+"""CLI commands for Epic Events CRM.
+
+This module defines the command-line interface commands.
+Each command is responsible only for orchestrating the flow,
+delegating specific responsibilities to specialized modules.
+"""
+
 import typer
 from rich.console import Console
-from sqlalchemy.exc import IntegrityError
+from src.cli.dependencies import (
+    db_session_scope,
+    get_client_service,
+    get_user_service,
+)
+from src.cli.input_handlers import prompt_client_data, prompt_user_data
+from src.cli.error_handlers import handle_command_errors, print_success
 
-from src.services import UserService
-from src.database import get_db_session
-from src.models.user import Department
-
-app = typer.Typer()
 console = Console()
-user_service = UserService()
+app = typer.Typer()
+
+# Sous-applications pour mieux organiser
+clients = typer.Typer(rich_markup_mode="rich")
+users = typer.Typer(rich_markup_mode="rich")
+events = typer.Typer(rich_markup_mode="rich")
+
+app.add_typer(clients, name="client")
+app.add_typer(users, name="user")
+app.add_typer(events, name="event")
 
 
-@app.command()
-def hello(name: str):
-    """Greet someone by name."""
-    console.print(f"[blue]👋[/blue] Hello {name}!")
+@clients.command("create")
+def create_client():
+    """Create a new client with interactive prompts."""
 
+    def operation():
+        # Header visuel
+        console.rule("[bold cyan]Création d'un nouveau client[/bold cyan]")
+        # Collect input data
+        client_data = prompt_client_data()
 
-@app.command()
-def create_user():
-    """Create a new user."""
-    db = None
-    try:
-        db = get_db_session()
+        # Execute business logic with automatic session management
+        with db_session_scope() as db:
+            client_service = get_client_service(db)
+            client = client_service.create_client(**client_data)
 
-        username = typer.prompt("Username")
-        first_name = typer.prompt("First Name")
-        last_name = typer.prompt("Last Name")
-        email = typer.prompt("Email")
-        phone = typer.prompt("Phone")
-        password = typer.prompt("Password", hide_input=True)
-        department_str = typer.prompt(
-            "Department (COMMERCIAL, GESTION, SUPPORT)", default="SUPPORT"
-        ).upper()
-
-        # Convert department string to enum
-        try:
-            department = Department[department_str]
-        except KeyError:
-            console.print(
-                f"[red]✗[/red] Invalid department. Must be one of: COMMERCIAL, GESTION, SUPPORT"
+            # Provide feedback
+            print_success(
+                f"Client {client.first_name} {client.last_name} créé avec succès !"
             )
-            raise typer.Exit(code=1)
+            return client
 
-        user = user_service.create_user(
-            db,
-            username,
-            email,
-            password,
-            first_name,
-            last_name,
-            phone,
-            department,
-        )
-        console.print(f"[green]✓[/green] User {user.username} created!")
+    handle_command_errors(operation)
 
-    except typer.Abort:
-        # User pressed Ctrl+C during prompts
-        console.print("\n[yellow]⚠[/yellow] Operation cancelled")
-        raise typer.Exit(code=1)
-    except IntegrityError:
-        # Database constraint violations (duplicate username/email, etc.)
-        console.print(f"[red]✗[/red] Database error: User might already exist")
-        raise typer.Exit(code=1)
-    except Exception as e:
-        # Unexpected errors
-        console.print(f"[red]✗[/red] Error creating user: {e}")
-        raise typer.Exit(code=1)
-    finally:
-        if db is not None:
-            db.close()
+
+@users.command("create")
+def create_user():
+    """Create a new user with interactive prompts."""
+
+    def operation():
+        # Collect input data
+        user_data = prompt_user_data()
+
+        # Execute business logic with automatic session management
+        with db_session_scope() as db:
+            user_service = get_user_service(db)
+            user = user_service.create_user(**user_data)
+
+            # Provide feedback
+            print_success(f"Utilisateur {user.username} créé avec succès !")
+            return user
+
+    handle_command_errors(operation)
 
 
 if __name__ == "__main__":
