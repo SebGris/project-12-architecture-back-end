@@ -1,34 +1,39 @@
-"""Database configuration and session management."""
+from contextlib import contextmanager, AbstractContextManager
+from typing import Callable
+import logging
 
-import os
+from sqlalchemy import create_engine, orm
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from dotenv import load_dotenv
+logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
-
-# Get database URL from environment or use default SQLite
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///epic_events_crm.db")
-
-# Create engine
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,  # Set to True for SQL query logging
-    connect_args=(
-        {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
-    ),
-)
-
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 
-def get_db_session() -> Session:
-    """Get a database session for CLI commands.
+class Database:
 
-    Returns:
-        Database session (must be closed manually)
-    """
-    return SessionLocal()
+    def __init__(self, db_url: str) -> None:
+        self._engine = create_engine(db_url, echo=True)
+        self._session_factory = orm.scoped_session(
+            orm.sessionmaker(
+                autocommit=False,
+                autoflush=False,
+                bind=self._engine,
+            ),
+        )
+
+    def create_database(self) -> None:
+        Base.metadata.create_all(self._engine)
+
+    @contextmanager
+    def session(self) -> Callable[..., AbstractContextManager[Session]]:
+        session: Session = self._session_factory()
+        try:
+            yield session
+        except Exception:
+            logger.exception("Session rollback because of exception")
+            session.rollback()
+            raise
+        finally:
+            session.close()

@@ -1,75 +1,240 @@
-"""CLI commands for Epic Events CRM.
+"""CLI commands for Epic Events CRM."""
 
-This module defines the command-line interface commands.
-Each command is responsible only for orchestrating the flow,
-delegating specific responsibilities to specialized modules.
-"""
-
+import re
 import typer
-from rich.console import Console
-from src.cli.dependencies import (
-    db_session_scope,
-    get_client_service,
-    get_user_service,
-)
-from src.cli.input_handlers import prompt_client_data, prompt_user_data
-from src.cli.error_handlers import handle_command_errors, print_success
+from sqlalchemy.exc import IntegrityError, OperationalError
 
-console = Console()
+from src.database import get_db_session
+from src.models.user import Department
+from src.services.client_service import ClientService
+from src.services.user_service import UserService
+from src.repositories.sqlalchemy_client_repository import SqlAlchemyClientRepository
+from src.repositories.sqlalchemy_user_repository import SqlAlchemyUserRepository
+
 app = typer.Typer()
+db_app = typer.Typer()
+user_app = typer.Typer()
 
-# Sous-applications pour mieux organiser
-clients = typer.Typer(rich_markup_mode="rich")
-users = typer.Typer(rich_markup_mode="rich")
-events = typer.Typer(rich_markup_mode="rich")
+app.add_typer(db_app, name="db", help="Commandes de base de données")
+app.add_typer(user_app, name="user", help="Gestion des utilisateurs")
 
-app.add_typer(clients, name="client")
-app.add_typer(users, name="user")
-app.add_typer(events, name="event")
-
-
-@clients.command("create")
-def create_client():
-    """Create a new client with interactive prompts."""
-
-    def operation():
-        # Header visuel
-        console.rule("[bold cyan]Création d'un nouveau client[/bold cyan]")
-        # Collect input data
-        client_data = prompt_client_data()
-
-        # Execute business logic with automatic session management
-        with db_session_scope() as db:
-            client_service = get_client_service(db)
-            client = client_service.create_client(**client_data)
-
-            # Provide feedback
-            print_success(
-                f"Client {client.first_name} {client.last_name} créé avec succès !"
-            )
-            return client
-
-    handle_command_errors(operation)
+# Regex patterns for validation
+EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+PHONE_PATTERN = re.compile(r"^[\d\s\-\+\(\)\.]+$")
+USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{3,50}$")
 
 
-@users.command("create")
-def create_user():
-    """Create a new user with interactive prompts."""
+# Callback validators for typer.Option
+def validate_first_name_callback(value: str) -> str:
+    """Validate and clean first name."""
+    cleaned = value.strip()
+    if len(cleaned) < 2:
+        raise typer.BadParameter("Le prénom doit avoir au moins 2 caractères")
+    return cleaned
 
-    def operation():
-        # Collect input data
-        user_data = prompt_user_data()
 
-        # Execute business logic with automatic session management
-        with db_session_scope() as db:
-            user_service = get_user_service(db)
-            user = user_service.create_user(**user_data)
+def validate_last_name_callback(value: str) -> str:
+    """Validate and clean last name."""
+    cleaned = value.strip()
+    if len(cleaned) < 2:
+        raise typer.BadParameter("Le nom doit avoir au moins 2 caractères")
+    return cleaned
 
-            # Provide feedback
-            print_success(f"Utilisateur {user.username} créé avec succès !")
-            return user
 
-    handle_command_errors(operation)
+def validate_email_callback(value: str) -> str:
+    """Validate and clean email."""
+    cleaned = value.strip().lower()
+    if not EMAIL_PATTERN.match(cleaned):
+        raise typer.BadParameter(f"Email invalide: {value}")
+    return cleaned
+
+
+def validate_phone_callback(value: str) -> str:
+    """Validate and clean phone number."""
+    cleaned = value.strip()
+    if not PHONE_PATTERN.match(cleaned):
+        raise typer.BadParameter(f"Format de téléphone invalide: {value}")
+    digits = re.sub(r"[^0-9]", "", cleaned)
+    if len(digits) < 10:
+        raise typer.BadParameter("Le téléphone doit avoir au moins 10 chiffres")
+    return cleaned
+
+
+def validate_company_name_callback(value: str) -> str:
+    """Validate and clean company name."""
+    cleaned = value.strip()
+    if not cleaned:
+        raise typer.BadParameter("Le nom de l'entreprise est requis")
+    return cleaned
+
+
+def validate_sales_contact_id_callback(value: int) -> int:
+    """Validate sales contact ID."""
+    if value <= 0:
+        raise typer.BadParameter("L'ID du contact doit être positif")
+    return value
+
+
+def validate_username_callback(value: str) -> str:
+    """Validate and clean username."""
+    cleaned = value.strip()
+    if not USERNAME_PATTERN.match(cleaned):
+        raise typer.BadParameter("Username invalide (3-50 caractères, lettres/chiffres/_/-)")
+    return cleaned
+
+
+def validate_password_callback(value: str) -> str:
+    """Validate password."""
+    if len(value) < 8:
+        raise typer.BadParameter("Le mot de passe doit avoir au moins 8 caractères")
+    return value
+
+
+def validate_department_callback(value: int) -> Department:
+    """Validate department selection."""
+    departments = list(Department)
+    if value < 1 or value > len(departments):
+        raise typer.BadParameter(f"Choix invalide. Veuillez choisir entre 1 et {len(departments)}")
+    return departments[value - 1]
+
+
+@app.command()
+def create_client(
+    first_name: str = typer.Option(..., prompt="Prénom", callback=validate_first_name_callback),
+    last_name: str = typer.Option(..., prompt="Nom", callback=validate_last_name_callback),
+    email: str = typer.Option(..., prompt="Email", callback=validate_email_callback),
+    phone: str = typer.Option(..., prompt="Téléphone", callback=validate_phone_callback),
+    company_name: str = typer.Option(..., prompt="Nom de l'entreprise", callback=validate_company_name_callback),
+    sales_contact_id: int = typer.Option(..., prompt="ID du contact commercial", callback=validate_sales_contact_id_callback),
+):
+    """Créer un nouveau client."""
+    typer.echo("\n=== Création d'un nouveau client ===\n")
+
+    db = get_db_session()
+
+    try:
+        # Business validation: check if sales contact exists
+        user_repo = SqlAlchemyUserRepository(db)
+        user = user_repo.get(sales_contact_id)
+
+        if not user:
+            typer.echo(f"[ERREUR] Utilisateur avec l'ID {sales_contact_id} n'existe pas")
+            raise typer.Exit(code=1)
+
+        if user.department != Department.COMMERCIAL:
+            typer.echo(f"[ERREUR] L'utilisateur {sales_contact_id} n'est pas du département COMMERCIAL")
+            raise typer.Exit(code=1)
+
+        # Create client via service
+        client_repo = SqlAlchemyClientRepository(db)
+        service = ClientService(client_repo)
+
+        client = service.create_client(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone=phone,
+            company_name=company_name,
+            sales_contact_id=sales_contact_id
+        )
+
+        db.commit()
+
+        # Success message
+        typer.echo(f"\n[SUCCÈS] Client {client.first_name} {client.last_name} créé avec succès!")
+        typer.echo(f"  ID: {client.id}")
+        typer.echo(f"  Email: {client.email}")
+        typer.echo(f"  Entreprise: {client.company_name}")
+
+    except IntegrityError:
+        db.rollback()
+        typer.echo("[ERREUR] Erreur d'intégrité: Données en double ou contrainte violée")
+        raise typer.Exit(code=1)
+
+    except OperationalError:
+        db.rollback()
+        typer.echo("[ERREUR] Erreur de connexion à la base de données")
+        raise typer.Exit(code=1)
+
+    except KeyboardInterrupt:
+        db.rollback()
+        typer.echo("\n[ANNULÉ] Opération annulée")
+        raise typer.Exit(code=1)
+
+    except Exception as e:
+        db.rollback()
+        typer.echo(f"[ERREUR] Erreur inattendue: {e}")
+        raise typer.Exit(code=1)
+
+    finally:
+        db.close()
+
+
+@app.command()
+def create_user(
+    username: str = typer.Option(..., prompt="Nom d'utilisateur", callback=validate_username_callback),
+    first_name: str = typer.Option(..., prompt="Prénom", callback=validate_first_name_callback),
+    last_name: str = typer.Option(..., prompt="Nom", callback=validate_last_name_callback),
+    email: str = typer.Option(..., prompt="Email", callback=validate_email_callback),
+    phone: str = typer.Option(..., prompt="Téléphone", callback=validate_phone_callback),
+    password: str = typer.Option(..., prompt="Mot de passe", hide_input=True, callback=validate_password_callback),
+    department_choice: int = typer.Option(
+        ...,
+        prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.SUPPORT.value}\n3. {Department.GESTION.value}\n\nChoisir un département (numéro)",
+        callback=validate_department_callback
+    ),
+):
+    """Créer un nouvel utilisateur."""
+    typer.echo("\n=== Création d'un nouvel utilisateur ===\n")
+
+    db = get_db_session()
+
+    try:
+        # Create user via service
+        user_repo = SqlAlchemyUserRepository(db)
+        service = UserService(user_repo)
+
+        user = service.create_user(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone=phone,
+            password=password,
+            department=department_choice
+        )
+
+        db.commit()
+
+        # Success message
+        typer.echo(f"\n[SUCCÈS] Utilisateur {user.username} créé avec succès!")
+        typer.echo(f"  ID: {user.id}")
+        typer.echo(f"  Nom complet: {user.first_name} {user.last_name}")
+        typer.echo(f"  Email: {user.email}")
+        typer.echo(f"  Département: {user.department.value}")
+
+    except IntegrityError:
+        db.rollback()
+        typer.echo("[ERREUR] Erreur d'intégrité: Données en double ou contrainte violée")
+        raise typer.Exit(code=1)
+
+    except OperationalError:
+        db.rollback()
+        typer.echo("[ERREUR] Erreur de connexion à la base de données")
+        raise typer.Exit(code=1)
+
+    except KeyboardInterrupt:
+        db.rollback()
+        typer.echo("\n[ANNULÉ] Opération annulée")
+        raise typer.Exit(code=1)
+
+    except Exception as e:
+        db.rollback()
+        typer.echo(f"[ERREUR] Erreur inattendue: {e}")
+        raise typer.Exit(code=1)
+
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":
