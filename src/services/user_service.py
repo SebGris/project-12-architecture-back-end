@@ -1,12 +1,25 @@
 from src.models.user import User, Department
-from sqlalchemy.orm import Session
+from src.repositories.user_repository import UserRepository
 import bcrypt
 
 
 class UserService:
+    def __init__(self, repository: UserRepository):
+        self.repository = repository
+
+    def get_user(self, user_id: int) -> User:
+        """Get a user by ID.
+
+        Args:
+            user_id: The user's ID
+
+        Returns:
+            User instance or None if not found
+        """
+        return self.repository.get(user_id)
+
     def create_user(
         self,
-        db: Session,
         username: str,
         email: str,
         password: str,
@@ -18,7 +31,6 @@ class UserService:
         """Create a new user with hashed password.
 
         Args:
-            db: Database session
             username: Unique username
             email: User email address
             password: Plain text password (will be hashed)
@@ -44,10 +56,7 @@ class UserService:
             phone=phone,
             department=department,
         )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        return user
+        return self.repository.add(user)
 
     def verify_password(self, password: str, password_hash: str) -> bool:
         """Verify a password against its hash.

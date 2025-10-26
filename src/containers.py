@@ -1,26 +1,35 @@
 from dependency_injector import containers, providers
-
-from .database import Database
-from src.repositories.client_repository import ClientRepository
+from src.database import get_db_session
+from src.repositories.sqlalchemy_client_repository import SqlAlchemyClientRepository
+from src.repositories.sqlalchemy_user_repository import SqlAlchemyUserRepository
 from src.services.client_service import ClientService
+from src.services.user_service import UserService
 
 
 class Container(containers.DeclarativeContainer):
+    """Container pour l'injection de dépendances."""
 
-    wiring_config = containers.WiringConfiguration(modules=[".endpoints"])
+    # Database session factory
+    db_session = providers.Factory(get_db_session)
 
-    config = providers.Configuration()
-    config.database_url.from_env("DATABASE_URL")
-    config.secret_key.from_env("SECRET_KEY", required=True)
-
-    db = providers.Singleton(Database, db_url=config.database_url)
-
+    # Repositories - recréés à chaque appel avec une nouvelle session
     client_repository = providers.Factory(
-        ClientRepository,
-        session_factory=db.provided.session,
+        SqlAlchemyClientRepository,
+        session=db_session,
     )
 
+    user_repository = providers.Factory(
+        SqlAlchemyUserRepository,
+        session=db_session,
+    )
+
+    # Services
     client_service = providers.Factory(
         ClientService,
-        client_repository=client_repository,
+        repository=client_repository,
+    )
+
+    user_service = providers.Factory(
+        UserService,
+        repository=user_repository,
     )

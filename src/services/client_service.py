@@ -4,11 +4,19 @@ from src.repositories.client_repository import ClientRepository
 
 
 class ClientService:
-    def __init__(self, repository: ClientRepository):
+    def __init__(self, repository: ClientRepository) -> None:
         self.repository = repository
 
-    def get_client(self, client_id: str) -> Optional[Client]:
-        return self.repository.get_by_id(client_id)
+    def get_client(self, client_id: int) -> Optional[Client]:
+        """Get a client by ID.
+
+        Args:
+            client_id: The client's ID
+
+        Returns:
+            Client instance or None if not found
+        """
+        return self.repository.get(client_id)
 
     def create_client(
         self,

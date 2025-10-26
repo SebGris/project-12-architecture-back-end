@@ -4,23 +4,42 @@ from src.models.client import Client
 
 
 class InMemoryClientRepository(ClientRepository):
-    """Implementation en mémoire du repository Client pour les tests."""
+    """In-memory implementation of ClientRepository for testing."""
 
     def __init__(self):
-        self._clients: dict[str, Client] = {}
+        self._clients: dict[int, Client] = {}
         self._next_id = 1
 
-    def get_by_id(self, client_id: str) -> Optional[Client]:
-        """Récupère un client par son ID."""
+    def get(self, client_id: int) -> Optional[Client]:
+        """Get a client by ID.
+
+        Args:
+            client_id: The client's ID
+
+        Returns:
+            Client instance or None if not found
+        """
         return self._clients.get(client_id)
 
-    def add(self, client: Client) -> None:
-        """Ajoute un nouveau client en mémoire."""
+    def add(self, client: Client) -> Client:
+        """Add a new client to the repository.
+
+        Args:
+            client: Client instance to add
+
+        Returns:
+            The added Client instance (with ID populated after commit)
+        """
         if client.id is None:
-            client.id = str(self._next_id)
+            client.id = self._next_id
             self._next_id += 1
         self._clients[client.id] = client
+        return client
 
     def list_all(self) -> List[Client]:
-        """Retourne la liste de tous les clients."""
+        """List all clients.
+
+        Returns:
+            List of all Client instances
+        """
         return list(self._clients.values())
