@@ -2,6 +2,7 @@ from enum import Enum
 from datetime import datetime
 from sqlalchemy import String, DateTime, Enum as SQLEnum, func
 from sqlalchemy.orm import Mapped, mapped_column
+import bcrypt
 from . import Base
 
 
@@ -38,14 +39,17 @@ class User(Base):
     )
 
     def set_password(self, password: str) -> None:
-        """Hash and set password (to be implemented with bcrypt)."""
-        # TODO: Implement with passlib bcrypt
-        raise NotImplementedError("Password hashing not implemented yet")
+        """Hash and set password using bcrypt."""
+        password_bytes = password.encode("utf-8")
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        self.password_hash = hashed.decode("utf-8")
 
     def verify_password(self, password: str) -> bool:
-        """Verify password against hash (to be implemented with bcrypt)."""
-        # TODO: Implement with passlib bcrypt
-        raise NotImplementedError("Password verification not implemented yet")
+        """Verify password against hash using bcrypt."""
+        password_bytes = password.encode("utf-8")
+        hash_bytes = self.password_hash.encode("utf-8")
+        return bcrypt.checkpw(password_bytes, hash_bytes)
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, username='{self.username}', department={self.department})>"
