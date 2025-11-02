@@ -2,19 +2,21 @@
 Pytest configuration and shared fixtures for Epic Events CRM tests.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import pytest
 
 # L'importation échouera tant que l'implémentation n'existera pas - c'est ce que l'on attend de la méthode TDD.
 try:
     from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker, Session
-    from src.models.user import User, Department, Base
+    from sqlalchemy.orm import Session, sessionmaker
+
+    from src.database import Base
     from src.models.client import Client
     from src.models.contract import Contract
     from src.models.event import Event
+    from src.models.user import Department, User
 except ImportError:
     # Mock for TDD phase
     User = None

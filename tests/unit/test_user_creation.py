@@ -1,25 +1,24 @@
 """
-Test unitaire pour la création des utilisateurs.
+Unit test for user creation.
 
-Ce test vérifie que :
-- Les utilisateurs peuvent être créés dans la base de données
-- Les mots de passe sont correctement hashés avec bcrypt
-- Les contraintes UNIQUE fonctionnent (username, email)
-- Les champs requis sont présents
+This test verifies that:
+- Users can be created in the database
+- Passwords are correctly hashed with bcrypt via User.set_password()
+- UNIQUE constraints work (username, email)
+- Required fields are present
 """
 import pytest
-import bcrypt
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.models import Base
-from src.models.user import User, Department
+from src.database import Base
+from src.models.user import Department, User
 
 
 @pytest.fixture
 def db_session():
-    """Crée une base de données SQLite en mémoire pour les tests."""
-    # Base de données temporaire en mémoire
+    """Creates an in-memory SQLite database for tests."""
+    # Temporary in-memory database
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
 
@@ -28,36 +27,33 @@ def db_session():
 
     yield session
 
-    # Nettoyage complet des ressources
+    # Complete resource cleanup
     session.close()
     engine.dispose()
 
 
 def test_create_user_success(db_session):
     """
-    GIVEN des données utilisateur valides
-    WHEN un utilisateur est créé
-    THEN il est sauvegardé correctement dans la base de données
+    GIVEN valid user data
+    WHEN a user is created
+    THEN it is correctly saved in the database
     """
-    # Préparer les données
-    password = "TestPassword123!"
-    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-    # Créer l'utilisateur
+    # Create the user
     user = User(
         username="testuser",
         email="test@epicevents.com",
-        password_hash=password_hash,
+        password_hash="",  # Temporary, will be set by set_password
         first_name="Test",
         last_name="User",
         phone="+33123456789",
         department=Department.COMMERCIAL
     )
+    user.set_password("TestPassword123!")
 
     db_session.add(user)
     db_session.commit()
 
-    # Vérifier que l'utilisateur existe
+    # Verify that the user exists
     saved_user = db_session.query(User).filter_by(username="testuser").first()
 
     assert saved_user is not None
@@ -72,68 +68,66 @@ def test_create_user_success(db_session):
 
 def test_password_is_hashed(db_session):
     """
-    GIVEN un mot de passe en clair
-    WHEN il est hashé et stocké
-    THEN le hash est valide et différent du mot de passe original
+    GIVEN a plain text password
+    WHEN it is hashed and stored
+    THEN the hash is valid and different from the original password
     """
     password = "MyPassword123!"
-    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     user = User(
         username="testuser",
         email="test@epicevents.com",
-        password_hash=password_hash,
+        password_hash="",  # Temporary, will be set by set_password
         first_name="Test",
         last_name="User",
         phone="+33123456789",
         department=Department.GESTION
     )
+    user.set_password(password)
 
     db_session.add(user)
     db_session.commit()
 
-    # Vérifier que le hash est correct
-    assert user.password_hash != password  # Le hash est différent du mot de passe
-    assert user.password_hash.startswith("$2b$")  # Format bcrypt
-    assert len(user.password_hash) == 60  # Longueur standard bcrypt
+    # Verify that the hash is correct
+    assert user.password_hash != password  # The hash is different from the password
+    assert user.password_hash.startswith("$2b$")  # bcrypt format
+    assert len(user.password_hash) == 60  # Standard bcrypt length
 
 
 def test_password_verification(db_session):
     """
-    GIVEN un utilisateur avec un mot de passe hashé
-    WHEN on vérifie le mot de passe
-    THEN le bon mot de passe est accepté et le mauvais est rejeté
+    GIVEN a user with a hashed password
+    WHEN the password is verified
+    THEN the correct password is accepted and the wrong one is rejected
     """
     password = "CorrectPassword123!"
-    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     user = User(
         username="testuser",
         email="test@epicevents.com",
-        password_hash=password_hash,
+        password_hash="",  # Temporary, will be set by set_password
         first_name="Test",
         last_name="User",
         phone="+33123456789",
         department=Department.SUPPORT
     )
+    user.set_password(password)
 
     db_session.add(user)
     db_session.commit()
 
-    # Vérifier le bon mot de passe
-    is_valid = bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8'))
-    assert is_valid is True
+    # Verify the correct password
+    assert user.verify_password(password) is True
 
-    # Vérifier un mauvais mot de passe
-    is_invalid = bcrypt.checkpw(b"WrongPassword!", user.password_hash.encode('utf-8'))
-    assert is_invalid is False
+    # Verify a wrong password
+    assert user.verify_password("WrongPassword!") is False
 
 
 def test_create_multiple_users(db_session):
     """
-    GIVEN plusieurs utilisateurs de départements différents
-    WHEN ils sont créés
-    THEN tous sont présents dans la base de données
+    GIVEN multiple users from different departments
+    WHEN they are created
+    THEN all are present in the database
     """
     users_data = [
         ("admin", "admin@epicevents.com", Department.GESTION),
@@ -142,25 +136,24 @@ def test_create_multiple_users(db_session):
     ]
 
     for username, email, department in users_data:
-        password_hash = bcrypt.hashpw(b"Password123!", bcrypt.gensalt()).decode('utf-8')
-
         user = User(
             username=username,
             email=email,
-            password_hash=password_hash,
+            password_hash="",  # Temporary, will be set by set_password
             first_name="Test",
             last_name="User",
             phone="+33123456789",
             department=department
         )
+        user.set_password("Password123!")
         db_session.add(user)
 
     db_session.commit()
 
-    # Vérifier le nombre total
+    # Verify total count
     assert db_session.query(User).count() == 3
 
-    # Vérifier chaque département
+    # Verify each department
     assert db_session.query(User).filter_by(department=Department.GESTION).count() == 1
     assert db_session.query(User).filter_by(department=Department.COMMERCIAL).count() == 1
     assert db_session.query(User).filter_by(department=Department.SUPPORT).count() == 1
@@ -168,128 +161,126 @@ def test_create_multiple_users(db_session):
 
 def test_username_must_be_unique(db_session):
     """
-    GIVEN un utilisateur existant
-    WHEN on essaie de créer un autre utilisateur avec le même username
-    THEN une erreur est levée
+    GIVEN an existing user
+    WHEN trying to create another user with the same username
+    THEN an error is raised
     """
-    password_hash = bcrypt.hashpw(b"Password123!", bcrypt.gensalt()).decode('utf-8')
-
-    # Premier utilisateur
+    # First user
     user1 = User(
         username="duplicate",
         email="user1@epicevents.com",
-        password_hash=password_hash,
+        password_hash="",  # Temporary, will be set by set_password
         first_name="User",
         last_name="One",
         phone="+33123456789",
         department=Department.COMMERCIAL
     )
+    user1.set_password("Password123!")
     db_session.add(user1)
     db_session.commit()
 
-    # Deuxième utilisateur avec le même username
+    # Second user with the same username
     user2 = User(
-        username="duplicate",  # Même username
+        username="duplicate",  # Same username
         email="user2@epicevents.com",
-        password_hash=password_hash,
+        password_hash="",  # Temporary, will be set by set_password
         first_name="User",
         last_name="Two",
         phone="+33198765432",
         department=Department.COMMERCIAL
     )
+    user2.set_password("Password123!")
     db_session.add(user2)
 
-    # Doit lever une exception
+    # Should raise an exception
     with pytest.raises(Exception):
         db_session.commit()
 
 
 def test_email_must_be_unique(db_session):
     """
-    GIVEN un utilisateur existant
-    WHEN on essaie de créer un autre utilisateur avec le même email
-    THEN une erreur est levée
+    GIVEN an existing user
+    WHEN trying to create another user with the same email
+    THEN an error is raised
     """
-    password_hash = bcrypt.hashpw(b"Password123!", bcrypt.gensalt()).decode('utf-8')
-
-    # Premier utilisateur
+    # First user
     user1 = User(
         username="user1",
         email="duplicate@epicevents.com",
-        password_hash=password_hash,
+        password_hash="",  # Temporary, will be set by set_password
         first_name="User",
         last_name="One",
         phone="+33123456789",
         department=Department.COMMERCIAL
     )
+    user1.set_password("Password123!")
     db_session.add(user1)
     db_session.commit()
 
-    # Deuxième utilisateur avec le même email
+    # Second user with the same email
     user2 = User(
         username="user2",
-        email="duplicate@epicevents.com",  # Même email
-        password_hash=password_hash,
+        email="duplicate@epicevents.com",  # Same email
+        password_hash="",  # Temporary, will be set by set_password
         first_name="User",
         last_name="Two",
         phone="+33198765432",
         department=Department.COMMERCIAL
     )
+    user2.set_password("Password123!")
     db_session.add(user2)
 
-    # Doit lever une exception
+    # Should raise an exception
     with pytest.raises(Exception):
         db_session.commit()
 
 
 def test_user_has_timestamps(db_session):
     """
-    GIVEN un nouvel utilisateur
-    WHEN il est créé
-    THEN created_at et updated_at sont automatiquement définis
+    GIVEN a new user
+    WHEN it is created
+    THEN created_at and updated_at are automatically set
     """
-    password_hash = bcrypt.hashpw(b"Password123!", bcrypt.gensalt()).decode('utf-8')
-
     user = User(
         username="testuser",
         email="test@epicevents.com",
-        password_hash=password_hash,
+        password_hash="",  # Temporary, will be set by set_password
         first_name="Test",
         last_name="User",
         phone="+33123456789",
         department=Department.COMMERCIAL
     )
+    user.set_password("Password123!")
 
     db_session.add(user)
     db_session.commit()
 
-    # Vérifier les timestamps
+    # Verify timestamps
     assert user.created_at is not None
     assert user.updated_at is not None
 
 
 def test_user_repr(db_session):
     """
-    GIVEN un utilisateur
-    WHEN on appelle repr() dessus
-    THEN une représentation lisible est retournée
+    GIVEN a user
+    WHEN repr() is called on it
+    THEN a readable representation is returned
     """
-    password_hash = bcrypt.hashpw(b"Password123!", bcrypt.gensalt()).decode('utf-8')
-
     user = User(
         username="testuser",
         email="test@epicevents.com",
-        password_hash=password_hash,
+        password_hash="",  # Temporary, will be set by set_password
         first_name="Test",
         last_name="User",
         phone="+33123456789",
         department=Department.COMMERCIAL
     )
+    user.set_password("Password123!")
 
     db_session.add(user)
     db_session.commit()
 
-    # Vérifier la représentation
+    # Verify the representation
     repr_str = repr(user)
     assert "User" in repr_str
     assert "testuser" in repr_str
