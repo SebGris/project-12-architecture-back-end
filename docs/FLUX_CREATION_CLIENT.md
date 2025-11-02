@@ -262,10 +262,6 @@ except OperationalError:
     typer.echo("[ERREUR] Erreur de connexion à la base de données")
     raise typer.Exit(code=1)
 
-except KeyboardInterrupt:
-    typer.echo("\n[ANNULÉ] Opération annulée")
-    raise typer.Exit(code=1)
-
 except Exception as e:
     typer.echo(f"[ERREUR] Erreur inattendue: {e}")
     raise typer.Exit(code=1)
@@ -274,7 +270,6 @@ except Exception as e:
 **Types d'erreurs gérées** :
 - **IntegrityError** : Email en double, clé étrangère invalide, etc.
 - **OperationalError** : Problème de connexion à la base de données
-- **KeyboardInterrupt** : L'utilisateur annule avec Ctrl+C
 - **Exception** : Toute autre erreur inattendue
 
 ---

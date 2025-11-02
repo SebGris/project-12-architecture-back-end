@@ -96,7 +96,9 @@ def create_client(
         user = user_service.get_user(sales_contact_id)
 
         if not user:
-            print_error(f"Utilisateur avec l'ID {sales_contact_id} n'existe pas")
+            print_error(
+                f"Utilisateur avec l'ID {sales_contact_id} n'existe pas"
+            )
             raise typer.Exit(code=1)
 
         if user.department != Department.COMMERCIAL:
@@ -116,7 +118,9 @@ def create_client(
         )
 
     except IntegrityError:
-        print_error("Erreur d'intégrité: Données en double ou contrainte violée")
+        print_error(
+            "Erreur d'intégrité: Données en double ou contrainte violée"
+        )
         raise typer.Exit(code=1)
 
     except Exception as e:
@@ -125,7 +129,9 @@ def create_client(
 
     # Success message
     print_separator()
-    print_success(f"Client {client.first_name} {client.last_name} créé avec succès!")
+    print_success(
+        f"Client {client.first_name} {client.last_name} créé avec succès!"
+    )
     print_field("ID", str(client.id))
     print_field("Email", client.email)
     print_field("Entreprise", client.company_name)
@@ -187,15 +193,13 @@ def create_user(
         )
 
     except IntegrityError:
-        print_error("Erreur d'intégrité: Données en double ou contrainte violée")
+        print_error(
+            "Erreur d'intégrité: Données en double ou contrainte violée"
+        )
         raise typer.Exit(code=1)
 
     except OperationalError:
         print_error("Erreur de connexion à la base de données")
-        raise typer.Exit(code=1)
-
-    except KeyboardInterrupt:
-        print_error("Opération annulée")
         raise typer.Exit(code=1)
 
     except Exception as e:
