@@ -52,16 +52,6 @@ class ContractService:
         Raises:
             ValueError: If remaining_amount > total_amount or amounts are negative
         """
-        # Business validation  # todo move to validators
-        if total_amount < 0:
-            raise ValueError("Le montant total doit être positif")
-        if remaining_amount < 0:
-            raise ValueError("Le montant restant doit être positif")
-        if remaining_amount > total_amount:
-            raise ValueError(
-                "Le montant restant ne peut pas dépasser le montant total"
-            )
-
         contract = Contract(
             client_id=client_id,
             total_amount=total_amount,
@@ -123,13 +113,6 @@ class ContractService:
         contract = self.repository.get(contract_id)
         if not contract:
             return None
-
-        if amount_paid <= 0:  # todo
-            raise ValueError("Le montant du paiement doit être positif")
-        if amount_paid > contract.remaining_amount:
-            raise ValueError(  # custom message exception
-                "Le montant du paiement dépasse le montant restant"
-            )
 
         contract.remaining_amount -= amount_paid
         return self.repository.update(contract)

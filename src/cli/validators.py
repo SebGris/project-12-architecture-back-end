@@ -126,3 +126,46 @@ def validate_amount_callback(value: str) -> str:
         return cleaned
     except ValueError:
         raise typer.BadParameter(f"Montant invalide: {value}")
+
+
+def validate_contract_amounts(total_amount, remaining_amount) -> None:
+    """
+    Validate contract amounts business rules.
+
+    Args:
+        total_amount: Total contract amount (Decimal or numeric type)
+        remaining_amount: Remaining amount to pay (Decimal or numeric type)
+
+    Raises:
+        ValueError: If amounts violate business rules
+    """
+    if total_amount < 0:
+        raise ValueError("Le montant total doit être positif ou zéro")
+
+    if remaining_amount < 0:
+        raise ValueError("Le montant restant doit être positif ou zéro")
+
+    if remaining_amount > total_amount:
+        raise ValueError(
+            f"Le montant restant ({remaining_amount}) ne peut pas dépasser le montant total ({total_amount})"
+        )
+
+
+def validate_payment_amount(amount_paid, remaining_amount) -> None:
+    """
+    Validate payment amount business rules.
+
+    Args:
+        amount_paid: Amount being paid (Decimal or numeric type)
+        remaining_amount: Remaining amount on contract (Decimal or numeric type)
+
+    Raises:
+        ValueError: If payment amount violates business rules
+    """
+    if amount_paid <= 0:
+        raise ValueError("Le montant du paiement doit être positif")
+
+    if amount_paid > remaining_amount:
+        raise ValueError(
+            f"Le montant du paiement ({amount_paid}) dépasse le montant restant ({remaining_amount})"
+        )

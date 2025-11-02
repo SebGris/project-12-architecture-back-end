@@ -12,6 +12,7 @@ from src.cli.validators import (
     validate_amount_callback,
     validate_client_id_callback,
     validate_company_name_callback,
+    validate_contract_amounts,
     validate_department_callback,
     validate_email_callback,
     validate_first_name_callback,
@@ -336,11 +337,11 @@ def create_contract(
         print_error("Erreur de conversion des montants")
         raise typer.Exit(code=1)
 
-    # Business validation: remaining amount must not exceed total amount
-    if remaining_decimal > total_decimal:
-        print_error(
-            f"Le montant restant ({remaining_decimal}) ne peut pas dépasser le montant total ({total_decimal})"
-        )
+    # Business validation: validate contract amounts
+    try:
+        validate_contract_amounts(total_decimal, remaining_decimal)
+    except ValueError as e:
+        print_error(str(e))
         raise typer.Exit(code=1)
 
     try:
