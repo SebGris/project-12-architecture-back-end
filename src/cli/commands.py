@@ -91,22 +91,20 @@ def create_client(
     client_service = _container.client_service()
     user_service = _container.user_service()
 
+    # Business validation: check if sales contact exists and is from COMMERCIAL dept
+    user = user_service.get_user(sales_contact_id)
+
+    if not user:
+        print_error(f"Utilisateur avec l'ID {sales_contact_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    if user.department != Department.COMMERCIAL:
+        print_error(
+            f"L'utilisateur {sales_contact_id} n'est pas du département COMMERCIAL"
+        )
+        raise typer.Exit(code=1)
+
     try:
-        # Business validation: check if sales contact exists and is from COMMERCIAL dept
-        user = user_service.get_user(sales_contact_id)
-
-        if not user:
-            print_error(
-                f"Utilisateur avec l'ID {sales_contact_id} n'existe pas"
-            )
-            raise typer.Exit(code=1)
-
-        if user.department != Department.COMMERCIAL:
-            print_error(
-                f"L'utilisateur {sales_contact_id} n'est pas du département COMMERCIAL"
-            )
-            raise typer.Exit(code=1)
-
         # Create client via service
         client = client_service.create_client(
             first_name=first_name,
@@ -121,6 +119,10 @@ def create_client(
         print_error(
             "Erreur d'intégrité: Données en double ou contrainte violée"
         )
+        raise typer.Exit(code=1)
+
+    except OperationalError:
+        print_error("Erreur de connexion à la base de données")
         raise typer.Exit(code=1)
 
     except Exception as e:
@@ -196,10 +198,6 @@ def create_user(
         print_error(
             "Erreur d'intégrité: Données en double ou contrainte violée"
         )
-        raise typer.Exit(code=1)
-
-    except OperationalError:
-        print_error("Erreur de connexion à la base de données")
         raise typer.Exit(code=1)
 
     except Exception as e:
