@@ -1,9 +1,16 @@
-from enum import Enum
 from datetime import datetime
-from sqlalchemy import String, DateTime, Enum as SQLEnum, func
-from sqlalchemy.orm import Mapped, mapped_column
+from enum import Enum
+from typing import TYPE_CHECKING, List
+
 import bcrypt
-from . import Base
+from sqlalchemy import DateTime, Enum as SQLEnum, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from src.database import Base
+
+if TYPE_CHECKING:
+    from .client import Client
+    from .event import Event
 
 
 class Department(str, Enum):
@@ -36,6 +43,14 @@ class User(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    clients: Mapped[List["Client"]] = relationship(
+        "Client", back_populates="sales_contact", lazy="select"
+    )
+    support_events: Mapped[List["Event"]] = relationship(
+        "Event", back_populates="support_contact", lazy="select"
     )
 
     def set_password(self, password: str) -> None:

@@ -1,10 +1,16 @@
 """Event model for Epic Events CRM."""
 
 from datetime import datetime
-from sqlalchemy import String, DateTime, ForeignKey, Integer, Text, CheckConstraint, func
+from typing import TYPE_CHECKING, Optional
+
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import Optional
-from . import Base
+
+from src.database import Base
+
+if TYPE_CHECKING:
+    from .contract import Contract
+    from .user import User
 
 
 class Event(Base):
@@ -30,9 +36,13 @@ class Event(Base):
         ForeignKey("users.id"), nullable=True
     )
 
-    # Relationships (to be fully implemented)
-    # contract: Mapped["Contract"] = relationship("Contract", back_populates="events")
-    # support_contact: Mapped[Optional["User"]] = relationship("User", back_populates="events")
+    # Relationships
+    contract: Mapped["Contract"] = relationship(
+        "Contract", back_populates="events", lazy="select"
+    )
+    support_contact: Mapped[Optional["User"]] = relationship(
+        "User", back_populates="support_events", lazy="select"
+    )
 
     # Check constraints
     __table_args__ = (

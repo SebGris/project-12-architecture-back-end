@@ -1,17 +1,25 @@
 """Contract model for Epic Events CRM."""
 
 from datetime import datetime
+from decimal import Decimal
+from typing import TYPE_CHECKING, List
+
 from sqlalchemy import (
-    String,
+    Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Numeric,
-    Boolean,
-    CheckConstraint,
+    String,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from . import Base
+
+from src.database import Base
+
+if TYPE_CHECKING:
+    from .client import Client
+    from .event import Event
 
 
 class Contract(Base):
@@ -20,8 +28,8 @@ class Contract(Base):
     __tablename__ = "contracts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    total_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    remaining_amount: Mapped[float] = mapped_column(
+    total_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    remaining_amount: Mapped[Decimal] = mapped_column(
         Numeric(10, 2), nullable=False
     )
     is_signed: Mapped[bool] = mapped_column(
@@ -39,9 +47,13 @@ class Contract(Base):
         ForeignKey("clients.id"), nullable=False
     )
 
-    # Relationships (to be fully implemented)
-    # client: Mapped["Client"] = relationship("Client", back_populates="contracts")
-    # events: Mapped[list["Event"]] = relationship("Event", back_populates="contract")
+    # Relationships
+    client: Mapped["Client"] = relationship(
+        "Client", back_populates="contracts", lazy="select"
+    )
+    events: Mapped[List["Event"]] = relationship(
+        "Event", back_populates="contract", lazy="select"
+    )
 
     # Check constraints
     __table_args__ = (
