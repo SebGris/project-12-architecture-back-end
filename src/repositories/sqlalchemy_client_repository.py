@@ -1,7 +1,15 @@
+"""SQLAlchemy implementation of ClientRepository.
+
+This module provides the concrete implementation of the ClientRepository
+interface using SQLAlchemy ORM for database persistence.
+"""
+
 from typing import List, Optional
+
 from sqlalchemy.orm import Session
-from src.repositories.client_repository import ClientRepository
+
 from src.models.client import Client
+from src.repositories.client_repository import ClientRepository
 
 
 class SqlAlchemyClientRepository(ClientRepository):

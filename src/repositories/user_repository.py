@@ -1,5 +1,12 @@
+"""User repository interface for Epic Events CRM.
+
+This module defines the abstract repository interface for User persistence,
+following the Repository pattern to decouple business logic from data access.
+"""
+
 from abc import ABC, abstractmethod
 from typing import Optional
+
 from src.models.user import User
 
 

@@ -1,6 +1,15 @@
+"""SQLAlchemy implementation of UserRepository.
+
+This module provides the concrete implementation of the UserRepository
+interface using SQLAlchemy ORM for database persistence.
+"""
+
+from typing import Optional
+
 from sqlalchemy.orm import Session
-from src.repositories.user_repository import UserRepository
+
 from src.models.user import User
+from src.repositories.user_repository import UserRepository
 
 
 class SqlAlchemyUserRepository(UserRepository):
@@ -23,7 +32,7 @@ class SqlAlchemyUserRepository(UserRepository):
         self.session.refresh(user)
         return user
 
-    def get(self, user_id: int) -> User:
+    def get(self, user_id: int) -> Optional[User]:
         """Get a user by ID.
 
         Args:
@@ -34,7 +43,7 @@ class SqlAlchemyUserRepository(UserRepository):
         """
         return self.session.query(User).filter_by(id=user_id).first()
 
-    def get_by_username(self, username: str) -> User:
+    def get_by_username(self, username: str) -> Optional[User]:
         """Get a user by username.
 
         Args:
@@ -45,7 +54,7 @@ class SqlAlchemyUserRepository(UserRepository):
         """
         return self.session.query(User).filter_by(username=username).first()
 
-    def get_by_email(self, email: str) -> User:
+    def get_by_email(self, email: str) -> Optional[User]:
         """Get a user by email.
 
         Args:

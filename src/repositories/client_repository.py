@@ -1,5 +1,12 @@
+"""Client repository interface for Epic Events CRM.
+
+This module defines the abstract repository interface for Client persistence,
+following the Repository pattern to decouple business logic from data access.
+"""
+
 from abc import ABC, abstractmethod
 from typing import List, Optional
+
 from src.models.client import Client
 
 
