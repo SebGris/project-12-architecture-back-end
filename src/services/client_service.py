@@ -1,9 +1,21 @@
-from typing import List, Optional
+"""Client service module for Epic Events CRM.
+
+This module contains the business logic for managing clients.
+"""
+
+from typing import Optional
+
 from src.models.client import Client
 from src.repositories.client_repository import ClientRepository
 
 
 class ClientService:
+    """Service for managing client-related business logic.
+
+    This service handles all client operations including creation,
+    retrieval, and validation of client data.
+    """
+
     def __init__(self, repository: ClientRepository) -> None:
         self.repository = repository
 

@@ -1,9 +1,19 @@
-from src.models.user import User, Department
+"""User service module for Epic Events CRM.
+
+This module contains the business logic for managing users,
+including authentication and password management.
+"""
+
+from src.models.user import Department, User
 from src.repositories.user_repository import UserRepository
-import bcrypt
 
 
 class UserService:
+    """Service for managing user-related business logic.
+
+    This service handles user operations including creation,
+    retrieval, password hashing, and password verification.
+    """
     def __init__(self, repository: UserRepository):
         self.repository = repository
 
@@ -42,32 +52,26 @@ class UserService:
         Returns:
             Created User object
         """
-        # Hash the password using bcrypt
-        password_bytes = password.encode('utf-8')
-        salt = bcrypt.gensalt()
-        password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
-
         user = User(
             username=username,
             email=email,
-            password_hash=password_hash,
+            password_hash="",  # Temporary, will be set by set_password
             first_name=first_name,
             last_name=last_name,
             phone=phone,
             department=department,
         )
+        user.set_password(password)
         return self.repository.add(user)
 
-    def verify_password(self, password: str, password_hash: str) -> bool:
-        """Verify a password against its hash.
+    def verify_password(self, user: User, password: str) -> bool:
+        """Verify a password against a user's stored hash.
 
         Args:
+            user: User instance with password_hash
             password: Plain text password to verify
-            password_hash: Hashed password from database
 
         Returns:
             True if password matches, False otherwise
         """
-        password_bytes = password.encode('utf-8')
-        password_hash_bytes = password_hash.encode('utf-8')
-        return bcrypt.checkpw(password_bytes, password_hash_bytes)
+        return user.verify_password(password)
