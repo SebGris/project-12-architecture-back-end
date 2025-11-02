@@ -12,6 +12,9 @@ PHONE_PATTERN = re.compile(r"^[\d\s\-\+\(\)\.]+$")
 # Pattern pour nom d'utilisateur: lettres (a-z, A-Z), chiffres (0-9), underscore (_) et tiret (-)
 # Longueur: entre 4 et 50 caractères. Ex: "john_doe", "user-123", "Admin_2024"
 USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{4,50}$")
+# Pattern pour noms et prénoms: lettres (incluant accents), espaces, tirets et apostrophes
+# Permet: "Jean", "Marie-Claire", "O'Connor", "François", "De La Cruz"
+NAME_PATTERN = re.compile(r"^[a-zA-ZÀ-ÿ\s\-']+$")
 
 
 # Callback validators for typer.Option
@@ -20,6 +23,10 @@ def validate_first_name_callback(value: str) -> str:
     cleaned = value.strip()
     if len(cleaned) < 2:
         raise typer.BadParameter("Le prénom doit avoir au moins 2 caractères")
+    if not NAME_PATTERN.match(cleaned):
+        raise typer.BadParameter(
+            "Le prénom ne peut contenir que des lettres, espaces, tirets et apostrophes"
+        )
     return cleaned
 
 
@@ -28,6 +35,10 @@ def validate_last_name_callback(value: str) -> str:
     cleaned = value.strip()
     if len(cleaned) < 2:
         raise typer.BadParameter("Le nom doit avoir au moins 2 caractères")
+    if not NAME_PATTERN.match(cleaned):
+        raise typer.BadParameter(
+            "Le nom ne peut contenir que des lettres, espaces, tirets et apostrophes"
+        )
     return cleaned
 
 
@@ -88,11 +99,11 @@ def validate_password_callback(value: str) -> str:
     return value
 
 
-def validate_department_callback(value: int) -> Department:
+def validate_department_callback(value: int) -> int:
     """Validate department selection."""
     departments = list(Department)
     if value < 1 or value > len(departments):
         raise typer.BadParameter(
             f"Choix invalide. Veuillez choisir entre 1 et {len(departments)}"
         )
-    return departments[value - 1]
+    return value

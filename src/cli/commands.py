@@ -1,6 +1,13 @@
 import typer
 from sqlalchemy.exc import IntegrityError, OperationalError
 
+from src.cli.console import (
+    print_error,
+    print_field,
+    print_header,
+    print_separator,
+    print_success,
+)
 from src.cli.validators import (
     validate_company_name_callback,
     validate_department_callback,
@@ -75,9 +82,10 @@ def create_client(
         epicevents create-client
         # Suit les prompts interactifs pour saisir les informations
     """
-    typer.echo(
-        "\n=== Création d'un nouveau client ===\n"
-    )  # todo voir si couleur
+    # Show header at the beginning
+    print_separator()
+    print_header("Création d'un nouveau client")
+    print_separator()
 
     # Get services from container
     client_service = _container.client_service()
@@ -85,17 +93,15 @@ def create_client(
 
     try:
         # Business validation: check if sales contact exists and is from COMMERCIAL dept
-        user = user_service.get_user(sales_contact_id)  # err si inexistant
+        user = user_service.get_user(sales_contact_id)
 
-        if not user:  # hors try
-            typer.echo(
-                f"[ERREUR] Utilisateur avec l'ID {sales_contact_id} n'existe pas"
-            )
+        if not user:
+            print_error(f"Utilisateur avec l'ID {sales_contact_id} n'existe pas")
             raise typer.Exit(code=1)
 
         if user.department != Department.COMMERCIAL:
-            typer.echo(
-                f"[ERREUR] L'utilisateur {sales_contact_id} n'est pas du département COMMERCIAL"
+            print_error(
+                f"L'utilisateur {sales_contact_id} n'est pas du département COMMERCIAL"
             )
             raise typer.Exit(code=1)
 
@@ -110,22 +116,20 @@ def create_client(
         )
 
     except IntegrityError:
-        typer.echo(
-            "[ERREUR] Erreur d'intégrité: Données en double ou contrainte violée"  # todo explicite
-        )
+        print_error("Erreur d'intégrité: Données en double ou contrainte violée")
         raise typer.Exit(code=1)
 
     except Exception as e:
-        typer.echo(f"[ERREUR] Erreur inattendue: {e}")
+        print_error(f"Erreur inattendue: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    typer.echo(
-        f"\n[SUCCÈS] Client {client.first_name} {client.last_name} créé avec succès!"
-    )
-    typer.echo(f"  ID: {client.id}")
-    typer.echo(f"  Email: {client.email}")
-    typer.echo(f"  Entreprise: {client.company_name}")
+    print_separator()
+    print_success(f"Client {client.first_name} {client.last_name} créé avec succès!")
+    print_field("ID", str(client.id))
+    print_field("Email", client.email)
+    print_field("Entreprise", client.company_name)
+    print_separator()
 
 
 @app.command()
@@ -153,15 +157,22 @@ def create_user(
     ),
     department_choice: int = typer.Option(
         ...,
-        prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.SUPPORT.value}\n3. {Department.GESTION.value}\n\nChoisir un département (numéro)",
+        prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.GESTION.value}\n3. {Department.SUPPORT.value}\n\nChoisir un département (numéro)",
         callback=validate_department_callback,
     ),
 ):
     """Créer un nouvel utilisateur."""
-    typer.echo("\n=== Création d'un nouvel utilisateur ===\n")
+    # Show header at the beginning
+    print_separator()
+    print_header("Création d'un nouvel utilisateur")
+    print_separator()
 
     # Get service from container
     user_service = _container.user_service()
+
+    # Convert department choice (int) to Department enum
+    departments = list(Department)
+    department = departments[department_choice - 1]
 
     try:
         # Create user via service
@@ -172,30 +183,30 @@ def create_user(
             email=email,
             phone=phone,
             password=password,
-            department=department_choice,
+            department=department,
         )
 
     except IntegrityError:
-        typer.echo(
-            "[ERREUR] Erreur d'intégrité: Données en double ou contrainte violée"
-        )
+        print_error("Erreur d'intégrité: Données en double ou contrainte violée")
         raise typer.Exit(code=1)
 
     except OperationalError:
-        typer.echo("[ERREUR] Erreur de connexion à la base de données")
+        print_error("Erreur de connexion à la base de données")
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
-        typer.echo("\n[ANNULÉ] Opération annulée")
+        print_error("Opération annulée")
         raise typer.Exit(code=1)
 
     except Exception as e:
-        typer.echo(f"[ERREUR] Erreur inattendue: {e}")
+        print_error(f"Erreur inattendue: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    typer.echo(f"\n[SUCCÈS] Utilisateur {user.username} créé avec succès!")
-    typer.echo(f"  ID: {user.id}")
-    typer.echo(f"  Nom complet: {user.first_name} {user.last_name}")
-    typer.echo(f"  Email: {user.email}")
-    typer.echo(f"  Département: {user.department.value}")
+    print_separator()
+    print_success(f"Utilisateur {user.username} créé avec succès!")
+    print_field("ID", str(user.id))
+    print_field("Nom complet", f"{user.first_name} {user.last_name}")
+    print_field("Email", user.email)
+    print_field("Département", user.department.value)
+    print_separator()
