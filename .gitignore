@@ -36,9 +36,10 @@ env/
 !.env.example
 config/secrets.py
 
-# IDE
+# IDEs and editors
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
