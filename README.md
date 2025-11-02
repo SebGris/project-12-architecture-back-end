@@ -116,6 +116,11 @@ Si vous ne voulez pas utiliser Poetry shell, vous pouvez exécuter les commandes
 ```bash
 # Avec Poetry run
 poetry run epicevents create-user
+poetry run epicevents create-client
+
+# Afficher l'aide
+poetry run epicevents --help
+poetry run epicevents create-user --help
 
 # Ou en tant que module Python
 poetry run python -m src.cli.main
@@ -133,64 +138,92 @@ poetry run python -m src.cli.main
 ## 📊 Architecture
 
 ```
-epic_events_crm/
-├── epic_events_crm.db     # Base de données SQLite
-├── .env                   # Variables d'environnement
-├── .gitignore             
-├── README.md              
-├── requirements.txt       
-├── alembic.ini           # Configuration Alembic
-├── alembic/              # Migrations
+project-12-architecture-back-end/
+├── data/
+│   └── epic_events_crm.db    # Base de données SQLite
+├── .env                       # Variables d'environnement
+├── .env.example              # Template des variables d'env
+├── .gitignore
+├── README.md
+├── pyproject.toml            # Configuration Poetry + entry points CLI
+├── poetry.lock
+├── alembic.ini               # Configuration Alembic
+├── alembic/                  # Migrations
 │   └── versions/
 ├── src/
 │   ├── __init__.py
-│   ├── database.py       # Configuration DB
-│   ├── models/           # Modèles SQLAlchemy
+│   ├── database.py           # Configuration DB et sessions
+│   ├── containers.py         # Dependency Injection (dependency-injector)
+│   ├── finders.py            # Finders pour requêtes SQLite
+│   ├── models/               # Modèles SQLAlchemy ORM
 │   │   ├── __init__.py
 │   │   ├── user.py
 │   │   ├── client.py
 │   │   ├── contract.py
 │   │   └── event.py
-│   ├── cli/              # Interface en ligne de commande
+│   ├── repositories/         # Repository pattern pour accès données
+│   │   ├── client_repository.py
+│   │   ├── sqlalchemy_client_repository.py
+│   │   ├── in_memory_client_repository.py
+│   │   ├── user_repository.py
+│   │   └── sqlalchemy_user_repository.py
+│   ├── services/             # Logique métier
 │   │   ├── __init__.py
-│   │   ├── main.py       # Point d'entrée (référencé dans pyproject.toml)
-│   │   └── commands.py   # Définition des commandes Typer
-│   └── services/         # Logique métier
+│   │   ├── user_service.py
+│   │   ├── client_service.py
+│   │   └── auth_service.py
+│   └── cli/                  # Interface en ligne de commande
 │       ├── __init__.py
-│       ├── user_service.py
-│       └── auth_service.py
-└── tests/
-    ├── __init__.py
-    ├── test_auth.py
-    ├── test_models.py
-    └── test_services.py
+│       ├── main.py           # Point d'entrée CLI (epicevents)
+│       └── commands.py       # Commandes Typer avec validation inline
+├── tests/
+│   ├── unit/                 # Tests unitaires
+│   │   └── test_client.py
+│   ├── integration/          # Tests d'intégration
+│   │   └── test_orm.py
+│   └── contract/             # Tests de contrat
+│       └── test_auth_commands.py
+└── docs/                     # Documentation du projet
+    ├── database-schema.md
+    ├── explication-models.md
+    ├── TYPER_SOUS_APPLICATIONS.md
+    ├── DEPENDENCY_INJECTION_GUIDE.md
+    └── ...
 ```
 
 ## 📝 Modèles de données
 
 ### User (Collaborateur)
-- id, email, password, role, created_at
+- id, username, email, password_hash, first_name, last_name, phone, department, created_at, updated_at
 
 ### Client
-- id, name, email, phone, company, created_by, commercial_id, created_at, updated_at
+- id, first_name, last_name, email, phone, company_name, sales_contact_id, created_at, updated_at
 
 ### Contract
-- id, client_id, commercial_id, total_amount, amount_due, status, created_at
+- id, client_id, total_amount, remaining_amount, is_signed, created_at
 
 ### Event
-- id, contract_id, support_id, name, location, start_date, end_date, attendees, notes
+- id, name, contract_id, support_contact_id, event_start, event_end, location, attendees, notes, created_at, updated_at
+
+Pour plus de détails, voir [docs/database-schema.md](docs/database-schema.md) et [docs/explication-models.md](docs/explication-models.md)
 
 ## 🧪 Tests
 
 ```bash
 # Lancer tous les tests
-pytest
+poetry run pytest
 
 # Tests avec couverture
-pytest --cov=src tests/
+poetry run pytest --cov=src tests/
 
-# Test spécifique
-pytest tests/test_auth.py
+# Tests unitaires uniquement
+poetry run pytest tests/unit/ -v
+
+# Tests d'intégration uniquement
+poetry run pytest tests/integration/ -v
+
+# Tests de contrat uniquement
+poetry run pytest tests/contract/ -v
 ```
 
 ## 💻 Aide-mémoire
