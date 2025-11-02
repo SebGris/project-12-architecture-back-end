@@ -107,3 +107,22 @@ def validate_department_callback(value: int) -> int:
             f"Choix invalide. Veuillez choisir entre 1 et {len(departments)}"
         )
     return value
+
+
+def validate_client_id_callback(value: int) -> int:
+    """Validate client ID."""
+    if value <= 0:
+        raise typer.BadParameter("L'ID du client doit être positif")
+    return value
+
+
+def validate_amount_callback(value: str) -> str:
+    """Validate monetary amount."""
+    cleaned = value.strip()
+    try:
+        amount = float(cleaned)
+        if amount < 0:
+            raise typer.BadParameter("Le montant doit être positif ou zéro")
+        return cleaned
+    except ValueError:
+        raise typer.BadParameter(f"Montant invalide: {value}")
