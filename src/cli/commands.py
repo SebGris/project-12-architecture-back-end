@@ -1,6 +1,5 @@
-"""CLI commands for Epic Events CRM."""
-
 import re
+
 import typer
 from sqlalchemy.exc import IntegrityError, OperationalError
 
@@ -9,7 +8,7 @@ from src.models.user import Department
 app = typer.Typer()
 
 # Global container - will be set by main.py
-_container = None
+_container = None  # todo: implement container ? chercher
 
 
 def set_container(container):
@@ -20,8 +19,12 @@ def set_container(container):
 
 # Regex patterns for validation
 EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+# Pattern pour numéros de téléphone: accepte chiffres, espaces, tirets, +, parenthèses et points
+# Permet des formats comme: "01 23 45 67 89", "+33 1 23 45 67 89", "(01) 23.45.67.89"
 PHONE_PATTERN = re.compile(r"^[\d\s\-\+\(\)\.]+$")
-USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{3,50}$")
+# Pattern pour nom d'utilisateur: lettres (a-z, A-Z), chiffres (0-9), underscore (_) et tiret (-)
+# Longueur: entre 4 et 50 caractères. Ex: "john_doe", "user-123", "Admin_2024"
+USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{4,50}$")
 
 
 # Callback validators for typer.Option
@@ -54,6 +57,8 @@ def validate_phone_callback(value: str) -> str:
     cleaned = value.strip()
     if not PHONE_PATTERN.match(cleaned):
         raise typer.BadParameter(f"Format de téléphone invalide: {value}")
+    # Extrait uniquement les chiffres en supprimant tous les caractères non-numériques
+    # Ex: "+33 1 23 45 67 89" devient "33123456789"
     digits = re.sub(r"[^0-9]", "", cleaned)
     if len(digits) < 10:
         raise typer.BadParameter(
@@ -66,7 +71,7 @@ def validate_company_name_callback(value: str) -> str:
     """Validate and clean company name."""
     cleaned = value.strip()
     if not cleaned:
-        raise typer.BadParameter("Le nom de l'entreprise est requis")
+        raise typer.BadParameter("Le nom de l'entreprise est requis")  # todo
     return cleaned
 
 
@@ -82,7 +87,7 @@ def validate_username_callback(value: str) -> str:
     cleaned = value.strip()
     if not USERNAME_PATTERN.match(cleaned):
         raise typer.BadParameter(
-            "Username invalide (3-50 caractères, lettres/chiffres/_/-)"
+            "Username invalide (4-50 caractères, lettres/chiffres/_/-)"
         )
     return cleaned
 
@@ -123,7 +128,7 @@ def create_client(
     company_name: str = typer.Option(
         ...,
         prompt="Nom de l'entreprise",
-        callback=validate_company_name_callback,
+        callback=validate_company_name_callback,  # todo
     ),
     sales_contact_id: int = typer.Option(
         ...,
@@ -131,18 +136,43 @@ def create_client(
         callback=validate_sales_contact_id_callback,
     ),
 ):
-    """Créer un nouveau client."""
-    typer.echo("\n=== Création d'un nouveau client ===\n")
+    """
+    Créer un nouveau client dans le système CRM.
+
+    Cette commande permet d'enregistrer un nouveau client avec ses informations
+    de contact et de l'associer à un contact commercial du département COMMERCIAL.
+
+    Args:
+        first_name: Prénom du client (minimum 2 caractères)
+        last_name: Nom du client (minimum 2 caractères)
+        email: Adresse email valide du client
+        phone: Numéro de téléphone (minimum 10 chiffres)
+        company_name: Nom de l'entreprise du client
+        sales_contact_id: ID d'un utilisateur du département COMMERCIAL
+
+    Returns:
+        None. Affiche un message de succès avec les détails du client créé.
+
+    Raises:
+        typer.Exit: En cas d'erreur (données invalides, contact inexistant, etc.)
+
+    Examples:
+        epicevents create-client
+        # Suit les prompts interactifs pour saisir les informations
+    """
+    typer.echo(
+        "\n=== Création d'un nouveau client ===\n"
+    )  # todo voir si couleur
 
     # Get services from container
     client_service = _container.client_service()
     user_service = _container.user_service()
 
     try:
-        # Business validation: check if sales contact exists
-        user = user_service.get_user(sales_contact_id)
+        # Business validation: check if sales contact exists and is from COMMERCIAL dept
+        user = user_service.get_user(sales_contact_id)  # err si inexistant
 
-        if not user:
+        if not user:  # hors try
             typer.echo(
                 f"[ERREUR] Utilisateur avec l'ID {sales_contact_id} n'existe pas"
             )
@@ -164,31 +194,23 @@ def create_client(
             sales_contact_id=sales_contact_id,
         )
 
-        # Success message
-        typer.echo(
-            f"\n[SUCCÈS] Client {client.first_name} {client.last_name} créé avec succès!"
-        )
-        typer.echo(f"  ID: {client.id}")
-        typer.echo(f"  Email: {client.email}")
-        typer.echo(f"  Entreprise: {client.company_name}")
-
     except IntegrityError:
         typer.echo(
-            "[ERREUR] Erreur d'intégrité: Données en double ou contrainte violée"
+            "[ERREUR] Erreur d'intégrité: Données en double ou contrainte violée"  # todo explicite
         )
-        raise typer.Exit(code=1)
-
-    except OperationalError:
-        typer.echo("[ERREUR] Erreur de connexion à la base de données")
-        raise typer.Exit(code=1)
-
-    except KeyboardInterrupt:
-        typer.echo("\n[ANNULÉ] Opération annulée")
         raise typer.Exit(code=1)
 
     except Exception as e:
         typer.echo(f"[ERREUR] Erreur inattendue: {e}")
         raise typer.Exit(code=1)
+
+    # Success message
+    typer.echo(
+        f"\n[SUCCÈS] Client {client.first_name} {client.last_name} créé avec succès!"
+    )
+    typer.echo(f"  ID: {client.id}")
+    typer.echo(f"  Email: {client.email}")
+    typer.echo(f"  Entreprise: {client.company_name}")
 
 
 @app.command()
@@ -238,13 +260,6 @@ def create_user(
             department=department_choice,
         )
 
-        # Success message
-        typer.echo(f"\n[SUCCÈS] Utilisateur {user.username} créé avec succès!")
-        typer.echo(f"  ID: {user.id}")
-        typer.echo(f"  Nom complet: {user.first_name} {user.last_name}")
-        typer.echo(f"  Email: {user.email}")
-        typer.echo(f"  Département: {user.department.value}")
-
     except IntegrityError:
         typer.echo(
             "[ERREUR] Erreur d'intégrité: Données en double ou contrainte violée"
@@ -263,6 +278,9 @@ def create_user(
         typer.echo(f"[ERREUR] Erreur inattendue: {e}")
         raise typer.Exit(code=1)
 
-
-if __name__ == "__main__":
-    app()
+    # Success message
+    typer.echo(f"\n[SUCCÈS] Utilisateur {user.username} créé avec succès!")
+    typer.echo(f"  ID: {user.id}")
+    typer.echo(f"  Nom complet: {user.first_name} {user.last_name}")
+    typer.echo(f"  Email: {user.email}")
+    typer.echo(f"  Département: {user.department.value}")

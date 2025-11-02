@@ -1,6 +1,6 @@
 """
-Point d'entrée principal de l'application Epic Events CRM.
-Ce module est référencé dans pyproject.toml pour la commande 'epicevents'.
+Main entry point for the Epic Events CRM application.
+This module is referenced in pyproject.toml for the 'epicevents' command.
 """
 
 from src.containers import Container
@@ -8,14 +8,14 @@ from src.cli import commands
 
 
 def main():
-    """Point d'entrée principal de l'application."""
-    # 1. Initialiser le container d'injection de dépendances
+    """Main entry point for the application."""
+    # 1. Initialize the dependency injection container
     container = Container()
 
-    # 2. Définir le container dans le module commands
+    # 2. Set the container in the commands module
     commands.set_container(container)
 
-    # 3. Lancer l'application Typer
+    # 3. Launch the Typer application
     commands.app()
 
 
