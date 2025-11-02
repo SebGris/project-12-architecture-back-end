@@ -115,10 +115,26 @@ def create_client(
             sales_contact_id=sales_contact_id,
         )
 
-    except IntegrityError:
-        print_error(
-            "Erreur d'intégrité: Données en double ou contrainte violée"
-        )
+    except IntegrityError as e:
+        error_msg = str(e.orig).lower() if hasattr(e, 'orig') else str(e).lower()
+
+        if 'unique' in error_msg or 'duplicate' in error_msg:
+            if 'email' in error_msg:
+                print_error(
+                    f"Un client avec l'email '{email}' existe déjà dans le système"
+                )
+            else:
+                print_error(
+                    "Erreur: Un client avec ces informations existe déjà"
+                )
+        elif 'foreign key' in error_msg:
+            print_error(
+                f"Le contact commercial (ID: {sales_contact_id}) n'existe pas"
+            )
+        else:
+            print_error(
+                f"Erreur d'intégrité de la base de données: {error_msg}"
+            )
         raise typer.Exit(code=1)
 
     except OperationalError:
@@ -194,10 +210,26 @@ def create_user(
             department=department,
         )
 
-    except IntegrityError:
-        print_error(
-            "Erreur d'intégrité: Données en double ou contrainte violée"
-        )
+    except IntegrityError as e:
+        error_msg = str(e.orig).lower() if hasattr(e, 'orig') else str(e).lower()
+
+        if 'unique' in error_msg or 'duplicate' in error_msg:
+            if 'username' in error_msg:
+                print_error(
+                    f"Le nom d'utilisateur '{username}' est déjà utilisé"
+                )
+            elif 'email' in error_msg:
+                print_error(
+                    f"L'email '{email}' est déjà utilisé par un autre utilisateur"
+                )
+            else:
+                print_error(
+                    "Erreur: Un utilisateur avec ces informations existe déjà"
+                )
+        else:
+            print_error(
+                f"Erreur d'intégrité de la base de données: {error_msg}"
+            )
         raise typer.Exit(code=1)
 
     except Exception as e:
