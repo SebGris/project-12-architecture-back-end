@@ -1,5 +1,4 @@
 import typer
-from dependency_injector.wiring import inject, Provide
 from sqlalchemy.exc import IntegrityError
 
 from src.cli.console import (
@@ -29,14 +28,144 @@ from src.cli.validators import (
     validate_user_id_callback,
     validate_username_callback,
 )
-from src.models.user import Department
+from src.models.user import Department, User
 from src.containers import Container
+from src.cli.permissions import (
+    require_auth,
+    require_department,
+    check_client_ownership,
+    check_event_ownership,
+)
 
 app = typer.Typer()
 
 
 @app.command()
-@inject
+def login(
+    username: str = typer.Option(..., prompt="Nom d'utilisateur"),
+    password: str = typer.Option(..., prompt="Mot de passe", hide_input=True)
+):
+    """
+    Se connecter à l'application Epic Events CRM.
+
+    Cette commande permet de s'authentifier avec un nom d'utilisateur et un mot de passe.
+    Un jeton JWT est généré et stocké localement pour une authentification persistante.
+
+    Args:
+        username: Nom d'utilisateur
+        password: Mot de passe (masqué lors de la saisie)
+
+    Returns:
+        None. Affiche un message de succès ou d'erreur.
+
+    Examples:
+        epicevents login
+    """
+    # Manually get auth_service from container
+    container = Container()
+    auth_service = container.auth_service()
+
+    print_separator()
+    print_header("Authentification")
+    print_separator()
+
+    # Authenticate user
+    user = auth_service.authenticate(username, password)
+
+    if not user:
+        print_error("Nom d'utilisateur ou mot de passe incorrect")
+        raise typer.Exit(code=1)
+
+    # Generate JWT token
+    token = auth_service.generate_token(user)
+
+    # Save token to disk
+    auth_service.save_token(token)
+
+    # Success message
+    print_separator()
+    print_success(f"Bienvenue {user.first_name} {user.last_name} !")
+    print_field("Département", user.department.value)
+    print_field("Session", f"Valide pour 24 heures")
+    print_separator()
+
+
+@app.command()
+def logout():
+    """
+    Se déconnecter de l'application Epic Events CRM.
+
+    Cette commande supprime le jeton JWT stocké localement.
+
+    Returns:
+        None. Affiche un message de confirmation.
+
+    Examples:
+        epicevents logout
+    """
+    # Manually get auth_service from container
+    container = Container()
+    auth_service = container.auth_service()
+
+    print_separator()
+    print_header("Déconnexion")
+    print_separator()
+
+    # Check if user is authenticated
+    user = auth_service.get_current_user()
+
+    if not user:
+        print_error("Vous n'êtes pas connecté")
+        raise typer.Exit(code=1)
+
+    # Delete token
+    auth_service.delete_token()
+
+    # Success message
+    print_success(f"Au revoir {user.first_name} {user.last_name} !")
+    print_separator()
+
+
+@app.command()
+def whoami():
+    """
+    Afficher les informations de l'utilisateur actuellement connecté.
+
+    Cette commande affiche les détails de l'utilisateur authentifié.
+
+    Returns:
+        None. Affiche les informations de l'utilisateur ou un message d'erreur.
+
+    Examples:
+        epicevents whoami
+    """
+    # Manually get auth_service from container
+    container = Container()
+    auth_service = container.auth_service()
+
+    print_separator()
+    print_header("Utilisateur actuel")
+    print_separator()
+
+    # Get current user
+    user = auth_service.get_current_user()
+
+    if not user:
+        print_error("Vous n'êtes pas connecté. Utilisez 'epicevents login' pour vous connecter.")
+        raise typer.Exit(code=1)
+
+    # Display user info
+    print_field("ID", str(user.id))
+    print_field("Nom d'utilisateur", user.username)
+    print_field("Nom complet", f"{user.first_name} {user.last_name}")
+    print_field("Email", user.email)
+    print_field("Téléphone", user.phone)
+    print_field("Département", user.department.value)
+    print_separator()
+
+
+@app.command()
+@require_department(Department.COMMERCIAL, Department.GESTION)
 def create_client(
     first_name: str = typer.Option(
         ..., prompt="Prénom", callback=validate_first_name_callback
@@ -56,12 +185,9 @@ def create_client(
         callback=validate_company_name_callback,
     ),
     sales_contact_id: int = typer.Option(
-        ...,
-        prompt="ID du contact commercial",
-        callback=validate_sales_contact_id_callback,
-    ),
-    client_service=Provide[Container.client_service],
-    user_service=Provide[Container.user_service],
+        None,
+        prompt="ID du contact commercial (laisser vide pour auto-assignation)",
+    )
 ):
     """
     Créer un nouveau client dans le système CRM.
@@ -75,7 +201,7 @@ def create_client(
         email: Adresse email valide du client
         phone: Numéro de téléphone (minimum 10 chiffres)
         company_name: Nom de l'entreprise du client
-        sales_contact_id: ID d'un utilisateur du département COMMERCIAL
+        sales_contact_id: ID d'un utilisateur du département COMMERCIAL (auto-assigné si vide pour COMMERCIAL)
 
     Returns:
         None. Affiche un message de succès avec les détails du client créé.
@@ -87,10 +213,28 @@ def create_client(
         epicevents create-client
         # Suit les prompts interactifs pour saisir les informations
     """
+    # Manually get services from container
+    container = Container()
+    client_service = container.client_service()
+    user_service = container.user_service()
+    auth_service = container.auth_service()
+
     # Show header at the beginning
     print_separator()
     print_header("Création d'un nouveau client")
     print_separator()
+
+    # Get current user for auto-assignment
+    current_user = auth_service.get_current_user()
+
+    # Auto-assign for COMMERCIAL users if no sales_contact_id provided
+    if sales_contact_id is None:
+        if current_user.department == Department.COMMERCIAL:
+            sales_contact_id = current_user.id
+            print_field("Contact commercial", f"Auto-assigné à {current_user.username}")
+        else:
+            print_error("Vous devez spécifier un ID de contact commercial")
+            raise typer.Exit(code=1)
 
     # Business validation: check if sales contact exists and is from COMMERCIAL dept
     user = user_service.get_user(sales_contact_id)
@@ -156,7 +300,7 @@ def create_client(
 
 
 @app.command()
-@inject
+@require_department(Department.GESTION)
 def create_user(
     username: str = typer.Option(
         ..., prompt="Nom d'utilisateur", callback=validate_username_callback
@@ -183,8 +327,7 @@ def create_user(
         ...,
         prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.GESTION.value}\n3. {Department.SUPPORT.value}\n\nChoisir un département (numéro)",
         callback=validate_department_callback,
-    ),
-    user_service=Provide[Container.user_service],
+    )
 ):
     """
     Créer un nouvel utilisateur dans le système CRM.
@@ -212,6 +355,10 @@ def create_user(
         epicevents create-user
         # Suit les prompts interactifs pour saisir les informations
     """
+    # Manually get services from container
+    container = Container()
+    user_service = container.user_service()
+
     # Show header at the beginning
     print_separator()
     print_header("Création d'un nouvel utilisateur")
@@ -272,7 +419,7 @@ def create_user(
 
 
 @app.command()
-@inject
+@require_department(Department.COMMERCIAL, Department.GESTION)
 def create_contract(
     client_id: int = typer.Option(
         ..., prompt="ID du client", callback=validate_client_id_callback
@@ -283,9 +430,7 @@ def create_contract(
     remaining_amount: str = typer.Option(
         ..., prompt="Montant restant", callback=validate_amount_callback
     ),
-    is_signed: bool = typer.Option(False, prompt="Contrat signé ?"),
-    contract_service=Provide[Container.contract_service],
-    client_service=Provide[Container.client_service],
+    is_signed: bool = typer.Option(False, prompt="Contrat signé ?")
 ):
     """
     Créer un nouveau contrat dans le système CRM.
@@ -310,6 +455,11 @@ def create_contract(
         # Suit les prompts interactifs pour saisir les informations
     """
     from decimal import Decimal
+
+    # Manually get services from container
+    container = Container()
+    contract_service = container.contract_service()
+    client_service = container.client_service()
 
     # Show header at the beginning
     print_separator()
@@ -381,7 +531,7 @@ def create_contract(
 
 
 @app.command()
-@inject
+@require_department(Department.COMMERCIAL, Department.GESTION)
 def create_event(
     name: str = typer.Option(
         ..., prompt="Nom de l'événement", callback=validate_event_name_callback
@@ -406,10 +556,7 @@ def create_event(
     notes: str = typer.Option("", prompt="Notes (optionnel)"),
     support_contact_id: int = typer.Option(
         0, prompt="ID du contact support (0 si aucun)"
-    ),
-    event_service=Provide[Container.event_service],
-    contract_service=Provide[Container.contract_service],
-    user_service=Provide[Container.user_service],
+    )
 ):
     """
     Créer un nouvel événement dans le système CRM.
@@ -438,6 +585,12 @@ def create_event(
         # Suit les prompts interactifs pour saisir les informations
     """
     from datetime import datetime
+
+    # Manually get services from container
+    container = Container()
+    event_service = container.event_service()
+    contract_service = container.contract_service()
+    user_service = container.user_service()
 
     # Show header at the beginning
     print_separator()
@@ -534,16 +687,14 @@ def create_event(
 
 
 @app.command()
-@inject
+@require_department(Department.GESTION)
 def assign_support(
     event_id: int = typer.Option(
         ..., prompt="ID de l'événement", callback=validate_event_id_callback
     ),
     support_contact_id: int = typer.Option(
         ..., prompt="ID du contact support", callback=validate_user_id_callback
-    ),
-    event_service=Provide[Container.event_service],
-    user_service=Provide[Container.user_service],
+    )
 ):
     """
     Assigner un contact support à un événement.
@@ -564,6 +715,11 @@ def assign_support(
     Examples:
         epicevents assign-support
     """
+    # Manually get services from container
+    container = Container()
+    event_service = container.event_service()
+    user_service = container.user_service()
+
     print_separator()
     print_header("Assignation d'un contact support")
     print_separator()
@@ -609,10 +765,8 @@ def assign_support(
 
 
 @app.command()
-@inject
-def filter_unsigned_contracts(
-    contract_service=Provide[Container.contract_service],
-):
+@require_auth
+def filter_unsigned_contracts():
     """
     Afficher tous les contrats non signés.
 
@@ -624,6 +778,10 @@ def filter_unsigned_contracts(
     Examples:
         epicevents filter-unsigned-contracts
     """
+    # Manually get services from container
+    container = Container()
+    contract_service = container.contract_service()
+
     print_separator()
     print_header("Contrats non signés")
     print_separator()
@@ -651,10 +809,8 @@ def filter_unsigned_contracts(
 
 
 @app.command()
-@inject
-def filter_unpaid_contracts(
-    contract_service=Provide[Container.contract_service],
-):
+@require_auth
+def filter_unpaid_contracts():
     """
     Afficher tous les contrats non soldés (montant restant > 0).
 
@@ -666,6 +822,10 @@ def filter_unpaid_contracts(
     Examples:
         epicevents filter-unpaid-contracts
     """
+    # Manually get services from container
+    container = Container()
+    contract_service = container.contract_service()
+
     print_separator()
     print_header("Contrats non soldés")
     print_separator()
@@ -696,8 +856,8 @@ def filter_unpaid_contracts(
 
 
 @app.command()
-@inject
-def filter_unassigned_events(event_service=Provide[Container.event_service]):
+@require_auth
+def filter_unassigned_events():
     """
     Afficher tous les événements sans contact support assigné.
 
@@ -709,6 +869,10 @@ def filter_unassigned_events(event_service=Provide[Container.event_service]):
     Examples:
         epicevents filter-unassigned-events
     """
+    # Manually get services from container
+    container = Container()
+    event_service = container.event_service()
+
     print_separator()
     print_header("Événements sans contact support")
     print_separator()
@@ -738,13 +902,11 @@ def filter_unassigned_events(event_service=Provide[Container.event_service]):
 
 
 @app.command()
-@inject
+@require_department(Department.SUPPORT, Department.GESTION)
 def filter_my_events(
     support_contact_id: int = typer.Option(
         ..., prompt="ID du contact support", callback=validate_user_id_callback
-    ),
-    event_service=Provide[Container.event_service],
-    user_service=Provide[Container.user_service],
+    )
 ):
     """
     Afficher les événements assignés à un contact support spécifique.
@@ -763,6 +925,11 @@ def filter_my_events(
     Examples:
         epicevents filter-my-events
     """
+    # Manually get services from container
+    container = Container()
+    event_service = container.event_service()
+    user_service = container.user_service()
+
     print_separator()
     print_header("Mes événements")
     print_separator()
@@ -810,7 +977,7 @@ def filter_my_events(
 
 
 @app.command()
-@inject
+@require_department(Department.COMMERCIAL, Department.GESTION)
 def update_client(
     client_id: int = typer.Option(
         ..., prompt="ID du client", callback=validate_client_id_callback
@@ -830,8 +997,7 @@ def update_client(
     company_name: str = typer.Option(
         None,
         prompt="Nouveau nom d'entreprise (laisser vide pour ne pas modifier)",
-    ),
-    client_service=Provide[Container.client_service],
+    )
 ):
     """
     Mettre à jour les informations d'un client.
@@ -856,6 +1022,10 @@ def update_client(
     Examples:
         epicevents update-client
     """
+    # Manually get services from container
+    container = Container()
+    client_service = container.client_service()
+
     print_separator()
     print_header("Mise à jour d'un client")
     print_separator()
@@ -921,7 +1091,7 @@ def update_client(
 
 
 @app.command()
-@inject
+@require_department(Department.COMMERCIAL, Department.GESTION)
 def update_contract(
     contract_id: int = typer.Option(
         ..., prompt="ID du contrat", callback=validate_contract_id_callback
@@ -934,8 +1104,7 @@ def update_contract(
         None,
         prompt="Nouveau montant restant (laisser vide pour ne pas modifier)",
     ),
-    is_signed: bool = typer.Option(None, prompt="Marquer comme signé ? (o/n)"),
-    contract_service=Provide[Container.contract_service],
+    is_signed: bool = typer.Option(None, prompt="Marquer comme signé ? (o/n)")
 ):
     """
     Mettre à jour les informations d'un contrat.
@@ -959,6 +1128,10 @@ def update_contract(
         epicevents update-contract
     """
     from decimal import Decimal
+
+    # Manually get services from container
+    container = Container()
+    contract_service = container.contract_service()
 
     print_separator()
     print_header("Mise à jour d'un contrat")

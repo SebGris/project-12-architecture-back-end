@@ -12,6 +12,7 @@ from src.repositories.sqlalchemy_client_repository import SqlAlchemyClientReposi
 from src.repositories.sqlalchemy_contract_repository import SqlAlchemyContractRepository
 from src.repositories.sqlalchemy_event_repository import SqlAlchemyEventRepository
 from src.repositories.sqlalchemy_user_repository import SqlAlchemyUserRepository
+from src.services.auth_service import AuthService
 from src.services.client_service import ClientService
 from src.services.contract_service import ContractService
 from src.services.event_service import EventService
@@ -55,6 +56,11 @@ class Container(containers.DeclarativeContainer):
     )
 
     # Services
+    auth_service = providers.Factory(
+        AuthService,
+        repository=user_repository,
+    )
+
     client_service = providers.Factory(
         ClientService,
         repository=client_repository,

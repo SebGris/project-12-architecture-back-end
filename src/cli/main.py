@@ -4,7 +4,7 @@ This module is referenced in pyproject.toml for the 'epicevents' command.
 """
 
 from src.containers import Container
-from src.cli import commands
+from src.cli import commands, permissions
 
 
 def main():
@@ -13,9 +13,9 @@ def main():
     container = Container()
 
     # 2. Wire the container to enable automatic dependency injection
-    # This tells dependency_injector to scan the commands module
+    # This tells dependency_injector to scan the commands and permissions modules
     # and inject dependencies marked with @inject and Provide[...]
-    container.wire(modules=[commands])
+    container.wire(modules=[commands, permissions])
 
     # 3. Launch the Typer application
     try:
