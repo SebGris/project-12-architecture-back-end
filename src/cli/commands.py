@@ -82,6 +82,10 @@ def login(
     # Save token to disk
     auth_service.save_token(token)
 
+    # Set Sentry user context
+    from src.sentry_config import set_user_context
+    set_user_context(user.id, user.username, user.department.value)
+
     # Success message
     print_separator()
     print_success(f"Bienvenue {user.first_name} {user.last_name} !")
@@ -120,6 +124,15 @@ def logout():
 
     # Delete token
     auth_service.delete_token()
+
+    # Clear Sentry user context
+    from src.sentry_config import clear_user_context, add_breadcrumb
+    add_breadcrumb(
+        f"Déconnexion de l'utilisateur: {user.username}",
+        category="auth",
+        level="info"
+    )
+    clear_user_context()
 
     # Success message
     print_success(f"Au revoir {user.first_name} {user.last_name} !")

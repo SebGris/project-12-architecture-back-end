@@ -413,8 +413,12 @@ TOKEN_EXPIRATION_HOURS = 24
 | 3.4 | Secret key via variable d'environnement | `EPICEVENTS_SECRET_KEY` dans `.env` | `src/services/auth_service.py:51` | ✅ |
 | 3.5 | Commandes login/logout/whoami | Commandes CLI disponibles | `src/cli/commands.py` (lignes 44, 94, 130) | ✅ |
 | **4** | **Journalisation avec Sentry** | | | |
-| 4.1 | Configuration Sentry | ⏳ À implémenter (hors scope actuel) | N/A | ⏳ |
-| 4.2 | Logging des exceptions et erreurs | ⏳ À implémenter (hors scope actuel) | N/A | ⏳ |
+| 4.1 | Configuration Sentry | Module `sentry_config.py` avec init automatique | `src/sentry_config.py` | ✅ |
+| 4.2 | Logging des exceptions et erreurs | Capture automatique des exceptions non gérées | `src/cli/main.py:27-31` | ✅ |
+| 4.3 | Logging des tentatives de connexion | Capture des succès et échecs d'authentification | `src/services/auth_service.py:75-112` | ✅ |
+| 4.4 | Contexte utilisateur | Association des erreurs aux utilisateurs | `src/cli/commands.py:86-87, 129-135` | ✅ |
+| 4.5 | Breadcrumbs (fil d'Ariane) | Traçage des actions utilisateur | `src/services/auth_service.py` | ✅ |
+| 4.6 | Configuration par environnement | Variable ENVIRONMENT et SENTRY_DSN | `.env` | ✅ |
 
 **Légende** :
 - ✅ Implémenté et testé
@@ -526,13 +530,14 @@ TOKEN_EXPIRATION_HOURS = 24
 - **Protection injection SQL** : ✅ 100%
 - **Principe du moindre privilège** : ✅ 100%
 - **Authentification persistante** : ✅ 100%
-- **Journalisation Sentry** : ⏳ Phase suivante
+- **Journalisation Sentry** : ✅ 100%
 
 ### 🔗 Documentation complémentaire
 
 - **Architecture** : `docs/AUTHENTICATION.md`
 - **Sécurité** : `docs/SECURITY_SUMMARY.md`
 - **Démarrage rapide** : `docs/QUICK_START_AUTH.md`
+- **Configuration Sentry** : `docs/SENTRY_SETUP.md`
 
 ---
 

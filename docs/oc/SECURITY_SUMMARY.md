@@ -174,10 +174,13 @@ query = f"SELECT * FROM users WHERE username = '{username}'"
 - [x] Stockage sécurisé des tokens
 - [x] Expiration des tokens
 - [x] Messages d'erreur sécurisés
+- [x] Journalisation Sentry
+- [x] Logging des tentatives de connexion
+- [x] Capture des exceptions
+- [x] Contexte utilisateur et breadcrumbs
 
 ### À implémenter ⏳
 
-- [ ] Journalisation Sentry
 - [ ] Rate limiting (optionnel)
 - [ ] Rotation des tokens (optionnel)
 - [ ] Blacklist de tokens (optionnel)

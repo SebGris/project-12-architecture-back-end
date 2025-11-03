@@ -72,13 +72,42 @@ class AuthService:
         Returns:
             User instance if authentication successful, None otherwise
         """
+        from src.sentry_config import add_breadcrumb, capture_message
+
+        # Add breadcrumb for login attempt
+        add_breadcrumb(
+            f"Tentative de connexion pour l'utilisateur: {username}",
+            category="auth",
+            level="info"
+        )
+
         user = self.repository.get_by_username(username)
 
         if not user:
+            # Log failed login attempt (user not found)
+            capture_message(
+                f"Tentative de connexion échouée - utilisateur inexistant: {username}",
+                level="warning",
+                context={"username": username, "reason": "user_not_found"}
+            )
             return None
 
         if not user.verify_password(password):
+            # Log failed login attempt (wrong password)
+            capture_message(
+                f"Tentative de connexion échouée - mot de passe incorrect: {username}",
+                level="warning",
+                context={"username": username, "reason": "wrong_password"}
+            )
             return None
+
+        # Successful login
+        add_breadcrumb(
+            f"Connexion réussie pour l'utilisateur: {username}",
+            category="auth",
+            level="info",
+            data={"user_id": user.id, "department": user.department.value}
+        )
 
         return user
 
