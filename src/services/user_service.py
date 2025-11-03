@@ -4,6 +4,8 @@ This module contains the business logic for managing users,
 including authentication and password management.
 """
 
+from typing import List, Optional
+
 from src.models.user import Department, User
 from src.repositories.user_repository import UserRepository
 
@@ -17,7 +19,7 @@ class UserService:
     def __init__(self, repository: UserRepository):
         self.repository = repository
 
-    def get_user(self, user_id: int) -> User:
+    def get_user(self, user_id: int) -> Optional[User]:
         """Get a user by ID.
 
         Args:

@@ -4,7 +4,7 @@ This module provides the concrete implementation of the UserRepository
 interface using SQLAlchemy ORM for database persistence.
 """
 
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -64,3 +64,16 @@ class SqlAlchemyUserRepository(UserRepository):
             User instance or None if not found
         """
         return self.session.query(User).filter_by(email=email).first()
+
+    def update(self, user: User) -> User:
+        """Update an existing user.
+
+        Args:
+            user: User instance to update
+
+        Returns:
+            The updated User instance
+        """
+        self.session.commit()
+        self.session.refresh(user)
+        return user

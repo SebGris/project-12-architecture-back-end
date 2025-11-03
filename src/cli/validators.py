@@ -169,3 +169,58 @@ def validate_payment_amount(amount_paid, remaining_amount) -> None:
         raise ValueError(
             f"Le montant du paiement ({amount_paid}) dépasse le montant restant ({remaining_amount})"
         )
+
+
+def validate_contract_id_callback(value: int) -> int:
+    """Validate contract ID."""
+    if value <= 0:
+        raise typer.BadParameter("L'ID du contrat doit être positif")
+    return value
+
+
+def validate_event_id_callback(value: int) -> int:
+    """Validate event ID."""
+    if value <= 0:
+        raise typer.BadParameter("L'ID de l'événement doit être positif")
+    return value
+
+
+def validate_user_id_callback(value: int) -> int:
+    """Validate user ID."""
+    if value <= 0:
+        raise typer.BadParameter("L'ID de l'utilisateur doit être positif")
+    return value
+
+
+def validate_event_name_callback(value: str) -> str:
+    """Validate and clean event name."""
+    cleaned = value.strip()
+    if len(cleaned) < 3:
+        raise typer.BadParameter("Le nom de l'événement doit avoir au moins 3 caractères")
+    if len(cleaned) > 100:
+        raise typer.BadParameter("Le nom de l'événement ne peut pas dépasser 100 caractères")
+    return cleaned
+
+
+def validate_location_callback(value: str) -> str:
+    """Validate and clean location."""
+    cleaned = value.strip()
+    if not cleaned:
+        raise typer.BadParameter("L'emplacement est requis")
+    if len(cleaned) > 255:
+        raise typer.BadParameter("L'emplacement ne peut pas dépasser 255 caractères")
+    return cleaned
+
+
+def validate_attendees_callback(value: int) -> int:
+    """Validate number of attendees."""
+    if value < 0:
+        raise typer.BadParameter("Le nombre de participants doit être positif ou zéro")
+    return value
+
+
+def validate_support_contact_id_callback(value: int) -> int:
+    """Validate support contact ID (optional, so 0 is acceptable)."""
+    if value < 0:
+        raise typer.BadParameter("L'ID du contact support doit être positif")
+    return value

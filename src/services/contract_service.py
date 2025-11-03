@@ -124,3 +124,14 @@ class ContractService:
 
         contract.is_signed = True
         return self.repository.update(contract)
+
+    def update_contract(self, contract: Contract) -> Contract:
+        """Update a contract.
+
+        Args:
+            contract: The contract instance to update
+
+        Returns:
+            Updated Contract instance
+        """
+        return self.repository.update(contract)

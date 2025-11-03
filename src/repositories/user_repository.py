@@ -5,7 +5,7 @@ following the Repository pattern to decouple business logic from data access.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Optional
 
 from src.models.user import User
 
@@ -58,5 +58,17 @@ class UserRepository(ABC):
 
         Returns:
             User instance or None if not found
+        """
+        pass
+
+    @abstractmethod
+    def update(self, user: User) -> User:
+        """Update an existing user.
+
+        Args:
+            user: User instance to update
+
+        Returns:
+            The updated User instance
         """
         pass

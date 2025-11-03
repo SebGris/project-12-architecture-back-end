@@ -5,7 +5,7 @@ following the Repository pattern to decouple business logic from data access.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Optional
 
 from src.models.client import Client
 
@@ -34,6 +34,18 @@ class ClientRepository(ABC):
 
         Returns:
             The added Client instance (with ID populated after commit)
+        """
+        pass
+
+    @abstractmethod
+    def update(self, client: Client) -> Client:
+        """Update an existing client.
+
+        Args:
+            client: Client instance to update
+
+        Returns:
+            The updated Client instance
         """
         pass
 

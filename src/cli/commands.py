@@ -1,6 +1,6 @@
 import typer
 from dependency_injector.wiring import inject, Provide
-from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.exc import IntegrityError
 
 from src.cli.console import (
     print_error,
@@ -11,16 +11,22 @@ from src.cli.console import (
 )
 from src.cli.validators import (
     validate_amount_callback,
+    validate_attendees_callback,
     validate_client_id_callback,
     validate_company_name_callback,
     validate_contract_amounts,
+    validate_contract_id_callback,
     validate_department_callback,
     validate_email_callback,
+    validate_event_id_callback,
+    validate_event_name_callback,
     validate_first_name_callback,
     validate_last_name_callback,
+    validate_location_callback,
     validate_password_callback,
     validate_phone_callback,
     validate_sales_contact_id_callback,
+    validate_user_id_callback,
     validate_username_callback,
 )
 from src.models.user import Department
@@ -111,10 +117,12 @@ def create_client(
         )
 
     except IntegrityError as e:
-        error_msg = str(e.orig).lower() if hasattr(e, 'orig') else str(e).lower()
+        error_msg = (
+            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
+        )
 
-        if 'unique' in error_msg or 'duplicate' in error_msg:
-            if 'email' in error_msg:
+        if "unique" in error_msg or "duplicate" in error_msg:
+            if "email" in error_msg:
                 print_error(
                     f"Un client avec l'email '{email}' existe déjà dans le système"
                 )
@@ -122,7 +130,7 @@ def create_client(
                 print_error(
                     "Erreur: Un client avec ces informations existe déjà"
                 )
-        elif 'foreign key' in error_msg:
+        elif "foreign key" in error_msg:
             print_error(
                 f"Le contact commercial (ID: {sales_contact_id}) n'existe pas"
             )
@@ -130,10 +138,6 @@ def create_client(
             print_error(
                 f"Erreur d'intégrité de la base de données: {error_msg}"
             )
-        raise typer.Exit(code=1)
-
-    except OperationalError:
-        print_error("Erreur de connexion à la base de données")
         raise typer.Exit(code=1)
 
     except Exception as e:
@@ -230,14 +234,16 @@ def create_user(
         )
 
     except IntegrityError as e:
-        error_msg = str(e.orig).lower() if hasattr(e, 'orig') else str(e).lower()
+        error_msg = (
+            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
+        )
 
-        if 'unique' in error_msg or 'duplicate' in error_msg:
-            if 'username' in error_msg:
+        if "unique" in error_msg or "duplicate" in error_msg:
+            if "username" in error_msg:
                 print_error(
                     f"Le nom d'utilisateur '{username}' est déjà utilisé"
                 )
-            elif 'email' in error_msg:
+            elif "email" in error_msg:
                 print_error(
                     f"L'email '{email}' est déjà utilisé par un autre utilisateur"
                 )
@@ -277,9 +283,7 @@ def create_contract(
     remaining_amount: str = typer.Option(
         ..., prompt="Montant restant", callback=validate_amount_callback
     ),
-    is_signed: bool = typer.Option(
-        False, prompt="Contrat signé ?"
-    ),
+    is_signed: bool = typer.Option(False, prompt="Contrat signé ?"),
     contract_service=Provide[Container.contract_service],
     client_service=Provide[Container.client_service],
 ):
@@ -344,18 +348,16 @@ def create_contract(
         )
 
     except IntegrityError as e:
-        error_msg = str(e.orig).lower() if hasattr(e, 'orig') else str(e).lower()
+        error_msg = (
+            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
+        )
 
-        if 'foreign key' in error_msg:
+        if "foreign key" in error_msg:
             print_error(f"Le client (ID: {client_id}) n'existe pas")
         else:
             print_error(
                 f"Erreur d'intégrité de la base de données: {error_msg}"
             )
-        raise typer.Exit(code=1)
-
-    except OperationalError:
-        print_error("Erreur de connexion à la base de données")
         raise typer.Exit(code=1)
 
     except Exception as e:
@@ -368,8 +370,665 @@ def create_contract(
         f"Contrat créé avec succès pour le client {client.first_name} {client.last_name}!"
     )
     print_field("ID du contrat", str(contract.id))
-    print_field("Client", f"{client.first_name} {client.last_name} ({client.company_name})")
+    print_field(
+        "Client",
+        f"{client.first_name} {client.last_name} ({client.company_name})",
+    )
     print_field("Montant total", f"{contract.total_amount}")
     print_field("Montant restant", f"{contract.remaining_amount}")
     print_field("Statut", "Signé" if contract.is_signed else "Non signé")
+    print_separator()
+
+
+@app.command()
+@inject
+def create_event(
+    name: str = typer.Option(
+        ..., prompt="Nom de l'événement", callback=validate_event_name_callback
+    ),
+    contract_id: int = typer.Option(
+        ..., prompt="ID du contrat", callback=validate_contract_id_callback
+    ),
+    event_start: str = typer.Option(
+        ..., prompt="Date et heure de début (YYYY-MM-DD HH:MM)"
+    ),
+    event_end: str = typer.Option(
+        ..., prompt="Date et heure de fin (YYYY-MM-DD HH:MM)"
+    ),
+    location: str = typer.Option(
+        ..., prompt="Lieu", callback=validate_location_callback
+    ),
+    attendees: int = typer.Option(
+        ...,
+        prompt="Nombre de participants",
+        callback=validate_attendees_callback,
+    ),
+    notes: str = typer.Option("", prompt="Notes (optionnel)"),
+    support_contact_id: int = typer.Option(
+        0, prompt="ID du contact support (0 si aucun)"
+    ),
+    event_service=Provide[Container.event_service],
+    contract_service=Provide[Container.contract_service],
+    user_service=Provide[Container.user_service],
+):
+    """
+    Créer un nouvel événement dans le système CRM.
+
+    Cette commande permet d'enregistrer un nouvel événement associé à un contrat
+    existant, avec des détails sur la date, le lieu et le nombre de participants.
+
+    Args:
+        name: Nom de l'événement (minimum 3 caractères)
+        contract_id: ID du contrat associé (doit exister dans la base)
+        event_start: Date et heure de début (format: YYYY-MM-DD HH:MM)
+        event_end: Date et heure de fin (format: YYYY-MM-DD HH:MM)
+        location: Lieu de l'événement
+        attendees: Nombre de participants attendus (>= 0)
+        notes: Notes optionnelles sur l'événement
+        support_contact_id: ID optionnel du contact support (utilisateur SUPPORT)
+
+    Returns:
+        None. Affiche un message de succès avec les détails de l'événement créé.
+
+    Raises:
+        typer.Exit: En cas d'erreur (contrat inexistant, dates invalides, etc.)
+
+    Examples:
+        epicevents create-event
+        # Suit les prompts interactifs pour saisir les informations
+    """
+    from datetime import datetime
+
+    # Show header at the beginning
+    print_separator()
+    print_header("Création d'un nouvel événement")
+    print_separator()
+
+    # Business validation: check if contract exists
+    contract = contract_service.get_contract(contract_id)
+
+    if not contract:
+        print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Parse datetime strings
+    try:
+        start_dt = datetime.strptime(event_start, "%Y-%m-%d %H:%M")
+        end_dt = datetime.strptime(event_end, "%Y-%m-%d %H:%M")
+    except ValueError:
+        print_error(
+            "Format de date invalide. Utilisez le format: YYYY-MM-DD HH:MM"
+        )
+        raise typer.Exit(code=1)
+
+    # Business validation: check if support contact exists and is from SUPPORT dept
+    support_id = support_contact_id if support_contact_id > 0 else None
+    if support_id:
+        user = user_service.get_user(support_id)
+        if not user:
+            print_error(f"Utilisateur avec l'ID {support_id} n'existe pas")
+            raise typer.Exit(code=1)
+        if user.department != Department.SUPPORT:
+            print_error(
+                f"L'utilisateur {support_id} n'est pas du département SUPPORT"
+            )
+            raise typer.Exit(code=1)
+
+    try:
+        # Create event via service
+        event = event_service.create_event(
+            name=name,
+            contract_id=contract_id,
+            event_start=start_dt,
+            event_end=end_dt,
+            location=location,
+            attendees=attendees,
+            notes=notes if notes else None,
+            support_contact_id=support_id,
+        )
+
+    except ValueError as e:
+        print_error(str(e))
+        raise typer.Exit(code=1)
+
+    except IntegrityError as e:
+        error_msg = (
+            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
+        )
+
+        if "foreign key" in error_msg:
+            if "contract" in error_msg:
+                print_error(f"Le contrat (ID: {contract_id}) n'existe pas")
+            elif "support" in error_msg:
+                print_error(
+                    f"Le contact support (ID: {support_id}) n'existe pas"
+                )
+        else:
+            print_error(
+                f"Erreur d'intégrité de la base de données: {error_msg}"
+            )
+        raise typer.Exit(code=1)
+
+    except Exception as e:
+        print_error(f"Erreur inattendue: {e}")
+        raise typer.Exit(code=1)
+
+    # Success message
+    print_separator()
+    print_success(f"Événement '{event.name}' créé avec succès!")
+    print_field("ID de l'événement", str(event.id))
+    print_field(
+        "Contrat associé",
+        f"Contrat #{contract.id} - Client: {contract.client.first_name} {contract.client.last_name}",
+    )
+    print_field("Date de début", event.event_start.strftime("%Y-%m-%d %H:%M"))
+    print_field("Date de fin", event.event_end.strftime("%Y-%m-%d %H:%M"))
+    print_field("Lieu", event.location)
+    print_field("Participants", str(event.attendees))
+    if event.support_contact:
+        print_field(
+            "Contact support",
+            f"{event.support_contact.first_name} {event.support_contact.last_name}",
+        )
+    print_separator()
+
+
+@app.command()
+@inject
+def assign_support(
+    event_id: int = typer.Option(
+        ..., prompt="ID de l'événement", callback=validate_event_id_callback
+    ),
+    support_contact_id: int = typer.Option(
+        ..., prompt="ID du contact support", callback=validate_user_id_callback
+    ),
+    event_service=Provide[Container.event_service],
+    user_service=Provide[Container.user_service],
+):
+    """
+    Assigner un contact support à un événement.
+
+    Cette commande permet d'assigner ou de réassigner un utilisateur du département
+    SUPPORT à un événement existant.
+
+    Args:
+        event_id: ID de l'événement
+        support_contact_id: ID de l'utilisateur SUPPORT à assigner
+
+    Returns:
+        None. Affiche un message de succès avec les détails.
+
+    Raises:
+        typer.Exit: En cas d'erreur (événement inexistant, utilisateur non SUPPORT, etc.)
+
+    Examples:
+        epicevents assign-support
+    """
+    print_separator()
+    print_header("Assignation d'un contact support")
+    print_separator()
+
+    # Vérifier que l'événement existe
+    event = event_service.get_event(event_id)
+    if not event:
+        print_error(f"Événement avec l'ID {event_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Vérifier que l'utilisateur existe et est du département SUPPORT
+    user = user_service.get_user(support_contact_id)
+    if not user:
+        print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    if user.department != Department.SUPPORT:
+        print_error(
+            f"L'utilisateur {support_contact_id} n'est pas du département SUPPORT"
+        )
+        raise typer.Exit(code=1)
+
+    # Assigner le contact support
+    try:
+        updated_event = event_service.assign_support_contact(
+            event_id, support_contact_id
+        )
+    except Exception as e:
+        print_error(f"Erreur lors de l'assignation: {e}")
+        raise typer.Exit(code=1)
+
+    # Success message
+    print_separator()
+    print_success(
+        f"Contact support assigné avec succès à l'événement '{event.name}'!"
+    )
+    print_field("Événement", event.name)
+    print_field(
+        "Contact support",
+        f"{user.first_name} {user.last_name} ({user.username})",
+    )
+    print_separator()
+
+
+@app.command()
+@inject
+def filter_unsigned_contracts(
+    contract_service=Provide[Container.contract_service],
+):
+    """
+    Afficher tous les contrats non signés.
+
+    Cette commande liste tous les contrats qui n'ont pas encore été signés.
+
+    Returns:
+        None. Affiche la liste des contrats non signés.
+
+    Examples:
+        epicevents filter-unsigned-contracts
+    """
+    print_separator()
+    print_header("Contrats non signés")
+    print_separator()
+
+    contracts = contract_service.get_unsigned_contracts()
+
+    if not contracts:
+        print_success("Aucun contrat non signé")
+        return
+
+    for contract in contracts:
+        print_field("ID", str(contract.id))
+        print_field(
+            "Client",
+            f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
+        )
+        print_field("Montant total", f"{contract.total_amount} €")
+        print_field("Montant restant", f"{contract.remaining_amount} €")
+        print_field(
+            "Date de création", contract.created_at.strftime("%Y-%m-%d")
+        )
+        print_separator()
+
+    print_success(f"Total: {len(contracts)} contrat(s) non signé(s)")
+
+
+@app.command()
+@inject
+def filter_unpaid_contracts(
+    contract_service=Provide[Container.contract_service],
+):
+    """
+    Afficher tous les contrats non soldés (montant restant > 0).
+
+    Cette commande liste tous les contrats qui ont un montant restant à payer.
+
+    Returns:
+        None. Affiche la liste des contrats non soldés.
+
+    Examples:
+        epicevents filter-unpaid-contracts
+    """
+    print_separator()
+    print_header("Contrats non soldés")
+    print_separator()
+
+    contracts = contract_service.get_unpaid_contracts()
+
+    if not contracts:
+        print_success("Aucun contrat non soldé")
+        return
+
+    for contract in contracts:
+        print_field("ID", str(contract.id))
+        print_field(
+            "Client",
+            f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
+        )
+        print_field("Montant total", f"{contract.total_amount} €")
+        print_field("Montant restant", f"{contract.remaining_amount} €")
+        print_field(
+            "Statut", "Signé ✓" if contract.is_signed else "Non signé ✗"
+        )
+        print_field(
+            "Date de création", contract.created_at.strftime("%Y-%m-%d")
+        )
+        print_separator()
+
+    print_success(f"Total: {len(contracts)} contrat(s) non soldé(s)")
+
+
+@app.command()
+@inject
+def filter_unassigned_events(event_service=Provide[Container.event_service]):
+    """
+    Afficher tous les événements sans contact support assigné.
+
+    Cette commande liste tous les événements qui n'ont pas encore de contact support.
+
+    Returns:
+        None. Affiche la liste des événements non assignés.
+
+    Examples:
+        epicevents filter-unassigned-events
+    """
+    print_separator()
+    print_header("Événements sans contact support")
+    print_separator()
+
+    events = event_service.get_unassigned_events()
+
+    if not events:
+        print_success("Aucun événement sans contact support")
+        return
+
+    for event in events:
+        print_field("ID", str(event.id))
+        print_field("Nom", event.name)
+        print_field(
+            "Contrat",
+            f"#{event.contract_id} - {event.contract.client.first_name} {event.contract.client.last_name}",
+        )
+        print_field(
+            "Date de début", event.event_start.strftime("%Y-%m-%d %H:%M")
+        )
+        print_field("Date de fin", event.event_end.strftime("%Y-%m-%d %H:%M"))
+        print_field("Lieu", event.location)
+        print_field("Participants", str(event.attendees))
+        print_separator()
+
+    print_success(f"Total: {len(events)} événement(s) sans contact support")
+
+
+@app.command()
+@inject
+def filter_my_events(
+    support_contact_id: int = typer.Option(
+        ..., prompt="ID du contact support", callback=validate_user_id_callback
+    ),
+    event_service=Provide[Container.event_service],
+    user_service=Provide[Container.user_service],
+):
+    """
+    Afficher les événements assignés à un contact support spécifique.
+
+    Cette commande liste tous les événements assignés à un utilisateur SUPPORT.
+
+    Args:
+        support_contact_id: ID de l'utilisateur SUPPORT
+
+    Returns:
+        None. Affiche la liste des événements assignés.
+
+    Raises:
+        typer.Exit: En cas d'erreur (utilisateur inexistant ou non SUPPORT)
+
+    Examples:
+        epicevents filter-my-events
+    """
+    print_separator()
+    print_header("Mes événements")
+    print_separator()
+
+    # Vérifier que l'utilisateur existe et est du département SUPPORT
+    user = user_service.get_user(support_contact_id)
+    if not user:
+        print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    if user.department != Department.SUPPORT:
+        print_error(
+            f"L'utilisateur {support_contact_id} n'est pas du département SUPPORT"
+        )
+        raise typer.Exit(code=1)
+
+    events = event_service.get_events_by_support_contact(support_contact_id)
+
+    if not events:
+        print_error(
+            f"Aucun événement assigné à {user.first_name} {user.last_name}"
+        )
+        return
+
+    for event in events:
+        print_field("ID", str(event.id))
+        print_field("Nom", event.name)
+        print_field(
+            "Contrat",
+            f"#{event.contract_id} - {event.contract.client.first_name} {event.contract.client.last_name}",
+        )
+        print_field(
+            "Date de début", event.event_start.strftime("%Y-%m-%d %H:%M")
+        )
+        print_field("Date de fin", event.event_end.strftime("%Y-%m-%d %H:%M"))
+        print_field("Lieu", event.location)
+        print_field("Participants", str(event.attendees))
+        if event.notes:
+            print_field("Notes", event.notes)
+        print_separator()
+
+    print_success(
+        f"Total: {len(events)} événement(s) assigné(s) à {user.first_name} {user.last_name}"
+    )
+
+
+@app.command()
+@inject
+def update_client(
+    client_id: int = typer.Option(
+        ..., prompt="ID du client", callback=validate_client_id_callback
+    ),
+    first_name: str = typer.Option(
+        None, prompt="Nouveau prénom (laisser vide pour ne pas modifier)"
+    ),
+    last_name: str = typer.Option(
+        None, prompt="Nouveau nom (laisser vide pour ne pas modifier)"
+    ),
+    email: str = typer.Option(
+        None, prompt="Nouvel email (laisser vide pour ne pas modifier)"
+    ),
+    phone: str = typer.Option(
+        None, prompt="Nouveau téléphone (laisser vide pour ne pas modifier)"
+    ),
+    company_name: str = typer.Option(
+        None,
+        prompt="Nouveau nom d'entreprise (laisser vide pour ne pas modifier)",
+    ),
+    client_service=Provide[Container.client_service],
+):
+    """
+    Mettre à jour les informations d'un client.
+
+    Cette commande permet de modifier les informations d'un client existant.
+    Les champs laissés vides ne seront pas modifiés.
+
+    Args:
+        client_id: ID du client à modifier
+        first_name: Nouveau prénom (optionnel)
+        last_name: Nouveau nom (optionnel)
+        email: Nouvel email (optionnel)
+        phone: Nouveau téléphone (optionnel)
+        company_name: Nouveau nom d'entreprise (optionnel)
+
+    Returns:
+        None. Affiche un message de succès avec les détails.
+
+    Raises:
+        typer.Exit: En cas d'erreur (client inexistant, données invalides, etc.)
+
+    Examples:
+        epicevents update-client
+    """
+    print_separator()
+    print_header("Mise à jour d'un client")
+    print_separator()
+
+    # Vérifier que le client existe
+    client = client_service.get_client(client_id)
+    if not client:
+        print_error(f"Client avec l'ID {client_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Nettoyer les champs vides
+    first_name = first_name.strip() if first_name else None
+    last_name = last_name.strip() if last_name else None
+    email = email.strip() if email else None
+    phone = phone.strip() if phone else None
+    company_name = company_name.strip() if company_name else None
+
+    # Validation des champs si fournis
+    if first_name and len(first_name) < 2:
+        print_error("Le prénom doit avoir au moins 2 caractères")
+        raise typer.Exit(code=1)
+
+    if last_name and len(last_name) < 2:
+        print_error("Le nom doit avoir au moins 2 caractères")
+        raise typer.Exit(code=1)
+
+    try:
+        # Mettre à jour le client
+        updated_client = client_service.update_client(
+            client_id=client_id,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone=phone,
+            company_name=company_name,
+        )
+
+    except IntegrityError as e:
+        error_msg = (
+            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
+        )
+        if "unique" in error_msg or "duplicate" in error_msg:
+            print_error(f"Un client avec l'email '{email}' existe déjà")
+        else:
+            print_error(f"Erreur d'intégrité: {error_msg}")
+        raise typer.Exit(code=1)
+
+    except Exception as e:
+        print_error(f"Erreur inattendue: {e}")
+        raise typer.Exit(code=1)
+
+    # Success message
+    print_separator()
+    print_success(f"Client mis à jour avec succès!")
+    print_field("ID", str(updated_client.id))
+    print_field(
+        "Nom", f"{updated_client.first_name} {updated_client.last_name}"
+    )
+    print_field("Email", updated_client.email)
+    print_field("Téléphone", updated_client.phone)
+    print_field("Entreprise", updated_client.company_name)
+    print_separator()
+
+
+@app.command()
+@inject
+def update_contract(
+    contract_id: int = typer.Option(
+        ..., prompt="ID du contrat", callback=validate_contract_id_callback
+    ),
+    total_amount: str = typer.Option(
+        None,
+        prompt="Nouveau montant total (laisser vide pour ne pas modifier)",
+    ),
+    remaining_amount: str = typer.Option(
+        None,
+        prompt="Nouveau montant restant (laisser vide pour ne pas modifier)",
+    ),
+    is_signed: bool = typer.Option(None, prompt="Marquer comme signé ? (o/n)"),
+    contract_service=Provide[Container.contract_service],
+):
+    """
+    Mettre à jour les informations d'un contrat.
+
+    Cette commande permet de modifier les informations d'un contrat existant.
+    Les champs laissés vides ne seront pas modifiés.
+
+    Args:
+        contract_id: ID du contrat à modifier
+        total_amount: Nouveau montant total (optionnel)
+        remaining_amount: Nouveau montant restant (optionnel)
+        is_signed: Marquer comme signé (optionnel)
+
+    Returns:
+        None. Affiche un message de succès avec les détails.
+
+    Raises:
+        typer.Exit: En cas d'erreur (contrat inexistant, montants invalides, etc.)
+
+    Examples:
+        epicevents update-contract
+    """
+    from decimal import Decimal
+
+    print_separator()
+    print_header("Mise à jour d'un contrat")
+    print_separator()
+
+    # Vérifier que le contrat existe
+    contract = contract_service.get_contract(contract_id)
+    if not contract:
+        print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Nettoyer et convertir les montants
+    total_decimal = None
+    remaining_decimal = None
+
+    if total_amount:
+        total_amount = total_amount.strip()
+        try:
+            total_decimal = Decimal(total_amount)
+        except Exception:
+            print_error("Montant total invalide")
+            raise typer.Exit(code=1)
+
+    if remaining_amount:
+        remaining_amount = remaining_amount.strip()
+        try:
+            remaining_decimal = Decimal(remaining_amount)
+        except Exception:
+            print_error("Montant restant invalide")
+            raise typer.Exit(code=1)
+
+    # Validation des montants
+    if total_decimal is not None and total_decimal < 0:
+        print_error("Le montant total doit être positif")
+        raise typer.Exit(code=1)
+
+    if remaining_decimal is not None and remaining_decimal < 0:
+        print_error("Le montant restant doit être positif")
+        raise typer.Exit(code=1)
+
+    # Mettre à jour les valeurs
+    if total_decimal is not None:
+        contract.total_amount = total_decimal
+    if remaining_decimal is not None:
+        contract.remaining_amount = remaining_decimal
+    if is_signed is not None:
+        contract.is_signed = is_signed
+
+    # Validation finale
+    if contract.remaining_amount > contract.total_amount:
+        print_error("Le montant restant ne peut pas dépasser le montant total")
+        raise typer.Exit(code=1)
+
+    try:
+        updated_contract = contract_service.update_contract(contract)
+    except Exception as e:
+        print_error(f"Erreur lors de la mise à jour: {e}")
+        raise typer.Exit(code=1)
+
+    # Success message
+    print_separator()
+    print_success("Contrat mis à jour avec succès!")
+    print_field("ID", str(updated_contract.id))
+    print_field(
+        "Client",
+        f"{updated_contract.client.first_name} {updated_contract.client.last_name}",
+    )
+    print_field("Montant total", f"{updated_contract.total_amount} €")
+    print_field("Montant restant", f"{updated_contract.remaining_amount} €")
+    print_field(
+        "Statut", "Signé ✓" if updated_contract.is_signed else "Non signé ✗"
+    )
     print_separator()
