@@ -2,7 +2,6 @@
 
 import pytest
 from typer.testing import CliRunner
-from unittest.mock import Mock, patch
 
 from src.cli.commands import app
 from src.containers import Container
@@ -40,7 +39,7 @@ def test_dependency_injection_wiring():
     container.wire(modules=[commands])
 
     # Verify that the container is wired
-    assert hasattr(commands, 'app')
+    assert hasattr(commands, "app")
 
     # Clean up
     container.unwire()
@@ -50,4 +49,7 @@ def test_create_user_command_structure(runner):
     """Test that create-user command has correct structure."""
     result = runner.invoke(app, ["create-user", "--help"])
     assert result.exit_code == 0
-    assert "Nom d'utilisateur" in result.stdout or "username" in result.stdout.lower()
+    assert (
+        "Nom d'utilisateur" in result.stdout
+        or "username" in result.stdout.lower()
+    )
