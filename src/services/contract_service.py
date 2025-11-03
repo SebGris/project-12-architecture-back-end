@@ -60,14 +60,6 @@ class ContractService:
         )
         return self.repository.add(contract)
 
-    def list_all_contracts(self) -> List[Contract]:
-        """List all contracts.
-
-        Returns:
-            List of all Contract instances
-        """
-        return self.repository.list_all()
-
     def get_contracts_by_client(self, client_id: int) -> List[Contract]:
         """Get all contracts for a specific client.
 

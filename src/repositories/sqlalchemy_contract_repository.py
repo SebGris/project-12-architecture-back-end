@@ -57,14 +57,6 @@ class SqlAlchemyContractRepository(ContractRepository):
         self.session.refresh(contract)
         return contract
 
-    def list_all(self) -> List[Contract]:
-        """List all contracts.
-
-        Returns:
-            List of all Contract instances
-        """
-        return self.session.query(Contract).all()
-
     def get_by_client_id(self, client_id: int) -> List[Contract]:
         """Get all contracts for a specific client.
 

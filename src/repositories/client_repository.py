@@ -5,7 +5,7 @@ following the Repository pattern to decouple business logic from data access.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Optional
 
 from src.models.client import Client
 
@@ -37,11 +37,3 @@ class ClientRepository(ABC):
         """
         pass
 
-    @abstractmethod
-    def list_all(self) -> List[Client]:
-        """List all clients.
-
-        Returns:
-            List of all Client instances
-        """
-        pass

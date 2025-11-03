@@ -58,14 +58,6 @@ class SqlAlchemyEventRepository(EventRepository):
         self.session.refresh(event)
         return event
 
-    def list_all(self) -> List[Event]:
-        """List all events.
-
-        Returns:
-            List of all Event instances
-        """
-        return self.session.query(Event).all()
-
     def get_by_contract_id(self, contract_id: int) -> List[Event]:
         """Get all events for a specific contract.
 

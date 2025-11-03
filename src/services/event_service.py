@@ -84,14 +84,6 @@ class EventService:
         )
         return self.repository.add(event)
 
-    def list_all_events(self) -> List[Event]:
-        """List all events.
-
-        Returns:
-            List of all Event instances
-        """
-        return self.repository.list_all()
-
     def get_events_by_contract(self, contract_id: int) -> List[Event]:
         """Get all events for a specific contract.
 

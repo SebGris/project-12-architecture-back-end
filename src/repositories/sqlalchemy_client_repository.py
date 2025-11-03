@@ -4,7 +4,7 @@ This module provides the concrete implementation of the ClientRepository
 interface using SQLAlchemy ORM for database persistence.
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -43,10 +43,3 @@ class SqlAlchemyClientRepository(ClientRepository):
         self.session.refresh(client)
         return client
 
-    def list_all(self) -> List[Client]:
-        """List all clients.
-
-        Returns:
-            List of all Client instances
-        """
-        return self.session.query(Client).all()

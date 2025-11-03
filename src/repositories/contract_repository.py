@@ -49,15 +49,6 @@ class ContractRepository(ABC):
         pass
 
     @abstractmethod
-    def list_all(self) -> List[Contract]:
-        """List all contracts.
-
-        Returns:
-            List of all Contract instances
-        """
-        pass
-
-    @abstractmethod
     def get_by_client_id(self, client_id: int) -> List[Contract]:
         """Get all contracts for a specific client.
 
