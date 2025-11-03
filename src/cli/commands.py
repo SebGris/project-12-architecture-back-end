@@ -1,4 +1,5 @@
 import typer
+from dependency_injector.wiring import inject, Provide
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from src.cli.console import (
@@ -23,20 +24,13 @@ from src.cli.validators import (
     validate_username_callback,
 )
 from src.models.user import Department
+from src.containers import Container
 
 app = typer.Typer()
 
-# Global container - will be set by main.py
-_container = None  # todo: implement container ? chercher
-
-
-def set_container(container):
-    """Set the dependency injection container."""
-    global _container
-    _container = container
-
 
 @app.command()
+@inject
 def create_client(
     first_name: str = typer.Option(
         ..., prompt="Prénom", callback=validate_first_name_callback
@@ -60,6 +54,8 @@ def create_client(
         prompt="ID du contact commercial",
         callback=validate_sales_contact_id_callback,
     ),
+    client_service=Provide[Container.client_service],
+    user_service=Provide[Container.user_service],
 ):
     """
     Créer un nouveau client dans le système CRM.
@@ -89,10 +85,6 @@ def create_client(
     print_separator()
     print_header("Création d'un nouveau client")
     print_separator()
-
-    # Get services from container
-    client_service = _container.client_service()
-    user_service = _container.user_service()
 
     # Business validation: check if sales contact exists and is from COMMERCIAL dept
     user = user_service.get_user(sales_contact_id)
@@ -160,6 +152,7 @@ def create_client(
 
 
 @app.command()
+@inject
 def create_user(
     username: str = typer.Option(
         ..., prompt="Nom d'utilisateur", callback=validate_username_callback
@@ -187,6 +180,7 @@ def create_user(
         prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.GESTION.value}\n3. {Department.SUPPORT.value}\n\nChoisir un département (numéro)",
         callback=validate_department_callback,
     ),
+    user_service=Provide[Container.user_service],
 ):
     """
     Créer un nouvel utilisateur dans le système CRM.
@@ -218,9 +212,6 @@ def create_user(
     print_separator()
     print_header("Création d'un nouvel utilisateur")
     print_separator()
-
-    # Get service from container
-    user_service = _container.user_service()
 
     # Convert department choice (int) to Department enum
     departments = list(Department)
@@ -275,6 +266,7 @@ def create_user(
 
 
 @app.command()
+@inject
 def create_contract(
     client_id: int = typer.Option(
         ..., prompt="ID du client", callback=validate_client_id_callback
@@ -288,6 +280,8 @@ def create_contract(
     is_signed: bool = typer.Option(
         False, prompt="Contrat signé ?"
     ),
+    contract_service=Provide[Container.contract_service],
+    client_service=Provide[Container.client_service],
 ):
     """
     Créer un nouveau contrat dans le système CRM.
@@ -317,10 +311,6 @@ def create_contract(
     print_separator()
     print_header("Création d'un nouveau contrat")
     print_separator()
-
-    # Get services from container
-    contract_service = _container.contract_service()
-    client_service = _container.client_service()
 
     # Business validation: check if client exists
     client = client_service.get_client(client_id)

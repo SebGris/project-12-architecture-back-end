@@ -12,11 +12,17 @@ def main():
     # 1. Initialize the dependency injection container
     container = Container()
 
-    # 2. Set the container in the commands module
-    commands.set_container(container)
+    # 2. Wire the container to enable automatic dependency injection
+    # This tells dependency_injector to scan the commands module
+    # and inject dependencies marked with @inject and Provide[...]
+    container.wire(modules=[commands])
 
     # 3. Launch the Typer application
-    commands.app()
+    try:
+        commands.app()
+    finally:
+        # 4. Clean up: unwire the container when application exits
+        container.unwire()
 
 
 if __name__ == "__main__":
