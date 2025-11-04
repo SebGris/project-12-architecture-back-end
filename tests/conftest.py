@@ -352,12 +352,3 @@ def token_file(tmp_path):
     token_dir.mkdir(exist_ok=True)
     token_file_path = token_dir / "token"
     return token_file_path
-
-
-@pytest.fixture
-def mock_sentry():
-    """
-    Mock Sentry SDK to avoid actual logging during tests.
-    """
-    # TODO: Implement Sentry mocking when sentry_config.py is created
-    pass

@@ -9,7 +9,7 @@ import logging
 import os
 
 from sqlalchemy import create_engine, orm
-from sqlalchemy.orm import Session, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase
 
 logger = logging.getLogger(__name__)
 
@@ -25,19 +25,27 @@ _engine = create_engine(DATABASE_URL, echo=False)
 _SessionLocal = orm.sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 
 
-def get_db_session() -> Session:
-    """Get a database session for dependency injection.
+def get_db_session():
+    """Get a database session with automatic cleanup.
 
-    Warning: This function returns a session without automatic cleanup.
-    The caller is responsible for committing and closing the session.
+    This is a generator function that yields a database session and ensures
+    proper cleanup when the session is no longer needed. Use with a context
+    manager or dependency injection framework.
 
-    Returns:
+    Yields:
         Session: SQLAlchemy Session instance
 
-    Note:
-        The repositories handle commit/rollback/close operations.
+    Example:
+        with get_db_session() as session:
+            # Use session here
+            session.add(obj)
+            session.commit()
     """
-    return _SessionLocal()
+    session = _SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 def init_db() -> None:

@@ -120,7 +120,7 @@ class ContractService:
         """
         contract = self.repository.get(contract_id)
         if not contract:
-            return None  # verifier les retours None
+            return None
 
         contract.is_signed = True
         return self.repository.update(contract)

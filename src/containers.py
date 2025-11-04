@@ -31,8 +31,8 @@ class Container(containers.DeclarativeContainer):
     new instances on each call for proper session management.
     """
 
-    # Database session factory
-    db_session = providers.Factory(get_db_session)
+    # Database session resource (context manager)
+    db_session = providers.Resource(get_db_session)
 
     # Repositories - recréés à chaque appel avec une nouvelle session
     client_repository = providers.Factory(
