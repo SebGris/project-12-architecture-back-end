@@ -60,18 +60,6 @@ class EventService:
         Raises:
             ValueError: If event dates are invalid or attendees is negative
         """
-        # Business validation
-        if event_end <= event_start:
-            raise ValueError(
-                "L'heure de fin de l'événement doit être postérieure à l'heure de début."
-            )
-        if attendees < 0:
-            raise ValueError("Le nombre de participants doit être positif.")
-        if event_start < datetime.now():
-            raise ValueError(
-                "L'heure de début de l'événement doit être dans le futur."
-            )
-
         event = Event(
             name=name,
             contract_id=contract_id,

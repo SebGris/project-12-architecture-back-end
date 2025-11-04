@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 import typer
 
@@ -227,3 +228,60 @@ def validate_support_contact_id_callback(value: int) -> int:
     if value < 0:
         raise typer.BadParameter("L'ID du contact support doit être positif")
     return value
+
+
+# Business validation functions
+def validate_user_is_commercial(user) -> None:
+    """
+    Validate that a user belongs to the COMMERCIAL department.
+
+    Args:
+        user: User object with a department attribute
+
+    Raises:
+        ValueError: If user is not from COMMERCIAL department
+    """
+    if user.department != Department.COMMERCIAL:
+        raise ValueError(
+            f"L'utilisateur {user.id} n'est pas du département COMMERCIAL"
+        )
+
+
+def validate_user_is_support(user) -> None:
+    """
+    Validate that a user belongs to the SUPPORT department.
+
+    Args:
+        user: User object with a department attribute
+
+    Raises:
+        ValueError: If user is not from SUPPORT department
+    """
+    if user.department != Department.SUPPORT:
+        raise ValueError(
+            f"L'utilisateur {user.id} n'est pas du département SUPPORT"
+        )
+
+
+def validate_event_dates(event_start: datetime, event_end: datetime, attendees: int) -> None:
+    """
+    Validate event dates and attendees business rules.
+
+    Args:
+        event_start: Start date and time of the event
+        event_end: End date and time of the event
+        attendees: Number of attendees
+
+    Raises:
+        ValueError: If event dates are invalid or attendees is negative
+    """
+    if event_end <= event_start:
+        raise ValueError(
+            "L'heure de fin de l'événement doit être postérieure à l'heure de début."
+        )
+    if attendees < 0:
+        raise ValueError("Le nombre de participants doit être positif.")
+    if event_start < datetime.now():
+        raise ValueError(
+            "L'heure de début de l'événement doit être dans le futur."
+        )

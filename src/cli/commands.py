@@ -18,6 +18,7 @@ from src.cli.validators import (
     validate_contract_id_callback,
     validate_department_callback,
     validate_email_callback,
+    validate_event_dates,
     validate_event_id_callback,
     validate_event_name_callback,
     validate_first_name_callback,
@@ -27,6 +28,8 @@ from src.cli.validators import (
     validate_phone_callback,
     validate_sales_contact_id_callback,
     validate_user_id_callback,
+    validate_user_is_commercial,
+    validate_user_is_support,
     validate_username_callback,
 )
 from src.models.user import Department
@@ -277,10 +280,10 @@ def create_client(
         print_error(f"Utilisateur avec l'ID {sales_contact_id} n'existe pas")
         raise typer.Exit(code=1)
 
-    if user.department != Department.COMMERCIAL:
-        print_error(
-            f"L'utilisateur {sales_contact_id} n'est pas du département COMMERCIAL"
-        )
+    try:
+        validate_user_is_commercial(user)
+    except ValueError as e:
+        print_error(str(e))
         raise typer.Exit(code=1)
 
     try:
@@ -666,6 +669,13 @@ def create_event(
         )
         raise typer.Exit(code=1)
 
+    # Business validation: validate event dates and attendees
+    try:
+        validate_event_dates(start_dt, end_dt, attendees)
+    except ValueError as e:
+        print_error(str(e))
+        raise typer.Exit(code=1)
+
     # Business validation: check if support contact exists and is from SUPPORT dept
     support_id = support_contact_id if support_contact_id > 0 else None
     if support_id:
@@ -673,10 +683,10 @@ def create_event(
         if not user:
             print_error(f"Utilisateur avec l'ID {support_id} n'existe pas")
             raise typer.Exit(code=1)
-        if user.department != Department.SUPPORT:
-            print_error(
-                f"L'utilisateur {support_id} n'est pas du département SUPPORT"
-            )
+        try:
+            validate_user_is_support(user)
+        except ValueError as e:
+            print_error(str(e))
             raise typer.Exit(code=1)
 
     try:
@@ -797,10 +807,10 @@ def assign_support(
         print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
         raise typer.Exit(code=1)
 
-    if user.department != Department.SUPPORT:
-        print_error(
-            f"L'utilisateur {support_contact_id} n'est pas du département SUPPORT"
-        )
+    try:
+        validate_user_is_support(user)
+    except ValueError as e:
+        print_error(str(e))
         raise typer.Exit(code=1)
 
     # Assigner le contact support
@@ -1040,10 +1050,10 @@ def filter_my_events(
         print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
         raise typer.Exit(code=1)
 
-    if user.department != Department.SUPPORT:
-        print_error(
-            f"L'utilisateur {support_contact_id} n'est pas du département SUPPORT"
-        )
+    try:
+        validate_user_is_support(user)
+    except ValueError as e:
+        print_error(str(e))
         raise typer.Exit(code=1)
 
     events = event_service.get_events_by_support_contact(support_contact_id)
