@@ -1,5 +1,6 @@
 import typer
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 
 from src.cli.console import (
     print_error,
@@ -38,6 +39,20 @@ from src.cli.permissions import (
 )
 
 app = typer.Typer()
+
+
+def format_event_datetime(dt: datetime) -> str:
+    """Format datetime for event display (e.g., '4 Jun 2023 @ 1PM')."""
+    # Get hour in 12-hour format and remove leading zero
+    hour_12 = dt.strftime("%I").lstrip("0") or "12"
+    # Get AM/PM
+    am_pm = dt.strftime("%p")
+    # Get date part
+    date_part = dt.strftime("%d %b %Y")
+    # Remove leading zero from day if present
+    if date_part.startswith("0"):
+        date_part = date_part[1:]
+    return f"{date_part} @ {hour_12}{am_pm}"
 
 
 @app.command()
@@ -308,7 +323,15 @@ def create_client(
     )
     print_field("ID", str(client.id))
     print_field("Email", client.email)
+    print_field("Téléphone", client.phone)
     print_field("Entreprise", client.company_name)
+    print_field(
+        "Contact commercial",
+        f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})"
+    )
+    print_field(
+        "Date de création", client.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    )
     print_separator()
 
 
@@ -537,9 +560,16 @@ def create_contract(
         "Client",
         f"{client.first_name} {client.last_name} ({client.company_name})",
     )
-    print_field("Montant total", f"{contract.total_amount}")
-    print_field("Montant restant", f"{contract.remaining_amount}")
-    print_field("Statut", "Signé" if contract.is_signed else "Non signé")
+    print_field(
+        "Contact commercial",
+        f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})"
+    )
+    print_field("Montant total", f"{contract.total_amount} €")
+    print_field("Montant restant à payer", f"{contract.remaining_amount} €")
+    print_field("Statut", "Signé ✓" if contract.is_signed else "Non signé ✗")
+    print_field(
+        "Date de création", contract.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    )
     print_separator()
 
 
@@ -682,20 +712,29 @@ def create_event(
     # Success message
     print_separator()
     print_success(f"Événement '{event.name}' créé avec succès!")
-    print_field("ID de l'événement", str(event.id))
+    print_field("Event ID", str(event.id))
+    print_field("Contract ID", str(contract.id))
     print_field(
-        "Contrat associé",
-        f"Contrat #{contract.id} - Client: {contract.client.first_name} {contract.client.last_name}",
+        "Client name",
+        f"{contract.client.first_name} {contract.client.last_name}",
     )
-    print_field("Date de début", event.event_start.strftime("%Y-%m-%d %H:%M"))
-    print_field("Date de fin", event.event_end.strftime("%Y-%m-%d %H:%M"))
-    print_field("Lieu", event.location)
-    print_field("Participants", str(event.attendees))
+    print_field(
+        "Client contact",
+        f"{contract.client.email}\n{contract.client.phone}"
+    )
+    print_field("Event date start", format_event_datetime(event.event_start))
+    print_field("Event date end", format_event_datetime(event.event_end))
     if event.support_contact:
         print_field(
-            "Contact support",
-            f"{event.support_contact.first_name} {event.support_contact.last_name}",
+            "Support contact",
+            f"{event.support_contact.first_name} {event.support_contact.last_name} (ID: {event.support_contact_id})",
         )
+    else:
+        print_field("Support contact", "Non assigné")
+    print_field("Location", event.location)
+    print_field("Attendees", str(event.attendees))
+    if event.notes:
+        print_field("Notes", event.notes)
     print_separator()
 
 
@@ -767,13 +806,28 @@ def assign_support(
     # Success message
     print_separator()
     print_success(
-        f"Contact support assigné avec succès à l'événement '{event.name}'!"
+        f"Contact support assigné avec succès à l'événement '{updated_event.name}'!"
     )
-    print_field("Événement", event.name)
+    print_field("Event ID", str(updated_event.id))
+    print_field("Contract ID", str(updated_event.contract_id))
     print_field(
-        "Contact support",
-        f"{user.first_name} {user.last_name} ({user.username})",
+        "Client name",
+        f"{updated_event.contract.client.first_name} {updated_event.contract.client.last_name}",
     )
+    print_field(
+        "Client contact",
+        f"{updated_event.contract.client.email}\n{updated_event.contract.client.phone}"
+    )
+    print_field("Event date start", format_event_datetime(updated_event.event_start))
+    print_field("Event date end", format_event_datetime(updated_event.event_end))
+    print_field(
+        "Support contact",
+        f"{user.first_name} {user.last_name} (ID: {user.id})",
+    )
+    print_field("Location", updated_event.location)
+    print_field("Attendees", str(updated_event.attendees))
+    if updated_event.notes:
+        print_field("Notes", updated_event.notes)
     print_separator()
 
 
@@ -811,8 +865,12 @@ def filter_unsigned_contracts():
             "Client",
             f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
         )
+        print_field(
+            "Contact commercial",
+            f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})"
+        )
         print_field("Montant total", f"{contract.total_amount} €")
-        print_field("Montant restant", f"{contract.remaining_amount} €")
+        print_field("Montant restant à payer", f"{contract.remaining_amount} €")
         print_field(
             "Date de création", contract.created_at.strftime("%Y-%m-%d")
         )
@@ -855,8 +913,12 @@ def filter_unpaid_contracts():
             "Client",
             f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
         )
+        print_field(
+            "Contact commercial",
+            f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})"
+        )
         print_field("Montant total", f"{contract.total_amount} €")
-        print_field("Montant restant", f"{contract.remaining_amount} €")
+        print_field("Montant restant à payer", f"{contract.remaining_amount} €")
         print_field(
             "Statut", "Signé ✓" if contract.is_signed else "Non signé ✗"
         )
@@ -897,18 +959,23 @@ def filter_unassigned_events():
         return
 
     for event in events:
-        print_field("ID", str(event.id))
-        print_field("Nom", event.name)
+        print_field("Event ID", str(event.id))
+        print_field("Contract ID", str(event.contract_id))
         print_field(
-            "Contrat",
-            f"#{event.contract_id} - {event.contract.client.first_name} {event.contract.client.last_name}",
+            "Client name",
+            f"{event.contract.client.first_name} {event.contract.client.last_name}",
         )
         print_field(
-            "Date de début", event.event_start.strftime("%Y-%m-%d %H:%M")
+            "Client contact",
+            f"{event.contract.client.email}\n{event.contract.client.phone}"
         )
-        print_field("Date de fin", event.event_end.strftime("%Y-%m-%d %H:%M"))
-        print_field("Lieu", event.location)
-        print_field("Participants", str(event.attendees))
+        print_field("Event date start", format_event_datetime(event.event_start))
+        print_field("Event date end", format_event_datetime(event.event_end))
+        print_field("Support contact", "Non assigné")
+        print_field("Location", event.location)
+        print_field("Attendees", str(event.attendees))
+        if event.notes:
+            print_field("Notes", event.notes)
         print_separator()
 
     print_success(f"Total: {len(events)} événement(s) sans contact support")
@@ -968,18 +1035,24 @@ def filter_my_events(
         return
 
     for event in events:
-        print_field("ID", str(event.id))
-        print_field("Nom", event.name)
+        print_field("Event ID", str(event.id))
+        print_field("Contract ID", str(event.contract_id))
         print_field(
-            "Contrat",
-            f"#{event.contract_id} - {event.contract.client.first_name} {event.contract.client.last_name}",
+            "Client name",
+            f"{event.contract.client.first_name} {event.contract.client.last_name}",
         )
         print_field(
-            "Date de début", event.event_start.strftime("%Y-%m-%d %H:%M")
+            "Client contact",
+            f"{event.contract.client.email}\n{event.contract.client.phone}"
         )
-        print_field("Date de fin", event.event_end.strftime("%Y-%m-%d %H:%M"))
-        print_field("Lieu", event.location)
-        print_field("Participants", str(event.attendees))
+        print_field("Event date start", format_event_datetime(event.event_start))
+        print_field("Event date end", format_event_datetime(event.event_end))
+        print_field(
+            "Support contact",
+            f"{user.first_name} {user.last_name} (ID: {user.id})"
+        )
+        print_field("Location", event.location)
+        print_field("Attendees", str(event.attendees))
         if event.notes:
             print_field("Notes", event.notes)
         print_separator()
@@ -1100,6 +1173,16 @@ def update_client(
     print_field("Email", updated_client.email)
     print_field("Téléphone", updated_client.phone)
     print_field("Entreprise", updated_client.company_name)
+    print_field(
+        "Contact commercial",
+        f"{updated_client.sales_contact.first_name} {updated_client.sales_contact.last_name} (ID: {updated_client.sales_contact_id})"
+    )
+    print_field(
+        "Date de création", updated_client.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    )
+    print_field(
+        "Dernière mise à jour", updated_client.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+    )
     print_separator()
 
 
@@ -1210,11 +1293,21 @@ def update_contract(
     print_field("ID", str(updated_contract.id))
     print_field(
         "Client",
-        f"{updated_contract.client.first_name} {updated_contract.client.last_name}",
+        f"{updated_contract.client.first_name} {updated_contract.client.last_name} ({updated_contract.client.company_name})",
+    )
+    print_field(
+        "Contact commercial",
+        f"{updated_contract.client.sales_contact.first_name} {updated_contract.client.sales_contact.last_name} (ID: {updated_contract.client.sales_contact_id})"
     )
     print_field("Montant total", f"{updated_contract.total_amount} €")
-    print_field("Montant restant", f"{updated_contract.remaining_amount} €")
+    print_field("Montant restant à payer", f"{updated_contract.remaining_amount} €")
     print_field(
         "Statut", "Signé ✓" if updated_contract.is_signed else "Non signé ✗"
+    )
+    print_field(
+        "Date de création", updated_contract.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    )
+    print_field(
+        "Dernière mise à jour", updated_contract.updated_at.strftime("%Y-%m-%d %H:%M:%S")
     )
     print_separator()
