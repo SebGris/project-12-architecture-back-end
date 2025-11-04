@@ -21,9 +21,11 @@
    - Algorithme HMAC-SHA256
    - Secret key via variable d'environnement
 
-4. **⏳ Journalisation avec Sentry** (à implémenter)
-   - Configuration Sentry à ajouter
+4. **✅ Journalisation avec Sentry**
+   - Configuration Sentry complète
    - Logging des exceptions et erreurs
+   - Capture des tentatives de connexion
+   - Contexte utilisateur et breadcrumbs
 
 ## 🔒 Mesures de Sécurité Implémentées
 
@@ -244,7 +246,7 @@ export DATABASE_URL="postgresql://user:pass@host:port/db"
 |--------|---------|------------|---------|
 | Créer | ✅ | ✅* | ❌ |
 | Lire tous | ✅ | ❌ | ❌ |
-| Lire filtrés | ✅ | ✅ | ❌ |
+| Lire filtrés | ✅ | ✅ | ✅ |
 | Modifier tous | ✅ | ❌ | ❌ |
 | Modifier clients assignés | ✅ | ✅ | ❌ |
 
@@ -281,9 +283,14 @@ export DATABASE_URL="postgresql://user:pass@host:port/db"
 | Protection injection SQL | ✅ |
 | Principe moindre privilège | ✅ |
 | Authentification persistante | ✅ |
-| Journalisation Sentry | ⏳ |
+| Journalisation Sentry | ✅ |
 
 **Légende** :
 - ✅ Implémenté et testé
 - ⏳ À implémenter
 - ❌ Non applicable
+
+---
+
+**Date de dernière mise à jour** : 2025-11-04
+**Version** : 1.1
