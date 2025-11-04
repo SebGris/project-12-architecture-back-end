@@ -74,9 +74,12 @@ def validate_company_name_callback(value: str) -> str:
 
 
 def validate_sales_contact_id_callback(value: int) -> int:
-    """Validate sales contact ID."""
-    if value <= 0:
-        raise typer.BadParameter("L'ID du contact doit être positif")
+    """Validate sales contact ID.
+
+    Accepts 0 for auto-assignment or positive integers for specific sales contact.
+    """
+    if value < 0:
+        raise typer.BadParameter("L'ID du contact doit être 0 (auto-assignation) ou positif")
     return value
 
 

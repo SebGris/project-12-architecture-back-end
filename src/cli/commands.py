@@ -29,13 +29,11 @@ from src.cli.validators import (
     validate_user_id_callback,
     validate_username_callback,
 )
-from src.models.user import Department, User
+from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import (
     require_auth,
     require_department,
-    check_client_ownership,
-    check_event_ownership,
 )
 
 app = typer.Typer()
@@ -58,7 +56,7 @@ def format_event_datetime(dt: datetime) -> str:
 @app.command()
 def login(
     username: str = typer.Option(..., prompt="Nom d'utilisateur"),
-    password: str = typer.Option(..., prompt="Mot de passe", hide_input=True)
+    password: str = typer.Option(..., prompt="Mot de passe", hide_input=True),
 ):
     """
     Se connecter à l'application Epic Events CRM.
@@ -99,6 +97,7 @@ def login(
 
     # Set Sentry user context
     from src.sentry_config import set_user_context
+
     set_user_context(user.id, user.username, user.department.value)
 
     # Success message
@@ -142,10 +141,11 @@ def logout():
 
     # Clear Sentry user context
     from src.sentry_config import clear_user_context, add_breadcrumb
+
     add_breadcrumb(
         f"Déconnexion de l'utilisateur: {user.username}",
         category="auth",
-        level="info"
+        level="info",
     )
     clear_user_context()
 
@@ -179,7 +179,9 @@ def whoami():
     user = auth_service.get_current_user()
 
     if not user:
-        print_error("Vous n'êtes pas connecté. Utilisez 'epicevents login' pour vous connecter.")
+        print_error(
+            "Vous n'êtes pas connecté. Utilisez 'epicevents login' pour vous connecter."
+        )
         raise typer.Exit(code=1)
 
     # Display user info
@@ -215,8 +217,9 @@ def create_client(
     sales_contact_id: int = typer.Option(
         0,
         prompt="ID du contact commercial (0 pour auto-assignation)",
+        callback=validate_sales_contact_id_callback,
     ),
-    **kwargs  # For receiving current_user from decorator
+    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Créer un nouveau client dans le système CRM.
@@ -260,7 +263,9 @@ def create_client(
     if sales_contact_id == 0:
         if current_user.department == Department.COMMERCIAL:
             sales_contact_id = current_user.id
-            print_field("Contact commercial", f"Auto-assigné à {current_user.username}")
+            print_field(
+                "Contact commercial", f"Auto-assigné à {current_user.username}"
+            )
         else:
             print_error("Vous devez spécifier un ID de contact commercial")
             raise typer.Exit(code=1)
@@ -328,7 +333,7 @@ def create_client(
     print_field("Entreprise", client.company_name)
     print_field(
         "Contact commercial",
-        f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})"
+        f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
     print_field(
         "Date de création", client.created_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -365,7 +370,7 @@ def create_user(
         prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.GESTION.value}\n3. {Department.SUPPORT.value}\n\nChoisir un département (numéro)",
         callback=validate_department_callback,
     ),
-    **kwargs  # For receiving current_user from decorator
+    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Créer un nouvel utilisateur dans le système CRM.
@@ -469,7 +474,7 @@ def create_contract(
         ..., prompt="Montant restant", callback=validate_amount_callback
     ),
     is_signed: bool = typer.Option(False, prompt="Contrat signé ?"),
-    **kwargs  # For receiving current_user from decorator
+    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Créer un nouveau contrat dans le système CRM.
@@ -565,7 +570,7 @@ def create_contract(
     )
     print_field(
         "Contact commercial",
-        f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})"
+        f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
     print_field("Montant total", f"{contract.total_amount} €")
     print_field("Montant restant à payer", f"{contract.remaining_amount} €")
@@ -603,7 +608,7 @@ def create_event(
     support_contact_id: int = typer.Option(
         0, prompt="ID du contact support (0 si aucun)"
     ),
-    **kwargs  # For receiving current_user from decorator
+    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Créer un nouvel événement dans le système CRM.
@@ -723,8 +728,7 @@ def create_event(
         f"{contract.client.first_name} {contract.client.last_name}",
     )
     print_field(
-        "Client contact",
-        f"{contract.client.email}\n{contract.client.phone}"
+        "Client contact", f"{contract.client.email}\n{contract.client.phone}"
     )
     print_field("Event date start", format_event_datetime(event.event_start))
     print_field("Event date end", format_event_datetime(event.event_end))
@@ -751,7 +755,7 @@ def assign_support(
     support_contact_id: int = typer.Option(
         ..., prompt="ID du contact support", callback=validate_user_id_callback
     ),
-    **kwargs  # For receiving current_user from decorator
+    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Assigner un contact support à un événement.
@@ -821,10 +825,14 @@ def assign_support(
     )
     print_field(
         "Client contact",
-        f"{updated_event.contract.client.email}\n{updated_event.contract.client.phone}"
+        f"{updated_event.contract.client.email}\n{updated_event.contract.client.phone}",
     )
-    print_field("Event date start", format_event_datetime(updated_event.event_start))
-    print_field("Event date end", format_event_datetime(updated_event.event_end))
+    print_field(
+        "Event date start", format_event_datetime(updated_event.event_start)
+    )
+    print_field(
+        "Event date end", format_event_datetime(updated_event.event_end)
+    )
     print_field(
         "Support contact",
         f"{user.first_name} {user.last_name} (ID: {user.id})",
@@ -872,10 +880,12 @@ def filter_unsigned_contracts(**kwargs):
         )
         print_field(
             "Contact commercial",
-            f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})"
+            f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
         print_field("Montant total", f"{contract.total_amount} €")
-        print_field("Montant restant à payer", f"{contract.remaining_amount} €")
+        print_field(
+            "Montant restant à payer", f"{contract.remaining_amount} €"
+        )
         print_field(
             "Date de création", contract.created_at.strftime("%Y-%m-%d")
         )
@@ -920,10 +930,12 @@ def filter_unpaid_contracts(**kwargs):
         )
         print_field(
             "Contact commercial",
-            f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})"
+            f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
         print_field("Montant total", f"{contract.total_amount} €")
-        print_field("Montant restant à payer", f"{contract.remaining_amount} €")
+        print_field(
+            "Montant restant à payer", f"{contract.remaining_amount} €"
+        )
         print_field(
             "Statut", "Signé ✓" if contract.is_signed else "Non signé ✗"
         )
@@ -972,9 +984,11 @@ def filter_unassigned_events(**kwargs):
         )
         print_field(
             "Client contact",
-            f"{event.contract.client.email}\n{event.contract.client.phone}"
+            f"{event.contract.client.email}\n{event.contract.client.phone}",
         )
-        print_field("Event date start", format_event_datetime(event.event_start))
+        print_field(
+            "Event date start", format_event_datetime(event.event_start)
+        )
         print_field("Event date end", format_event_datetime(event.event_end))
         print_field("Support contact", "Non assigné")
         print_field("Location", event.location)
@@ -992,7 +1006,7 @@ def filter_my_events(
     support_contact_id: int = typer.Option(
         ..., prompt="ID du contact support", callback=validate_user_id_callback
     ),
-    **kwargs  # For receiving current_user from decorator
+    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Afficher les événements assignés à un contact support spécifique.
@@ -1049,13 +1063,15 @@ def filter_my_events(
         )
         print_field(
             "Client contact",
-            f"{event.contract.client.email}\n{event.contract.client.phone}"
+            f"{event.contract.client.email}\n{event.contract.client.phone}",
         )
-        print_field("Event date start", format_event_datetime(event.event_start))
+        print_field(
+            "Event date start", format_event_datetime(event.event_start)
+        )
         print_field("Event date end", format_event_datetime(event.event_end))
         print_field(
             "Support contact",
-            f"{user.first_name} {user.last_name} (ID: {user.id})"
+            f"{user.first_name} {user.last_name} (ID: {user.id})",
         )
         print_field("Location", event.location)
         print_field("Attendees", str(event.attendees))
@@ -1090,7 +1106,7 @@ def update_client(
         None,
         prompt="Nouveau nom d'entreprise (laisser vide pour ne pas modifier)",
     ),
-    **kwargs  # For receiving current_user from decorator
+    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Mettre à jour les informations d'un client.
@@ -1182,13 +1198,15 @@ def update_client(
     print_field("Entreprise", updated_client.company_name)
     print_field(
         "Contact commercial",
-        f"{updated_client.sales_contact.first_name} {updated_client.sales_contact.last_name} (ID: {updated_client.sales_contact_id})"
+        f"{updated_client.sales_contact.first_name} {updated_client.sales_contact.last_name} (ID: {updated_client.sales_contact_id})",
     )
     print_field(
-        "Date de création", updated_client.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        "Date de création",
+        updated_client.created_at.strftime("%Y-%m-%d %H:%M:%S"),
     )
     print_field(
-        "Dernière mise à jour", updated_client.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+        "Dernière mise à jour",
+        updated_client.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
     )
     print_separator()
 
@@ -1208,7 +1226,7 @@ def update_contract(
         prompt="Nouveau montant restant (laisser vide pour ne pas modifier)",
     ),
     is_signed: bool = typer.Option(None, prompt="Marquer comme signé ? (o/n)"),
-    **kwargs  # For receiving current_user from decorator
+    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Mettre à jour les informations d'un contrat.
@@ -1305,17 +1323,21 @@ def update_contract(
     )
     print_field(
         "Contact commercial",
-        f"{updated_contract.client.sales_contact.first_name} {updated_contract.client.sales_contact.last_name} (ID: {updated_contract.client.sales_contact_id})"
+        f"{updated_contract.client.sales_contact.first_name} {updated_contract.client.sales_contact.last_name} (ID: {updated_contract.client.sales_contact_id})",
     )
     print_field("Montant total", f"{updated_contract.total_amount} €")
-    print_field("Montant restant à payer", f"{updated_contract.remaining_amount} €")
+    print_field(
+        "Montant restant à payer", f"{updated_contract.remaining_amount} €"
+    )
     print_field(
         "Statut", "Signé ✓" if updated_contract.is_signed else "Non signé ✗"
     )
     print_field(
-        "Date de création", updated_contract.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        "Date de création",
+        updated_contract.created_at.strftime("%Y-%m-%d %H:%M:%S"),
     )
     print_field(
-        "Dernière mise à jour", updated_contract.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+        "Dernière mise à jour",
+        updated_contract.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
     )
     print_separator()

@@ -33,10 +33,11 @@ def require_auth(func: Callable) -> Callable:
             current_user = kwargs.get('current_user')
             pass
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Get auth_service from kwargs (injected by dependency_injector)
-        auth_service = kwargs.get('auth_service')
+        auth_service = kwargs.get("auth_service")
 
         if not auth_service:
             # If auth_service is not in kwargs, create one manually
@@ -55,7 +56,7 @@ def require_auth(func: Callable) -> Callable:
             raise typer.Exit(code=1)
 
         # Add user to kwargs for the command function
-        kwargs['current_user'] = user
+        kwargs["current_user"] = user
 
         return func(*args, **kwargs)
 
@@ -85,11 +86,12 @@ def require_department(*allowed_departments: Department):
             service = container.some_service()
             pass
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Get auth_service from kwargs (injected by dependency_injector)
-            auth_service = kwargs.get('auth_service')
+            auth_service = kwargs.get("auth_service")
 
             if not auth_service:
                 # If auth_service is not in kwargs, create one manually
@@ -102,7 +104,9 @@ def require_department(*allowed_departments: Department):
 
             if not user:
                 print_separator()
-                print_error("Vous devez être connecté pour effectuer cette action")
+                print_error(
+                    "Vous devez être connecté pour effectuer cette action"
+                )
                 print_error("Utilisez 'epicevents login' pour vous connecter")
                 print_separator()
                 raise typer.Exit(code=1)
@@ -118,51 +122,10 @@ def require_department(*allowed_departments: Department):
                 raise typer.Exit(code=1)
 
             # Add user to kwargs for the command function
-            kwargs['current_user'] = user
+            kwargs["current_user"] = user
 
             return func(*args, **kwargs)
 
         return wrapper
+
     return decorator
-
-
-def check_client_ownership(user: User, client) -> bool:
-    """Check if a user owns a client (for COMMERCIAL department).
-
-    Args:
-        user: The user to check
-        client: The client to check ownership for
-
-    Returns:
-        True if user owns the client or is from GESTION, False otherwise
-    """
-    # GESTION has access to all clients
-    if user.department == Department.GESTION:
-        return True
-
-    # COMMERCIAL can only access their own clients
-    if user.department == Department.COMMERCIAL:
-        return client.sales_contact_id == user.id
-
-    return False
-
-
-def check_event_ownership(user: User, event) -> bool:
-    """Check if a user is responsible for an event (for SUPPORT department).
-
-    Args:
-        user: The user to check
-        event: The event to check responsibility for
-
-    Returns:
-        True if user is responsible for the event or is from GESTION, False otherwise
-    """
-    # GESTION has access to all events
-    if user.department == Department.GESTION:
-        return True
-
-    # SUPPORT can only access their assigned events
-    if user.department == Department.SUPPORT:
-        return event.support_contact_id == user.id
-
-    return False
