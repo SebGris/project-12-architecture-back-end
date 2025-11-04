@@ -224,7 +224,7 @@ Saisir :
 - **Email** : `marie.dupont@example.com`
 - **Téléphone** : `0612345678`
 - **Nom de l'entreprise** : `DupontCorp`
-- **ID du contact commercial** : *(laisser vide - appuyer sur Entrée)*
+- **ID du contact commercial** : `0` (pour auto-assignation)
 
 **Résultat attendu** :
 ```
@@ -432,25 +432,25 @@ TOKEN_EXPIRATION_HOURS = 24
 | Action | GESTION | COMMERCIAL | SUPPORT | Fichier | Ligne |
 |--------|---------|------------|---------|---------|-------|
 | **Utilisateurs** | | | | | |
-| Créer utilisateurs | ✅ | ❌ | ❌ | `commands.py` | 301 |
+| Créer utilisateurs | ✅ | ❌ | ❌ | `commands.py` | 341 |
 | Lire tous utilisateurs | ✅ | ❌ | ❌ | N/A (méthode supprimée) | - |
 | **Clients** | | | | | |
-| Créer clients | ✅ | ✅ (auto-assigné) | ❌ | `commands.py` | 169 |
-| Modifier tous clients | ✅ | ❌ | ❌ | `commands.py` | 980 |
-| Modifier clients assignés | ✅ | ✅ | ❌ | `commands.py` | 980 + logique métier |
+| Créer clients | ✅ | ✅ (auto-assigné) | ❌ | `commands.py` | 197 |
+| Modifier tous clients | ✅ | ❌ | ❌ | `commands.py` | 1073 |
+| Modifier clients assignés | ✅ | ✅ | ❌ | `commands.py` | 1073 + logique métier |
 | **Contrats** | | | | | |
-| Créer contrats | ✅ | ✅ (leurs clients) | ❌ | `commands.py` | 422 |
-| Modifier tous contrats | ✅ | ❌ | ❌ | `commands.py` | 1094 |
-| Modifier contrats clients assignés | ✅ | ✅ | ❌ | `commands.py` | 1094 + logique métier |
-| Filtrer contrats non signés | ✅ | ✅ | ❌ | `commands.py` | 768 |
-| Filtrer contrats non soldés | ✅ | ✅ | ❌ | `commands.py` | 812 |
+| Créer contrats | ✅ | ✅ (leurs clients) | ❌ | `commands.py` | 461 |
+| Modifier tous contrats | ✅ | ❌ | ❌ | `commands.py` | 1198 |
+| Modifier contrats clients assignés | ✅ | ✅ | ❌ | `commands.py` | 1198 + logique métier |
+| Filtrer contrats non signés | ✅ | ✅ | ✅ | `commands.py` | 841 |
+| Filtrer contrats non soldés | ✅ | ✅ | ✅ | `commands.py` | 889 |
 | **Événements** | | | | | |
-| Créer événements | ✅ | ✅ (leurs clients, contrats signés) | ❌ | `commands.py` | 534 |
+| Créer événements | ✅ | ✅ (leurs clients, contrats signés) | ❌ | `commands.py` | 581 |
 | Modifier tous événements | ✅ | ❌ | ❌ | N/A (à implémenter) | - |
 | Modifier événements assignés | ✅ | ❌ | ✅ | N/A (à implémenter) | - |
-| Assigner support | ✅ | ❌ | ❌ | `commands.py` | 690 |
-| Filtrer événements sans support | ✅ | ✅ | ✅ | `commands.py` | 859 |
-| Filtrer mes événements (SUPPORT) | ✅ | ❌ | ✅ | `commands.py` | 905 |
+| Assigner support | ✅ | ❌ | ❌ | `commands.py` | 747 |
+| Filtrer événements sans support | ✅ | ✅ | ✅ | `commands.py` | 940 |
+| Filtrer mes événements (SUPPORT) | ✅ | ❌ | ✅ | `commands.py` | 991 |
 
 ---
 
@@ -541,5 +541,5 @@ TOKEN_EXPIRATION_HOURS = 24
 
 ---
 
-**Date de dernière mise à jour** : 2025-11-03
-**Version** : 1.0
+**Date de dernière mise à jour** : 2025-11-04
+**Version** : 1.1
