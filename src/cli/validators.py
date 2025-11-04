@@ -285,3 +285,17 @@ def validate_event_dates(event_start: datetime, event_end: datetime, attendees: 
         raise ValueError(
             "L'heure de début de l'événement doit être dans le futur."
         )
+
+
+def validate_attendees_positive(attendees: int) -> None:
+    """
+    Validate that the number of attendees is positive.
+
+    Args:
+        attendees: Number of attendees
+
+    Raises:
+        ValueError: If attendees is negative
+    """
+    if attendees < 0:
+        raise ValueError("Le nombre de participants doit être positif.")

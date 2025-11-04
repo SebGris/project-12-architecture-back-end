@@ -12,6 +12,7 @@ from src.cli.console import (
 from src.cli.validators import (
     validate_amount_callback,
     validate_attendees_callback,
+    validate_attendees_positive,
     validate_client_id_callback,
     validate_company_name_callback,
     validate_contract_amounts,
@@ -1350,4 +1351,94 @@ def update_contract(
         "Dernière mise à jour",
         updated_contract.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
     )
+    print_separator()
+
+
+@app.command()
+@require_department(Department.GESTION, Department.SUPPORT)
+def update_event_attendees(
+    event_id: int = typer.Option(
+        ..., prompt="ID de l'événement", callback=validate_event_id_callback
+    ),
+    attendees: int = typer.Option(
+        ..., prompt="Nouveau nombre de participants", callback=validate_attendees_callback
+    ),
+    **kwargs,  # For receiving current_user from decorator
+):
+    """
+    Mettre à jour le nombre de participants d'un événement.
+
+    Cette commande permet de modifier le nombre de participants attendus
+    pour un événement existant.
+
+    Args:
+        event_id: ID de l'événement à modifier
+        attendees: Nouveau nombre de participants (>= 0)
+
+    Returns:
+        None. Affiche un message de succès avec les détails de l'événement.
+
+    Raises:
+        typer.Exit: En cas d'erreur (événement inexistant, nombre invalide, etc.)
+
+    Examples:
+        epicevents update-event-attendees
+        # Suit les prompts pour saisir l'ID et le nouveau nombre
+    """
+    # Manually get services from container
+    container = Container()
+    event_service = container.event_service()
+
+    print_separator()
+    print_header("Mise à jour du nombre de participants")
+    print_separator()
+
+    # Vérifier que l'événement existe
+    event = event_service.get_event(event_id)
+    if not event:
+        print_error(f"Événement avec l'ID {event_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Business validation: validate attendees is positive
+    try:
+        validate_attendees_positive(attendees)
+    except ValueError as e:
+        print_error(str(e))
+        raise typer.Exit(code=1)
+
+    # Mettre à jour le nombre de participants
+    try:
+        updated_event = event_service.update_attendees(event_id, attendees)
+        if not updated_event:
+            print_error(f"Événement avec l'ID {event_id} n'existe pas")
+            raise typer.Exit(code=1)
+    except Exception as e:
+        print_error(f"Erreur lors de la mise à jour: {e}")
+        raise typer.Exit(code=1)
+
+    # Success message
+    print_separator()
+    print_success(
+        f"Nombre de participants mis à jour avec succès pour l'événement #{event_id}!"
+    )
+    print_field("ID", str(updated_event.id))
+    print_field("Nom de l'événement", updated_event.name)
+    print_field("Contrat ID", str(updated_event.contract_id))
+    print_field(
+        "Début", format_event_datetime(updated_event.event_start)
+    )
+    print_field(
+        "Fin", format_event_datetime(updated_event.event_end)
+    )
+    print_field("Lieu", updated_event.location)
+    print_field("Nombre de participants", str(updated_event.attendees))
+    if updated_event.support_contact:
+        print_field(
+            "Support contact",
+            f"{updated_event.support_contact.first_name} {updated_event.support_contact.last_name} (ID: {updated_event.support_contact_id})",
+        )
+    else:
+        print_field("Support contact", "Non assigné")
+    if updated_event.notes:
+        print_field("Notes", updated_event.notes)
     print_separator()

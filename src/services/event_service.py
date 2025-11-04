@@ -160,17 +160,11 @@ class EventService:
 
         Args:
             event_id: The event's ID
-            attendees: New number of attendees
+            attendees: New number of attendees (must be >= 0)
 
         Returns:
             Updated Event instance or None if not found
-
-        Raises:
-            ValueError: If attendees is negative
         """
-        if attendees < 0:
-            raise ValueError("Le nombre de participants doit être positif")
-
         event = self.repository.get(event_id)
         if not event:
             return None
