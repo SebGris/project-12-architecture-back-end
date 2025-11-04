@@ -4,7 +4,7 @@ This module provides decorators to enforce permissions based on user roles/depar
 """
 
 from functools import wraps
-from typing import Callable, List
+from typing import Callable
 
 import typer
 
