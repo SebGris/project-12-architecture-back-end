@@ -3,7 +3,7 @@
 This module contains the business logic for managing clients.
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from src.models.client import Client
 from src.repositories.client_repository import ClientRepository
