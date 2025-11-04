@@ -27,9 +27,10 @@ def require_auth(func: Callable) -> Callable:
 
     Example:
         @app.command()
-        @inject
         @require_auth
-        def my_command(auth_service=Provide[Container.auth_service]):
+        def my_command(**kwargs):
+            # current_user is automatically injected in kwargs by the decorator
+            current_user = kwargs.get('current_user')
             pass
     """
     @wraps(func)
@@ -75,12 +76,13 @@ def require_department(*allowed_departments: Department):
 
     Example:
         @app.command()
-        @inject
         @require_department(Department.GESTION, Department.COMMERCIAL)
-        def my_command(
-            auth_service=Provide[Container.auth_service],
-            current_user: User = None
-        ):
+        def my_command(**kwargs):
+            # current_user is automatically injected in kwargs by the decorator
+            current_user = kwargs.get('current_user')
+            # Services can be accessed from Container
+            container = Container()
+            service = container.some_service()
             pass
     """
     def decorator(func: Callable) -> Callable:

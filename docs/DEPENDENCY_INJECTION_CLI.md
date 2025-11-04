@@ -14,32 +14,25 @@ Ce document explique comment l'injection de dépendances est implémentée dans 
 
 ## 🎯 Vue d'ensemble
 
-L'injection de dépendances (DI) est un pattern de conception qui permet de découpler les composants d'une application. Au lieu de créer des dépendances directement dans le code, elles sont **injectées automatiquement** par un conteneur.
+L'injection de dépendances (DI) est un pattern de conception qui permet de découpler les composants d'une application. Dans notre application CLI Epic Events, nous utilisons **l'instanciation manuelle du Container** pour obtenir les services nécessaires.
 
-### Avant l'injection de dépendances
+### L'approche utilisée
 
 ```python
-def create_client(...):
-    # ❌ Création manuelle des dépendances
-    session = get_db_session()
-    repository = SqlAlchemyClientRepository(session)
-    service = ClientService(repository)
+@app.command()
+def create_client(
+    first_name: str = typer.Option(...),
+    last_name: str = typer.Option(...),
+):
+    # ✅ Création manuelle du container et obtention des services
+    container = Container()
+    client_service = container.client_service()
 
     # Utilisation du service
-    client = service.create_client(...)
-```
-
-### Après l'injection de dépendances
-
-```python
-@inject
-def create_client(
-    ...,
-    client_service=Provide[Container.client_service],  # ✅ Injection automatique
-):
-    # Le service est déjà prêt à l'emploi !
     client = client_service.create_client(...)
 ```
+
+Cette approche est **simple, explicite et fonctionne parfaitement avec Typer**.
 
 ## 🏗️ Architecture
 
@@ -47,8 +40,8 @@ Notre architecture CLI suit une séparation claire des responsabilités :
 
 ```
 src/cli/
-├── main.py          # Point d'entrée - Configure le wiring
-└── commands.py      # Commandes CLI - Reçoit les dépendances injectées
+├── main.py          # Point d'entrée - Configure le wiring pour les permissions
+└── commands.py      # Commandes CLI - Crée le container manuellement
 
 src/
 ├── containers.py    # Définit le conteneur de dépendances
@@ -59,15 +52,11 @@ src/
 
 ### Pourquoi séparer `main.py` et `commands.py` ?
 
-**Raisons techniques :**
-1. **Le wiring nécessite un module à scanner** : `container.wire(modules=[commands])` doit scanner un module existant
-2. **Ordre d'exécution** : Le wiring doit s'exécuter AVANT que les commandes soient appelées
-3. **Limitation Python** : On ne peut pas scanner un module pendant qu'il s'exécute
-
 **Raisons architecturales :**
-4. **Séparation des responsabilités** : `main.py` orchestre, `commands.py` contient la logique
-5. **Maintenabilité** : Plus facile de gérer plusieurs commandes dans un module dédié
-6. **Testabilité** : On peut importer et tester `commands.app` indépendamment
+1. **Séparation des responsabilités** : `main.py` orchestre, `commands.py` contient la logique
+2. **Maintenabilité** : Plus facile de gérer plusieurs commandes dans un module dédié
+3. **Testabilité** : On peut importer et tester `commands.app` indépendamment
+4. **Configuration** : Le wiring pour les permissions est configuré une seule fois dans `main.py`
 
 ## ⚙️ Comment ça fonctionne
 
@@ -100,21 +89,22 @@ class Container(containers.DeclarativeContainer):
 - `Singleton` : Crée une seule instance réutilisée partout
 - `Configuration` : Gère la configuration de l'application
 
-### 2. Configuration du wiring (`src/cli/main.py`)
+### 2. Configuration dans main.py (`src/cli/main.py`)
 
-Le point d'entrée configure le wiring pour activer l'injection automatique :
+Le point d'entrée configure le wiring pour les décorateurs de permissions :
 
 ```python
 from src.containers import Container
-from src.cli import commands
+from src.cli import commands, permissions
 
 def main():
     # 1. Créer le conteneur
     container = Container()
 
-    # 2. Activer le wiring
-    # Cela scanne le module 'commands' pour trouver les @inject
-    container.wire(modules=[commands])
+    # 2. Activer le wiring pour les permissions
+    # Cela permet aux décorateurs @require_auth et @require_department
+    # d'accéder à auth_service si nécessaire
+    container.wire(modules=[commands, permissions])
 
     # 3. Lancer l'application
     try:
@@ -124,44 +114,49 @@ def main():
         container.unwire()
 ```
 
-**Ce que fait `container.wire()` :**
-1. Scanne le module `commands` pour trouver les fonctions avec `@inject`
-2. Identifie les paramètres avec `Provide[Container.xxx]`
-3. Configure l'injection automatique pour ces paramètres
-4. Quand la fonction est appelée, les dépendances sont injectées automatiquement
+**Note importante :** Le wiring est utilisé uniquement pour les décorateurs de permissions. Les commandes elles-mêmes n'utilisent pas l'injection automatique.
 
-### 3. Déclaration des dépendances (`src/cli/commands.py`)
+### 3. Utilisation dans les commandes (`src/cli/commands.py`)
 
-Les commandes déclarent leurs dépendances via le décorateur `@inject` :
+Les commandes créent manuellement le container et obtiennent les services :
 
 ```python
-from dependency_injector.wiring import inject, Provide
 from src.containers import Container
+from src.cli.permissions import require_department
+from src.models.user import Department
 
 @app.command()
-@inject
+@require_department(Department.COMMERCIAL, Department.GESTION)
 def create_client(
     # Paramètres CLI normaux
-    first_name: str = typer.Option(...),
-    last_name: str = typer.Option(...),
-
-    # Dépendances injectées automatiquement
-    client_service=Provide[Container.client_service],
-    user_service=Provide[Container.user_service],
+    first_name: str = typer.Option(..., prompt="Prénom"),
+    last_name: str = typer.Option(..., prompt="Nom"),
+    email: str = typer.Option(..., prompt="Email"),
 ):
-    # Les services sont déjà instanciés et prêts !
-    client = client_service.create_client(...)
+    """Créer un nouveau client dans le système CRM."""
+    # Création manuelle du container
+    container = Container()
+
+    # Obtenir les services nécessaires
+    client_service = container.client_service()
+
+    # Utiliser le service
+    client = client_service.create_client(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+    )
 ```
 
 **Points importants :**
-- `@inject` : Décorateur qui active l'injection pour cette fonction
-- `Provide[Container.xxx]` : Indique quelle dépendance injecter
-- Ces paramètres **ne sont pas des options CLI** - ils sont invisibles pour l'utilisateur
-- Le wiring les remplit automatiquement avant l'exécution de la fonction
+- Chaque commande crée son propre `Container()`
+- On obtient les services via `container.service_name()`
+- Pas de décorateur `@inject` nécessaire
+- Signatures de fonctions propres (uniquement les paramètres CLI)
 
 ## 📖 Exemple détaillé
 
-Prenons l'exemple de la commande `create_client` :
+Prenons l'exemple de la commande `create_client` avec vérification de permissions :
 
 ### Étape 1 : L'utilisateur lance la commande
 
@@ -169,7 +164,15 @@ Prenons l'exemple de la commande `create_client` :
 $ poetry run epicevents create-client
 ```
 
-### Étape 2 : Typer collecte les paramètres CLI
+### Étape 2 : Le décorateur vérifie les permissions
+
+Le décorateur `@require_department` :
+1. Crée un container pour obtenir `auth_service`
+2. Vérifie que l'utilisateur est connecté
+3. Vérifie que l'utilisateur appartient au département COMMERCIAL ou GESTION
+4. Injecte `current_user` dans `kwargs`
+
+### Étape 3 : Typer collecte les paramètres CLI
 
 ```python
 # Typer affiche les prompts et collecte les valeurs
@@ -179,18 +182,6 @@ Email: john@example.com
 ...
 ```
 
-### Étape 3 : Le wiring injecte les dépendances
-
-Avant d'appeler `create_client()`, le wiring :
-
-1. Résout `client_service=Provide[Container.client_service]`
-   - Appelle `container.client_service()`
-   - Qui crée un `ClientService` avec ses dépendances
-
-2. Résout `user_service=Provide[Container.user_service]`
-   - Appelle `container.user_service()`
-   - Qui crée un `UserService` avec ses dépendances
-
 ### Étape 4 : La fonction s'exécute
 
 ```python
@@ -198,201 +189,194 @@ def create_client(
     first_name="John",
     last_name="Doe",
     email="john@example.com",
-    ...,
-    client_service=<ClientService instance>,  # ✅ Injecté !
-    user_service=<UserService instance>,      # ✅ Injecté !
 ):
-    # Le code s'exécute avec tout ce dont il a besoin
+    # 1. Créer le container
+    container = Container()
+
+    # 2. Obtenir le service
+    client_service = container.client_service()
+
+    # 3. Utiliser le service
     client = client_service.create_client(...)
+```
+
+### Étape 5 : La chaîne de dépendances
+
+```
+Container()
+    ↓
+container.client_service()
+    ↓ (Factory crée)
+ClientService(repository=...)
+    ↓ (Factory crée)
+SqlAlchemyClientRepository(session=...)
+    ↓ (Factory crée)
+get_db_session()
+    ↓
+SQLAlchemy Session
 ```
 
 ## ✅ Avantages de cette approche
 
-### 1. Code plus propre
+### 1. Code simple et explicite
 
-**Avant :**
 ```python
-# Global container
-_container = None
-
-def set_container(container):
-    global _container
-    _container = container
-
+# ✅ Approche actuelle - Simple et claire
 def create_client(...):
-    service = _container.client_service()  # ❌ Variable globale
-```
+    container = Container()
+    service = container.client_service()
+    # ...
 
-**Après :**
-```python
+# ❌ Alternative avec @inject - Plus complexe
 @inject
 def create_client(
     ...,
-    client_service=Provide[Container.client_service],  # ✅ Explicite
+    client_service=Provide[Container.client_service],
 ):
-    pass
+    # ...
 ```
 
-### 2. Testabilité améliorée
+### 2. Signatures de fonctions propres
+
+Les signatures ne contiennent que les paramètres CLI visibles par l'utilisateur :
 
 ```python
-def test_create_client():
-    # Mock des services
-    mock_client_service = Mock()
-    mock_user_service = Mock()
-
-    # Override des providers pour les tests
-    with container.client_service.override(mock_client_service):
-        with container.user_service.override(mock_user_service):
-            # Test de la commande avec des mocks
-            result = runner.invoke(app, ["create-client", ...])
-```
-
-### 3. Dépendances explicites
-
-Chaque fonction déclare clairement ses dépendances dans sa signature :
-
-```python
-@inject
-def create_contract(
-    ...,
-    contract_service=Provide[Container.contract_service],  # ← Visible !
-    client_service=Provide[Container.client_service],      # ← Visible !
-):
-    pass
-```
-
-On voit immédiatement :
-- Quels services sont utilisés
-- Quelles sont les dépendances externes
-- Ce qu'il faut mocker dans les tests
-
-### 4. Pas de variable globale
-
-Plus besoin de `_container` global ou de `set_container()` !
-
-### 5. Configuration centralisée
-
-Toute la logique de création des dépendances est dans `containers.py` :
-- Facile à maintenir
-- Un seul endroit à modifier
-- Cohérence garantie
-
-## 🎯 Bonnes pratiques
-
-### 1. Toujours utiliser `@inject` avec `Provide`
-
-```python
-# ✅ Bon
-@inject
-def my_command(
-    service=Provide[Container.service],
-):
-    pass
-
-# ❌ Mauvais - L'injection ne fonctionnera pas
-def my_command(
-    service=Provide[Container.service],  # Manque @inject
-):
-    pass
-```
-
-### 2. Mettre les dépendances en dernier
-
-```python
-# ✅ Bon - Paramètres CLI d'abord, dépendances à la fin
-@inject
+# ✅ Propre - Uniquement les paramètres CLI
 def create_client(
     first_name: str = typer.Option(...),
     last_name: str = typer.Option(...),
-    client_service=Provide[Container.client_service],
 ):
     pass
 
-# ❌ Mauvais - Mélanger les types de paramètres
-@inject
+# ❌ Encombré - Mélange CLI et DI
 def create_client(
-    client_service=Provide[Container.client_service],
     first_name: str = typer.Option(...),
+    client_service: ClientService = Provide[...],  # Confus !
 ):
     pass
 ```
 
-### 3. Toujours nettoyer avec `unwire()`
+### 3. Isolation entre commandes
+
+Chaque commande crée son propre container avec ses propres instances de services et de session de base de données :
 
 ```python
-def main():
-    container = Container()
-    container.wire(modules=[commands])
+@app.command()
+def create_client(...):
+    container = Container()  # ← Nouveau container
+    # Session de DB isolée pour cette commande
 
-    try:
-        commands.app()
-    finally:
-        container.unwire()  # ✅ Important pour éviter les fuites mémoire
+@app.command()
+def update_client(...):
+    container = Container()  # ← Nouveau container indépendant
+    # Autre session de DB, pas de conflit
 ```
 
-### 4. Utiliser des Factory pour les sessions de base de données
+### 4. Testabilité
+
+Facile de mocker le container dans les tests :
+
+```python
+from unittest.mock import Mock, patch
+
+def test_create_client():
+    # Mock le container
+    mock_container = Mock()
+    mock_service = Mock()
+    mock_container.client_service.return_value = mock_service
+
+    # Patcher Container pour retourner le mock
+    with patch('src.cli.commands.Container', return_value=mock_container):
+        result = runner.invoke(app, ["create-client", ...])
+
+        # Vérifier que le service a été appelé
+        mock_service.create_client.assert_called_once()
+```
+
+### 5. Pas de configuration complexe
+
+Pas besoin de :
+- Configurer le wiring pour les commandes
+- Comprendre `@inject` et `Provide[...]`
+- Gérer les conflits entre Typer et dependency_injector
+
+## 🎯 Bonnes pratiques
+
+### 1. Créer le container en début de fonction
+
+```python
+# ✅ Bon - Container créé au début
+def my_command(...):
+    container = Container()
+    service1 = container.service1()
+    service2 = container.service2()
+    # Utiliser les services
+
+# ❌ Mauvais - Multiples containers
+def my_command(...):
+    service1 = Container().service1()  # Container 1
+    service2 = Container().service2()  # Container 2 (inutile)
+```
+
+### 2. Utiliser des Factory pour les sessions DB
 
 ```python
 class Container(containers.DeclarativeContainer):
     # ✅ Factory = Nouvelle session à chaque appel
     db_session = providers.Factory(get_db_session)
 
-    # ❌ Singleton = Réutilise la même session (dangereux !)
+    # ❌ Singleton = Même session réutilisée (dangereux !)
     # db_session = providers.Singleton(get_db_session)
 ```
 
-### 5. Garder `main.py` et `commands.py` séparés
+### 3. Accéder à current_user avec **kwargs
+
+Les décorateurs de permissions injectent `current_user` dans `kwargs` :
 
 ```python
-# ✅ Bon - Modules séparés
-# main.py
-container.wire(modules=[commands])
+@app.command()
+@require_department(Department.COMMERCIAL, Department.GESTION)
+def update_client(
+    client_id: int = typer.Option(...),
+    **kwargs  # ← Pour recevoir current_user
+):
+    container = Container()
+    client_service = container.client_service()
 
-# ❌ Mauvais - Tout dans main.py
-container.wire(modules=[__name__])  # Ne fonctionnera pas !
+    # Récupérer l'utilisateur du décorateur
+    current_user = kwargs.get('current_user')
+
+    # Utiliser current_user pour les vérifications
+    client = client_service.get_client_by_id(client_id)
+    if not check_client_ownership(current_user, client):
+        print_error("Accès refusé")
+        raise typer.Exit(code=1)
 ```
 
-## 📚 Ressources
+### 4. Ne pas stocker le container globalement
 
-### Documentation officielle
+```python
+# ❌ Mauvais - Variable globale
+_container = None
 
-- **[Dependency Injector - Documentation officielle](https://python-dependency-injector.ets-labs.org/)**
-  - Guide complet du framework
+def set_container(container):
+    global _container
+    _container = container
 
-- **[CLI Application Tutorial](https://python-dependency-injector.ets-labs.org/tutorials/cli.html)**
-  - Tutoriel officiel pour les applications CLI
-  - Exemple complet de "Movie Lister"
-
-- **[Wiring Feature](https://python-dependency-injector.ets-labs.org/wiring.html)**
-  - Documentation détaillée sur le wiring
-  - Exemples avancés avec `@inject` et `Provide`
-
-### Articles et tutoriels
-
-- **[Dependency Injection in Python - Snyk Blog](https://snyk.io/blog/dependency-injection-python/)**
-  - Introduction aux concepts de DI en Python
-
-- **[Python Dependency Injector - Medium](https://medium.com/@rmogylatov/dependency-injector-python-dependency-injection-framework-eeb9f5c6db8b)**
-  - Article de l'auteur du framework
-
-### Typer
-
-- **[Typer - Documentation officielle](https://typer.tiangolo.com/)**
-  - Framework CLI utilisé dans ce projet
-
-- **[Using the Context - Typer](https://typer.tiangolo.com/tutorial/commands/context/)**
-  - Alternative avec `ctx.obj` (approche différente)
+# ✅ Bon - Container local
+def my_command(...):
+    container = Container()
+```
 
 ## 🔄 Comparaison avec d'autres approches
 
-### Approche 1 : Variable globale (ancienne version)
+### Approche 1 : Variable globale
 
 ```python
 # ❌ Problèmes :
-# - Variable globale
+# - État global
 # - Couplage fort
-# - Difficile à tester
+# - Tests difficiles
 
 _container = None
 
@@ -404,35 +388,114 @@ def create_client(...):
     service = _container.client_service()
 ```
 
-### Approche 2 : Context de Typer
+### Approche 2 : Injection automatique avec @inject
 
 ```python
-# ✅ Fonctionne, mais moins élégant
-@app.callback()
-def main(ctx: typer.Context):
-    ctx.obj = Container()
-
-@app.command()
-def create_client(ctx: typer.Context, ...):
-    service = ctx.obj.client_service()
-```
-
-### Approche 3 : Dependency Injector avec wiring (actuelle)
-
-```python
-# ✅✅ Meilleure approche :
-# - Pas de global
-# - Injection automatique
-# - Dépendances explicites
-# - Facile à tester
+# ❌ Problèmes :
+# - Signatures encombrées
+# - Confusion avec Typer
+# - Configuration complexe
 
 @inject
 def create_client(
-    ...,
-    service=Provide[Container.client_service],
+    first_name: str = typer.Option(...),
+    client_service: ClientService = Provide[Container.client_service],
 ):
     pass
 ```
+
+### Approche 3 : Instanciation manuelle (actuelle)
+
+```python
+# ✅✅ Avantages :
+# - Simple et explicite
+# - Signatures propres
+# - Facile à tester
+# - Pas de configuration
+
+def create_client(
+    first_name: str = typer.Option(...),
+):
+    container = Container()
+    service = container.client_service()
+    # ...
+```
+
+## 📝 Exemple complet
+
+Voici un exemple complet d'une commande avec permissions et vérifications :
+
+```python
+from src.containers import Container
+from src.cli.permissions import require_department, check_client_ownership
+from src.models.user import Department
+
+@app.command()
+@require_department(Department.COMMERCIAL, Department.GESTION)
+def update_client(
+    client_id: int = typer.Option(..., prompt="ID du client"),
+    first_name: str = typer.Option(None, prompt="Nouveau prénom (laisser vide pour ne pas changer)"),
+    last_name: str = typer.Option(None, prompt="Nouveau nom (laisser vide pour ne pas changer)"),
+    **kwargs  # Pour recevoir current_user du décorateur
+):
+    """
+    Mettre à jour les informations d'un client existant.
+
+    Seuls les commerciaux peuvent modifier leurs propres clients.
+    L'équipe GESTION peut modifier tous les clients.
+    """
+    # 1. Créer le container et obtenir les services
+    container = Container()
+    client_service = container.client_service()
+
+    # 2. Récupérer l'utilisateur courant (injecté par le décorateur)
+    current_user = kwargs.get('current_user')
+
+    # 3. Récupérer le client
+    try:
+        client = client_service.get_client_by_id(client_id)
+    except ValueError as e:
+        print_error(str(e))
+        raise typer.Exit(code=1)
+
+    # 4. Vérifier les permissions
+    if not check_client_ownership(current_user, client):
+        print_error("Vous n'avez pas accès à ce client")
+        raise typer.Exit(code=1)
+
+    # 5. Mettre à jour le client
+    try:
+        updated_client = client_service.update_client(
+            client_id=client_id,
+            first_name=first_name if first_name else None,
+            last_name=last_name if last_name else None,
+        )
+        print_success(f"Client {updated_client.id} mis à jour avec succès")
+    except Exception as e:
+        print_error(f"Erreur: {str(e)}")
+        raise typer.Exit(code=1)
+```
+
+## 📚 Ressources
+
+### Documentation officielle
+
+- **[Dependency Injector - Documentation officielle](https://python-dependency-injector.ets-labs.org/)**
+  - Guide complet du framework
+
+- **[Providers Documentation](https://python-dependency-injector.ets-labs.org/providers/index.html)**
+  - Détails sur Factory, Singleton, etc.
+
+- **[Typer - Documentation officielle](https://typer.tiangolo.com/)**
+  - Framework CLI utilisé dans ce projet
+
+### Articles et tutoriels
+
+- **[Dependency Injection in Python - Real Python](https://realpython.com/python-dependency-injection/)**
+  - Introduction aux concepts de DI en Python
+
+- **[Service Locator Pattern](https://martinfowler.com/articles/injection.html)**
+  - Article de Martin Fowler sur l'injection de dépendances
 
 ## 🐛 Dépannage
 
@@ -440,48 +503,57 @@ def create_client(
 
 ```python
 # ❌ Erreur
-service=Provide[Container.wrong_name]
+container = Container()
+service = container.wrong_name()
 
 # ✅ Solution : Vérifier que le provider existe dans containers.py
-service=Provide[Container.client_service]
+service = container.client_service()
 ```
 
-### Erreur : "Injection is not working"
+### Erreur : Session de base de données fermée
 
 ```python
-# ❌ Oublié le décorateur @inject
-def my_command(service=Provide[Container.service]):
-    pass
+# ❌ Problème : Réutilisation du même container
+container = Container()
 
-# ✅ Ajouter @inject
-@inject
-def my_command(service=Provide[Container.service]):
-    pass
+def command1():
+    service = container.client_service()  # Session fermée après usage
+
+def command2():
+    service = container.client_service()  # Réutilise la même session fermée
+
+# ✅ Solution : Nouveau container dans chaque commande
+def command1():
+    container = Container()
+    service = container.client_service()
+
+def command2():
+    container = Container()
+    service = container.client_service()
 ```
 
-### Erreur : "Container is not wired"
+### current_user est None
 
 ```python
-# ❌ Oublié container.wire()
-def main():
-    container = Container()
-    commands.app()
+# ❌ Problème : Oubli de **kwargs
+@require_department(Department.GESTION)
+def my_command(param: str = typer.Option(...)):
+    current_user = kwargs.get('current_user')  # NameError !
 
-# ✅ Ajouter le wiring
-def main():
-    container = Container()
-    container.wire(modules=[commands])
-    commands.app()
+# ✅ Solution : Ajouter **kwargs
+@require_department(Department.GESTION)
+def my_command(param: str = typer.Option(...), **kwargs):
+    current_user = kwargs.get('current_user')  # ✓
 ```
 
 ## 📝 Résumé
 
-L'injection de dépendances avec `dependency_injector` offre :
+L'instanciation manuelle du Container offre :
 
-1. ✅ **Code plus propre** - Pas de variables globales
-2. ✅ **Testabilité** - Facile de mocker les dépendances
-3. ✅ **Maintenabilité** - Configuration centralisée
-4. ✅ **Explicite** - Les dépendances sont visibles dans la signature
-5. ✅ **Professionnel** - Pattern standard de l'industrie
+1. ✅ **Simplicité** - Code facile à comprendre et maintenir
+2. ✅ **Signatures propres** - Pas de paramètres DI dans les fonctions CLI
+3. ✅ **Isolation** - Chaque commande a ses propres dépendances
+4. ✅ **Testabilité** - Facile de mocker le container
+5. ✅ **Pas de magie** - Le flux est explicite et prévisible
 
-Cette approche est recommandée pour tous les projets Python nécessitant une gestion propre des dépendances !
+Cette approche est recommandée pour les applications CLI avec Typer qui n'ont pas besoin d'injection automatique complexe !

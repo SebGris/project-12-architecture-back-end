@@ -116,17 +116,28 @@ Supprime le token JWT stocké.
 ```python
 from src.cli.permissions import require_department
 from src.models.user import Department
+from src.containers import Container
 
 @app.command()
-@inject
 @require_department(Department.GESTION)
 def create_user(
-    auth_service=Provide[Container.auth_service],
-    user_service=Provide[Container.user_service],
-    current_user: User = None,  # Injecté par le décorateur
-    # ... autres paramètres
+    username: str = typer.Option(..., prompt="Nom d'utilisateur"),
+    # ... autres paramètres typer.Option
 ):
-    # Seuls les utilisateurs GESTION peuvent exécuter cette commande
+    """
+    Seuls les utilisateurs GESTION peuvent exécuter cette commande.
+
+    Le décorateur @require_department vérifie automatiquement l'authentification
+    et les permissions avant d'exécuter la commande.
+    """
+    # Manually get services from container
+    container = Container()
+    user_service = container.user_service()
+
+    # Le current_user est disponible via kwargs si nécessaire
+    # mais n'est généralement pas utilisé dans la signature de fonction
+
+    # Logique de création d'utilisateur...
     pass
 ```
 
@@ -136,9 +147,13 @@ def create_user(
 Vérifie que l'utilisateur est authentifié.
 
 ```python
+@app.command()
 @require_auth
-def my_command(current_user: User = None):
-    # current_user est automatiquement injecté
+def my_command():
+    # Le décorateur vérifie l'authentification
+    # Le current_user est disponible dans kwargs si nécessaire
+    container = Container()
+    # Accéder aux services nécessaires...
     pass
 ```
 
@@ -146,9 +161,12 @@ def my_command(current_user: User = None):
 Vérifie que l'utilisateur appartient à un des départements autorisés.
 
 ```python
+@app.command()
 @require_department(Department.COMMERCIAL, Department.GESTION)
-def my_command(current_user: User = None):
+def my_command():
     # Accessible uniquement pour COMMERCIAL et GESTION
+    container = Container()
+    # Accéder aux services nécessaires...
     pass
 ```
 
@@ -158,18 +176,42 @@ def my_command(current_user: User = None):
 Vérifie si un utilisateur a le droit d'accéder à un client.
 
 ```python
-if not check_client_ownership(current_user, client):
-    print_error("Vous n'avez pas accès à ce client")
-    raise typer.Exit(code=1)
+@app.command()
+@require_department(Department.COMMERCIAL, Department.GESTION)
+def update_client(client_id: int = typer.Option(...), **kwargs):
+    container = Container()
+    auth_service = container.auth_service()
+    client_service = container.client_service()
+
+    # Récupérer l'utilisateur courant depuis kwargs (injecté par le décorateur)
+    current_user = kwargs.get('current_user')
+
+    client = client_service.get_client_by_id(client_id)
+
+    if not check_client_ownership(current_user, client):
+        print_error("Vous n'avez pas accès à ce client")
+        raise typer.Exit(code=1)
 ```
 
 #### `check_event_ownership(user, event)`
 Vérifie si un utilisateur a le droit d'accéder à un événement.
 
 ```python
-if not check_event_ownership(current_user, event):
-    print_error("Vous n'avez pas accès à cet événement")
-    raise typer.Exit(code=1)
+@app.command()
+@require_department(Department.SUPPORT, Department.GESTION)
+def update_event(event_id: int = typer.Option(...), **kwargs):
+    container = Container()
+    auth_service = container.auth_service()
+    event_service = container.event_service()
+
+    # Récupérer l'utilisateur courant depuis kwargs (injecté par le décorateur)
+    current_user = kwargs.get('current_user')
+
+    event = event_service.get_event_by_id(event_id)
+
+    if not check_event_ownership(current_user, event):
+        print_error("Vous n'avez pas accès à cet événement")
+        raise typer.Exit(code=1)
 ```
 
 ## Flux d'authentification
