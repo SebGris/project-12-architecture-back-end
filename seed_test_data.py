@@ -105,7 +105,7 @@ def create_clients(session, users):
 
     session.commit()
 
-    print(f"\n✓ {len(created_clients)} clients créés avec succès !")
+    print(f"\n[OK] {len(created_clients)} clients créés avec succès !")
     print("=" * 60)
 
     return created_clients
@@ -122,43 +122,43 @@ def create_contracts(session, clients):
         {
             "client_id": clients[0].id,
             "total_amount": Decimal("15000.00"),
-            "amount_remaining": Decimal("5000.00"),
+            "remaining_amount": Decimal("5000.00"),
             "is_signed": True,
         },
         {
             "client_id": clients[0].id,
             "total_amount": Decimal("8000.00"),
-            "amount_remaining": Decimal("8000.00"),
+            "remaining_amount": Decimal("8000.00"),
             "is_signed": False,
         },
         {
             "client_id": clients[1].id,
             "total_amount": Decimal("25000.00"),
-            "amount_remaining": Decimal("0.00"),
+            "remaining_amount": Decimal("0.00"),
             "is_signed": True,
         },
         {
             "client_id": clients[2].id,
             "total_amount": Decimal("12000.00"),
-            "amount_remaining": Decimal("12000.00"),
+            "remaining_amount": Decimal("12000.00"),
             "is_signed": False,
         },
         {
             "client_id": clients[2].id,
             "total_amount": Decimal("30000.00"),
-            "amount_remaining": Decimal("10000.00"),
+            "remaining_amount": Decimal("10000.00"),
             "is_signed": True,
         },
         {
             "client_id": clients[3].id,
             "total_amount": Decimal("18000.00"),
-            "amount_remaining": Decimal("6000.00"),
+            "remaining_amount": Decimal("6000.00"),
             "is_signed": True,
         },
         {
             "client_id": clients[4].id,
             "total_amount": Decimal("5000.00"),
-            "amount_remaining": Decimal("5000.00"),
+            "remaining_amount": Decimal("5000.00"),
             "is_signed": False,
         },
     ]
@@ -179,7 +179,7 @@ def create_contracts(session, clients):
 
     session.commit()
 
-    print(f"\n✓ {len(created_contracts)} contrats créés avec succès !")
+    print(f"\n[OK]{len(created_contracts)} contrats créés avec succès !")
     print("=" * 60)
 
     return created_contracts
@@ -202,8 +202,8 @@ def create_events(session, contracts, users):
         {
             "name": "Mariage Jean & Claire",
             "contract_id": signed_contracts[0].id,
-            "start_date": base_date + timedelta(days=15),
-            "end_date": base_date + timedelta(days=15, hours=6),
+            "event_start": base_date + timedelta(days=15),
+            "event_end": base_date + timedelta(days=15, hours=6),
             "location": "Château de Versailles",
             "attendees": 150,
             "notes": "Cérémonie en extérieur, prévoir plan B en cas de pluie",
@@ -212,8 +212,8 @@ def create_events(session, contracts, users):
         {
             "name": "Conférence Tech 2025",
             "contract_id": signed_contracts[1].id,
-            "start_date": base_date + timedelta(days=45),
-            "end_date": base_date + timedelta(days=47),
+            "event_start": base_date + timedelta(days=45),
+            "event_end": base_date + timedelta(days=47),
             "location": "Palais des Congrès, Paris",
             "attendees": 500,
             "notes": "Événement sur 3 jours, besoin de matériel audiovisuel",
@@ -222,8 +222,8 @@ def create_events(session, contracts, users):
         {
             "name": "Gala de Charité",
             "contract_id": signed_contracts[2].id,
-            "start_date": base_date + timedelta(days=60),
-            "end_date": base_date + timedelta(days=60, hours=4),
+            "event_start": base_date + timedelta(days=60),
+            "event_end": base_date + timedelta(days=60, hours=4),
             "location": "Hôtel Le Meurice, Paris",
             "attendees": 200,
             "notes": "Dîner de gala, vente aux enchères",
@@ -232,8 +232,8 @@ def create_events(session, contracts, users):
         {
             "name": "Lancement de Produit",
             "contract_id": signed_contracts[3].id,
-            "start_date": base_date + timedelta(days=20),
-            "end_date": base_date + timedelta(days=20, hours=3),
+            "event_start": base_date + timedelta(days=20),
+            "event_end": base_date + timedelta(days=20, hours=3),
             "location": "Grand Palais Éphémère",
             "attendees": 300,
             "notes": "Présentation produit + cocktail",
@@ -261,7 +261,7 @@ def create_events(session, contracts, users):
 
     session.commit()
 
-    print(f"\n✓ {len(created_events)} événements créés avec succès !")
+    print(f"\n[OK]{len(created_events)} événements créés avec succès !")
     print("=" * 60)
 
     return created_events
@@ -295,7 +295,7 @@ def display_summary(session):
         session.query(Contract).with_entities(Contract.total_amount).all()
     )
     total_remaining = (
-        session.query(Contract).with_entities(Contract.amount_remaining).all()
+        session.query(Contract).with_entities(Contract.remaining_amount).all()
     )
     sum_total = sum(amount[0] for amount in total_amount)
     sum_remaining = sum(amount[0] for amount in total_remaining)
@@ -336,7 +336,7 @@ def main():
         # Récupérer les utilisateurs
         print("\nRécupération des utilisateurs existants...")
         users = get_users(session)
-        print("✓ Utilisateurs trouvés")
+        print("[OK]Utilisateurs trouvés")
 
         # Supprimer les données existantes
         print("\nSuppression des données existantes...")
@@ -344,7 +344,7 @@ def main():
         session.query(Contract).delete()
         session.query(Client).delete()
         session.commit()
-        print("✓ Données existantes supprimées")
+        print("[OK]Données existantes supprimées")
 
         # Créer les données de test
         clients = create_clients(session, users)

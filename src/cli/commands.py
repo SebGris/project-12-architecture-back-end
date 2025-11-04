@@ -213,9 +213,10 @@ def create_client(
         callback=validate_company_name_callback,
     ),
     sales_contact_id: int = typer.Option(
-        None,
-        prompt="ID du contact commercial (laisser vide pour auto-assignation)",
-    )
+        0,
+        prompt="ID du contact commercial (0 pour auto-assignation)",
+    ),
+    **kwargs  # For receiving current_user from decorator
 ):
     """
     Créer un nouveau client dans le système CRM.
@@ -256,7 +257,7 @@ def create_client(
     current_user = auth_service.get_current_user()
 
     # Auto-assign for COMMERCIAL users if no sales_contact_id provided
-    if sales_contact_id is None:
+    if sales_contact_id == 0:
         if current_user.department == Department.COMMERCIAL:
             sales_contact_id = current_user.id
             print_field("Contact commercial", f"Auto-assigné à {current_user.username}")
@@ -363,7 +364,8 @@ def create_user(
         ...,
         prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.GESTION.value}\n3. {Department.SUPPORT.value}\n\nChoisir un département (numéro)",
         callback=validate_department_callback,
-    )
+    ),
+    **kwargs  # For receiving current_user from decorator
 ):
     """
     Créer un nouvel utilisateur dans le système CRM.
@@ -466,7 +468,8 @@ def create_contract(
     remaining_amount: str = typer.Option(
         ..., prompt="Montant restant", callback=validate_amount_callback
     ),
-    is_signed: bool = typer.Option(False, prompt="Contrat signé ?")
+    is_signed: bool = typer.Option(False, prompt="Contrat signé ?"),
+    **kwargs  # For receiving current_user from decorator
 ):
     """
     Créer un nouveau contrat dans le système CRM.
@@ -599,7 +602,8 @@ def create_event(
     notes: str = typer.Option("", prompt="Notes (optionnel)"),
     support_contact_id: int = typer.Option(
         0, prompt="ID du contact support (0 si aucun)"
-    )
+    ),
+    **kwargs  # For receiving current_user from decorator
 ):
     """
     Créer un nouvel événement dans le système CRM.
@@ -746,7 +750,8 @@ def assign_support(
     ),
     support_contact_id: int = typer.Option(
         ..., prompt="ID du contact support", callback=validate_user_id_callback
-    )
+    ),
+    **kwargs  # For receiving current_user from decorator
 ):
     """
     Assigner un contact support à un événement.
@@ -833,7 +838,7 @@ def assign_support(
 
 @app.command()
 @require_auth
-def filter_unsigned_contracts():
+def filter_unsigned_contracts(**kwargs):
     """
     Afficher tous les contrats non signés.
 
@@ -881,7 +886,7 @@ def filter_unsigned_contracts():
 
 @app.command()
 @require_auth
-def filter_unpaid_contracts():
+def filter_unpaid_contracts(**kwargs):
     """
     Afficher tous les contrats non soldés (montant restant > 0).
 
@@ -932,7 +937,7 @@ def filter_unpaid_contracts():
 
 @app.command()
 @require_auth
-def filter_unassigned_events():
+def filter_unassigned_events(**kwargs):
     """
     Afficher tous les événements sans contact support assigné.
 
@@ -986,7 +991,8 @@ def filter_unassigned_events():
 def filter_my_events(
     support_contact_id: int = typer.Option(
         ..., prompt="ID du contact support", callback=validate_user_id_callback
-    )
+    ),
+    **kwargs  # For receiving current_user from decorator
 ):
     """
     Afficher les événements assignés à un contact support spécifique.
@@ -1083,7 +1089,8 @@ def update_client(
     company_name: str = typer.Option(
         None,
         prompt="Nouveau nom d'entreprise (laisser vide pour ne pas modifier)",
-    )
+    ),
+    **kwargs  # For receiving current_user from decorator
 ):
     """
     Mettre à jour les informations d'un client.
@@ -1200,7 +1207,8 @@ def update_contract(
         None,
         prompt="Nouveau montant restant (laisser vide pour ne pas modifier)",
     ),
-    is_signed: bool = typer.Option(None, prompt="Marquer comme signé ? (o/n)")
+    is_signed: bool = typer.Option(None, prompt="Marquer comme signé ? (o/n)"),
+    **kwargs  # For receiving current_user from decorator
 ):
     """
     Mettre à jour les informations d'un contrat.
