@@ -2,37 +2,8 @@ import typer
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
-from src.cli.console import (
-    print_error,
-    print_field,
-    print_header,
-    print_separator,
-    print_success,
-)
-from src.cli.validators import (
-    validate_amount_callback,
-    validate_attendees_callback,
-    validate_attendees_positive,
-    validate_client_id_callback,
-    validate_company_name_callback,
-    validate_contract_amounts,
-    validate_contract_id_callback,
-    validate_department_callback,
-    validate_email_callback,
-    validate_event_dates,
-    validate_event_id_callback,
-    validate_event_name_callback,
-    validate_first_name_callback,
-    validate_last_name_callback,
-    validate_location_callback,
-    validate_password_callback,
-    validate_phone_callback,
-    validate_sales_contact_id_callback,
-    validate_user_id_callback,
-    validate_user_is_commercial,
-    validate_user_is_support,
-    validate_username_callback,
-)
+from src.cli import console
+from src.cli import validators
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import (
@@ -82,15 +53,15 @@ def login(
     container = Container()
     auth_service = container.auth_service()
 
-    print_separator()
-    print_header("Authentification")
-    print_separator()
+    console.print_separator()
+    console.print_header("Authentification")
+    console.print_separator()
 
     # Authenticate user
     user = auth_service.authenticate(username, password)
 
     if not user:
-        print_error("Nom d'utilisateur ou mot de passe incorrect")
+        console.print_error("Nom d'utilisateur ou mot de passe incorrect")
         raise typer.Exit(code=1)
 
     # Generate JWT token
@@ -105,11 +76,11 @@ def login(
     set_user_context(user.id, user.username, user.department.value)
 
     # Success message
-    print_separator()
-    print_success(f"Bienvenue {user.first_name} {user.last_name} !")
-    print_field("Département", user.department.value)
-    print_field("Session", f"Valide pour 24 heures")
-    print_separator()
+    console.print_separator()
+    console.print_success(f"Bienvenue {user.first_name} {user.last_name} !")
+    console.print_field("Département", user.department.value)
+    console.print_field("Session", f"Valide pour 24 heures")
+    console.print_separator()
 
 
 @app.command()
@@ -129,15 +100,15 @@ def logout():
     container = Container()
     auth_service = container.auth_service()
 
-    print_separator()
-    print_header("Déconnexion")
-    print_separator()
+    console.print_separator()
+    console.print_header("Déconnexion")
+    console.print_separator()
 
     # Check if user is authenticated
     user = auth_service.get_current_user()
 
     if not user:
-        print_error("Vous n'êtes pas connecté")
+        console.print_error("Vous n'êtes pas connecté")
         raise typer.Exit(code=1)
 
     # Delete token
@@ -154,8 +125,8 @@ def logout():
     clear_user_context()
 
     # Success message
-    print_success(f"Au revoir {user.first_name} {user.last_name} !")
-    print_separator()
+    console.print_success(f"Au revoir {user.first_name} {user.last_name} !")
+    console.print_separator()
 
 
 @app.command()
@@ -175,53 +146,53 @@ def whoami():
     container = Container()
     auth_service = container.auth_service()
 
-    print_separator()
-    print_header("Utilisateur actuel")
-    print_separator()
+    console.print_separator()
+    console.print_header("Utilisateur actuel")
+    console.print_separator()
 
     # Get current user
     user = auth_service.get_current_user()
 
     if not user:
-        print_error(
+        console.print_error(
             "Vous n'êtes pas connecté. Utilisez 'epicevents login' pour vous connecter."
         )
         raise typer.Exit(code=1)
 
     # Display user info
-    print_field("ID", str(user.id))
-    print_field("Nom d'utilisateur", user.username)
-    print_field("Nom complet", f"{user.first_name} {user.last_name}")
-    print_field("Email", user.email)
-    print_field("Téléphone", user.phone)
-    print_field("Département", user.department.value)
-    print_separator()
+    console.print_field("ID", str(user.id))
+    console.print_field("Nom d'utilisateur", user.username)
+    console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
+    console.print_field("Email", user.email)
+    console.print_field("Téléphone", user.phone)
+    console.print_field("Département", user.department.value)
+    console.print_separator()
 
 
 @app.command()
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def create_client(
     first_name: str = typer.Option(
-        ..., prompt="Prénom", callback=validate_first_name_callback
+        ..., prompt="Prénom", callback=validators.validate_first_name_callback
     ),
     last_name: str = typer.Option(
-        ..., prompt="Nom", callback=validate_last_name_callback
+        ..., prompt="Nom", callback=validators.validate_last_name_callback
     ),
     email: str = typer.Option(
-        ..., prompt="Email", callback=validate_email_callback
+        ..., prompt="Email", callback=validators.validate_email_callback
     ),
     phone: str = typer.Option(
-        ..., prompt="Téléphone", callback=validate_phone_callback
+        ..., prompt="Téléphone", callback=validators.validate_phone_callback
     ),
     company_name: str = typer.Option(
         ...,
         prompt="Nom de l'entreprise",
-        callback=validate_company_name_callback,
+        callback=validators.validate_company_name_callback,
     ),
     sales_contact_id: int = typer.Option(
         0,
         prompt="ID du contact commercial (0 pour auto-assignation)",
-        callback=validate_sales_contact_id_callback,
+        callback=validators.validate_sales_contact_id_callback,
     ),
     **kwargs,  # For receiving current_user from decorator
 ):
@@ -256,9 +227,9 @@ def create_client(
     auth_service = container.auth_service()
 
     # Show header at the beginning
-    print_separator()
-    print_header("Création d'un nouveau client")
-    print_separator()
+    console.print_separator()
+    console.print_header("Création d'un nouveau client")
+    console.print_separator()
 
     # Get current user for auto-assignment
     current_user = auth_service.get_current_user()
@@ -267,24 +238,24 @@ def create_client(
     if sales_contact_id == 0:
         if current_user.department == Department.COMMERCIAL:
             sales_contact_id = current_user.id
-            print_field(
+            console.print_field(
                 "Contact commercial", f"Auto-assigné à {current_user.username}"
             )
         else:
-            print_error("Vous devez spécifier un ID de contact commercial")
+            console.print_error("Vous devez spécifier un ID de contact commercial")
             raise typer.Exit(code=1)
 
     # Business validation: check if sales contact exists and is from COMMERCIAL dept
     user = user_service.get_user(sales_contact_id)
 
     if not user:
-        print_error(f"Utilisateur avec l'ID {sales_contact_id} n'existe pas")
+        console.print_error(f"Utilisateur avec l'ID {sales_contact_id} n'existe pas")
         raise typer.Exit(code=1)
 
     try:
-        validate_user_is_commercial(user)
+        validators.validate_user_is_commercial(user)
     except ValueError as e:
-        print_error(str(e))
+        console.print_error(str(e))
         raise typer.Exit(code=1)
 
     try:
@@ -305,74 +276,76 @@ def create_client(
 
         if "unique" in error_msg or "duplicate" in error_msg:
             if "email" in error_msg:
-                print_error(
+                console.print_error(
                     f"Un client avec l'email '{email}' existe déjà dans le système"
                 )
             else:
-                print_error(
+                console.print_error(
                     "Erreur: Un client avec ces informations existe déjà"
                 )
         elif "foreign key" in error_msg:
-            print_error(
+            console.print_error(
                 f"Le contact commercial (ID: {sales_contact_id}) n'existe pas"
             )
         else:
-            print_error(
+            console.print_error(
                 f"Erreur d'intégrité de la base de données: {error_msg}"
             )
         raise typer.Exit(code=1)
 
     except Exception as e:
-        print_error(f"Erreur inattendue: {e}")
+        console.print_error(f"Erreur inattendue: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    print_separator()
-    print_success(
+    console.print_separator()
+    console.print_success(
         f"Client {client.first_name} {client.last_name} créé avec succès!"
     )
-    print_field("ID", str(client.id))
-    print_field("Email", client.email)
-    print_field("Téléphone", client.phone)
-    print_field("Entreprise", client.company_name)
-    print_field(
+    console.print_field("ID", str(client.id))
+    console.print_field("Email", client.email)
+    console.print_field("Téléphone", client.phone)
+    console.print_field("Entreprise", client.company_name)
+    console.print_field(
         "Contact commercial",
         f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
-    print_field(
+    console.print_field(
         "Date de création", client.created_at.strftime("%Y-%m-%d %H:%M:%S")
     )
-    print_separator()
+    console.print_separator()
 
 
 @app.command()
 @require_department(Department.GESTION)
 def create_user(
     username: str = typer.Option(
-        ..., prompt="Nom d'utilisateur", callback=validate_username_callback
+        ...,
+        prompt="Nom d'utilisateur",
+        callback=validators.validate_username_callback,
     ),
     first_name: str = typer.Option(
-        ..., prompt="Prénom", callback=validate_first_name_callback
+        ..., prompt="Prénom", callback=validators.validate_first_name_callback
     ),
     last_name: str = typer.Option(
-        ..., prompt="Nom", callback=validate_last_name_callback
+        ..., prompt="Nom", callback=validators.validate_last_name_callback
     ),
     email: str = typer.Option(
-        ..., prompt="Email", callback=validate_email_callback
+        ..., prompt="Email", callback=validators.validate_email_callback
     ),
     phone: str = typer.Option(
-        ..., prompt="Téléphone", callback=validate_phone_callback
+        ..., prompt="Téléphone", callback=validators.validate_phone_callback
     ),
     password: str = typer.Option(
         ...,
         prompt="Mot de passe",
         hide_input=True,
-        callback=validate_password_callback,
+        callback=validators.validate_password_callback,
     ),
     department_choice: int = typer.Option(
         ...,
         prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.GESTION.value}\n3. {Department.SUPPORT.value}\n\nChoisir un département (numéro)",
-        callback=validate_department_callback,
+        callback=validators.validate_department_callback,
     ),
     **kwargs,  # For receiving current_user from decorator
 ):
@@ -407,9 +380,9 @@ def create_user(
     user_service = container.user_service()
 
     # Show header at the beginning
-    print_separator()
-    print_header("Création d'un nouvel utilisateur")
-    print_separator()
+    console.print_separator()
+    console.print_header("Création d'un nouvel utilisateur")
+    console.print_separator()
 
     # Convert department choice (int) to Department enum
     departments = list(Department)
@@ -434,48 +407,54 @@ def create_user(
 
         if "unique" in error_msg or "duplicate" in error_msg:
             if "username" in error_msg:
-                print_error(
+                console.print_error(
                     f"Le nom d'utilisateur '{username}' est déjà utilisé"
                 )
             elif "email" in error_msg:
-                print_error(
+                console.print_error(
                     f"L'email '{email}' est déjà utilisé par un autre utilisateur"
                 )
             else:
-                print_error(
+                console.print_error(
                     "Erreur: Un utilisateur avec ces informations existe déjà"
                 )
         else:
-            print_error(
+            console.print_error(
                 f"Erreur d'intégrité de la base de données: {error_msg}"
             )
         raise typer.Exit(code=1)
 
     except Exception as e:
-        print_error(f"Erreur inattendue: {e}")
+        console.print_error(f"Erreur inattendue: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    print_separator()
-    print_success(f"Utilisateur {user.username} créé avec succès!")
-    print_field("ID", str(user.id))
-    print_field("Nom complet", f"{user.first_name} {user.last_name}")
-    print_field("Email", user.email)
-    print_field("Département", user.department.value)
-    print_separator()
+    console.print_separator()
+    console.print_success(f"Utilisateur {user.username} créé avec succès!")
+    console.print_field("ID", str(user.id))
+    console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
+    console.print_field("Email", user.email)
+    console.print_field("Département", user.department.value)
+    console.print_separator()
 
 
 @app.command()
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def create_contract(
     client_id: int = typer.Option(
-        ..., prompt="ID du client", callback=validate_client_id_callback
+        ...,
+        prompt="ID du client",
+        callback=validators.validate_client_id_callback,
     ),
     total_amount: str = typer.Option(
-        ..., prompt="Montant total", callback=validate_amount_callback
+        ...,
+        prompt="Montant total",
+        callback=validators.validate_amount_callback,
     ),
     remaining_amount: str = typer.Option(
-        ..., prompt="Montant restant", callback=validate_amount_callback
+        ...,
+        prompt="Montant restant",
+        callback=validators.validate_amount_callback,
     ),
     is_signed: bool = typer.Option(False, prompt="Contrat signé ?"),
     **kwargs,  # For receiving current_user from decorator
@@ -510,15 +489,15 @@ def create_contract(
     client_service = container.client_service()
 
     # Show header at the beginning
-    print_separator()
-    print_header("Création d'un nouveau contrat")
-    print_separator()
+    console.print_separator()
+    console.print_header("Création d'un nouveau contrat")
+    console.print_separator()
 
     # Business validation: check if client exists
     client = client_service.get_client(client_id)
 
     if not client:
-        print_error(f"Client avec l'ID {client_id} n'existe pas")
+        console.print_error(f"Client avec l'ID {client_id} n'existe pas")
         raise typer.Exit(code=1)
 
     # Convert amounts to Decimal
@@ -526,14 +505,14 @@ def create_contract(
         total_decimal = Decimal(total_amount)
         remaining_decimal = Decimal(remaining_amount)
     except Exception:
-        print_error("Erreur de conversion des montants")
+        console.print_error("Erreur de conversion des montants")
         raise typer.Exit(code=1)
 
     # Business validation: validate contract amounts
     try:
-        validate_contract_amounts(total_decimal, remaining_decimal)
+        validators.validate_contract_amounts(total_decimal, remaining_decimal)
     except ValueError as e:
-        print_error(str(e))
+        console.print_error(str(e))
         raise typer.Exit(code=1)
 
     try:
@@ -551,48 +530,52 @@ def create_contract(
         )
 
         if "foreign key" in error_msg:
-            print_error(f"Le client (ID: {client_id}) n'existe pas")
+            console.print_error(f"Le client (ID: {client_id}) n'existe pas")
         else:
-            print_error(
+            console.print_error(
                 f"Erreur d'intégrité de la base de données: {error_msg}"
             )
         raise typer.Exit(code=1)
 
     except Exception as e:
-        print_error(f"Erreur inattendue: {e}")
+        console.print_error(f"Erreur inattendue: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    print_separator()
-    print_success(
+    console.print_separator()
+    console.print_success(
         f"Contrat créé avec succès pour le client {client.first_name} {client.last_name}!"
     )
-    print_field("ID du contrat", str(contract.id))
-    print_field(
+    console.print_field("ID du contrat", str(contract.id))
+    console.print_field(
         "Client",
         f"{client.first_name} {client.last_name} ({client.company_name})",
     )
-    print_field(
+    console.print_field(
         "Contact commercial",
         f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
-    print_field("Montant total", f"{contract.total_amount} €")
-    print_field("Montant restant à payer", f"{contract.remaining_amount} €")
-    print_field("Statut", "Signé ✓" if contract.is_signed else "Non signé ✗")
-    print_field(
+    console.print_field("Montant total", f"{contract.total_amount} €")
+    console.print_field("Montant restant à payer", f"{contract.remaining_amount} €")
+    console.print_field("Statut", "Signé ✓" if contract.is_signed else "Non signé ✗")
+    console.print_field(
         "Date de création", contract.created_at.strftime("%Y-%m-%d %H:%M:%S")
     )
-    print_separator()
+    console.print_separator()
 
 
 @app.command()
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def create_event(
     name: str = typer.Option(
-        ..., prompt="Nom de l'événement", callback=validate_event_name_callback
+        ...,
+        prompt="Nom de l'événement",
+        callback=validators.validate_event_name_callback,
     ),
     contract_id: int = typer.Option(
-        ..., prompt="ID du contrat", callback=validate_contract_id_callback
+        ...,
+        prompt="ID du contrat",
+        callback=validators.validate_contract_id_callback,
     ),
     event_start: str = typer.Option(
         ..., prompt="Date et heure de début (YYYY-MM-DD HH:MM)"
@@ -601,12 +584,12 @@ def create_event(
         ..., prompt="Date et heure de fin (YYYY-MM-DD HH:MM)"
     ),
     location: str = typer.Option(
-        ..., prompt="Lieu", callback=validate_location_callback
+        ..., prompt="Lieu", callback=validators.validate_location_callback
     ),
     attendees: int = typer.Option(
         ...,
         prompt="Nombre de participants",
-        callback=validate_attendees_callback,
+        callback=validators.validate_attendees_callback,
     ),
     notes: str = typer.Option("", prompt="Notes (optionnel)"),
     support_contact_id: int = typer.Option(
@@ -649,15 +632,15 @@ def create_event(
     user_service = container.user_service()
 
     # Show header at the beginning
-    print_separator()
-    print_header("Création d'un nouvel événement")
-    print_separator()
+    console.print_separator()
+    console.print_header("Création d'un nouvel événement")
+    console.print_separator()
 
     # Business validation: check if contract exists
     contract = contract_service.get_contract(contract_id)
 
     if not contract:
-        print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
+        console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
         raise typer.Exit(code=1)
 
     # Parse datetime strings
@@ -665,16 +648,16 @@ def create_event(
         start_dt = datetime.strptime(event_start, "%Y-%m-%d %H:%M")
         end_dt = datetime.strptime(event_end, "%Y-%m-%d %H:%M")
     except ValueError:
-        print_error(
+        console.print_error(
             "Format de date invalide. Utilisez le format: YYYY-MM-DD HH:MM"
         )
         raise typer.Exit(code=1)
 
     # Business validation: validate event dates and attendees
     try:
-        validate_event_dates(start_dt, end_dt, attendees)
+        validators.validate_event_dates(start_dt, end_dt, attendees)
     except ValueError as e:
-        print_error(str(e))
+        console.print_error(str(e))
         raise typer.Exit(code=1)
 
     # Business validation: check if support contact exists and is from SUPPORT dept
@@ -682,12 +665,12 @@ def create_event(
     if support_id:
         user = user_service.get_user(support_id)
         if not user:
-            print_error(f"Utilisateur avec l'ID {support_id} n'existe pas")
+            console.print_error(f"Utilisateur avec l'ID {support_id} n'existe pas")
             raise typer.Exit(code=1)
         try:
-            validate_user_is_support(user)
+            validators.validate_user_is_support(user)
         except ValueError as e:
-            print_error(str(e))
+            console.print_error(str(e))
             raise typer.Exit(code=1)
 
     try:
@@ -704,7 +687,7 @@ def create_event(
         )
 
     except ValueError as e:
-        print_error(str(e))
+        console.print_error(str(e))
         raise typer.Exit(code=1)
 
     except IntegrityError as e:
@@ -714,57 +697,61 @@ def create_event(
 
         if "foreign key" in error_msg:
             if "contract" in error_msg:
-                print_error(f"Le contrat (ID: {contract_id}) n'existe pas")
+                console.print_error(f"Le contrat (ID: {contract_id}) n'existe pas")
             elif "support" in error_msg:
-                print_error(
+                console.print_error(
                     f"Le contact support (ID: {support_id}) n'existe pas"
                 )
         else:
-            print_error(
+            console.print_error(
                 f"Erreur d'intégrité de la base de données: {error_msg}"
             )
         raise typer.Exit(code=1)
 
     except Exception as e:
-        print_error(f"Erreur inattendue: {e}")
+        console.print_error(f"Erreur inattendue: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    print_separator()
-    print_success(f"Événement '{event.name}' créé avec succès!")
-    print_field("Event ID", str(event.id))
-    print_field("Contract ID", str(contract.id))
-    print_field(
+    console.print_separator()
+    console.print_success(f"Événement '{event.name}' créé avec succès!")
+    console.print_field("Event ID", str(event.id))
+    console.print_field("Contract ID", str(contract.id))
+    console.print_field(
         "Client name",
         f"{contract.client.first_name} {contract.client.last_name}",
     )
-    print_field(
+    console.print_field(
         "Client contact", f"{contract.client.email}\n{contract.client.phone}"
     )
-    print_field("Event date start", format_event_datetime(event.event_start))
-    print_field("Event date end", format_event_datetime(event.event_end))
+    console.print_field("Event date start", format_event_datetime(event.event_start))
+    console.print_field("Event date end", format_event_datetime(event.event_end))
     if event.support_contact:
-        print_field(
+        console.print_field(
             "Support contact",
             f"{event.support_contact.first_name} {event.support_contact.last_name} (ID: {event.support_contact_id})",
         )
     else:
-        print_field("Support contact", "Non assigné")
-    print_field("Location", event.location)
-    print_field("Attendees", str(event.attendees))
+        console.print_field("Support contact", "Non assigné")
+    console.print_field("Location", event.location)
+    console.print_field("Attendees", str(event.attendees))
     if event.notes:
-        print_field("Notes", event.notes)
-    print_separator()
+        console.print_field("Notes", event.notes)
+    console.print_separator()
 
 
 @app.command()
 @require_department(Department.GESTION)
 def assign_support(
     event_id: int = typer.Option(
-        ..., prompt="ID de l'événement", callback=validate_event_id_callback
+        ...,
+        prompt="ID de l'événement",
+        callback=validators.validate_event_id_callback,
     ),
     support_contact_id: int = typer.Option(
-        ..., prompt="ID du contact support", callback=validate_user_id_callback
+        ...,
+        prompt="ID du contact support",
+        callback=validators.validate_user_id_callback,
     ),
     **kwargs,  # For receiving current_user from decorator
 ):
@@ -792,26 +779,26 @@ def assign_support(
     event_service = container.event_service()
     user_service = container.user_service()
 
-    print_separator()
-    print_header("Assignation d'un contact support")
-    print_separator()
+    console.print_separator()
+    console.print_header("Assignation d'un contact support")
+    console.print_separator()
 
     # Vérifier que l'événement existe
     event = event_service.get_event(event_id)
     if not event:
-        print_error(f"Événement avec l'ID {event_id} n'existe pas")
+        console.print_error(f"Événement avec l'ID {event_id} n'existe pas")
         raise typer.Exit(code=1)
 
     # Vérifier que l'utilisateur existe et est du département SUPPORT
     user = user_service.get_user(support_contact_id)
     if not user:
-        print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
+        console.print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
         raise typer.Exit(code=1)
 
     try:
-        validate_user_is_support(user)
+        validators.validate_user_is_support(user)
     except ValueError as e:
-        print_error(str(e))
+        console.print_error(str(e))
         raise typer.Exit(code=1)
 
     # Assigner le contact support
@@ -820,39 +807,39 @@ def assign_support(
             event_id, support_contact_id
         )
     except Exception as e:
-        print_error(f"Erreur lors de l'assignation: {e}")
+        console.print_error(f"Erreur lors de l'assignation: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    print_separator()
-    print_success(
+    console.print_separator()
+    console.print_success(
         f"Contact support assigné avec succès à l'événement '{updated_event.name}'!"
     )
-    print_field("Event ID", str(updated_event.id))
-    print_field("Contract ID", str(updated_event.contract_id))
-    print_field(
+    console.print_field("Event ID", str(updated_event.id))
+    console.print_field("Contract ID", str(updated_event.contract_id))
+    console.print_field(
         "Client name",
         f"{updated_event.contract.client.first_name} {updated_event.contract.client.last_name}",
     )
-    print_field(
+    console.print_field(
         "Client contact",
         f"{updated_event.contract.client.email}\n{updated_event.contract.client.phone}",
     )
-    print_field(
+    console.print_field(
         "Event date start", format_event_datetime(updated_event.event_start)
     )
-    print_field(
+    console.print_field(
         "Event date end", format_event_datetime(updated_event.event_end)
     )
-    print_field(
+    console.print_field(
         "Support contact",
         f"{user.first_name} {user.last_name} (ID: {user.id})",
     )
-    print_field("Location", updated_event.location)
-    print_field("Attendees", str(updated_event.attendees))
+    console.print_field("Location", updated_event.location)
+    console.print_field("Attendees", str(updated_event.attendees))
     if updated_event.notes:
-        print_field("Notes", updated_event.notes)
-    print_separator()
+        console.print_field("Notes", updated_event.notes)
+    console.print_separator()
 
 
 @app.command()
@@ -873,36 +860,36 @@ def filter_unsigned_contracts(**kwargs):
     container = Container()
     contract_service = container.contract_service()
 
-    print_separator()
-    print_header("Contrats non signés")
-    print_separator()
+    console.print_separator()
+    console.print_header("Contrats non signés")
+    console.print_separator()
 
     contracts = contract_service.get_unsigned_contracts()
 
     if not contracts:
-        print_success("Aucun contrat non signé")
+        console.print_success("Aucun contrat non signé")
         return
 
     for contract in contracts:
-        print_field("ID", str(contract.id))
-        print_field(
+        console.print_field("ID", str(contract.id))
+        console.print_field(
             "Client",
             f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
         )
-        print_field(
+        console.print_field(
             "Contact commercial",
             f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
-        print_field("Montant total", f"{contract.total_amount} €")
-        print_field(
+        console.print_field("Montant total", f"{contract.total_amount} €")
+        console.print_field(
             "Montant restant à payer", f"{contract.remaining_amount} €"
         )
-        print_field(
+        console.print_field(
             "Date de création", contract.created_at.strftime("%Y-%m-%d")
         )
-        print_separator()
+        console.print_separator()
 
-    print_success(f"Total: {len(contracts)} contrat(s) non signé(s)")
+    console.print_success(f"Total: {len(contracts)} contrat(s) non signé(s)")
 
 
 @app.command()
@@ -923,39 +910,39 @@ def filter_unpaid_contracts(**kwargs):
     container = Container()
     contract_service = container.contract_service()
 
-    print_separator()
-    print_header("Contrats non soldés")
-    print_separator()
+    console.print_separator()
+    console.print_header("Contrats non soldés")
+    console.print_separator()
 
     contracts = contract_service.get_unpaid_contracts()
 
     if not contracts:
-        print_success("Aucun contrat non soldé")
+        console.print_success("Aucun contrat non soldé")
         return
 
     for contract in contracts:
-        print_field("ID", str(contract.id))
-        print_field(
+        console.print_field("ID", str(contract.id))
+        console.print_field(
             "Client",
             f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
         )
-        print_field(
+        console.print_field(
             "Contact commercial",
             f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
-        print_field("Montant total", f"{contract.total_amount} €")
-        print_field(
+        console.print_field("Montant total", f"{contract.total_amount} €")
+        console.print_field(
             "Montant restant à payer", f"{contract.remaining_amount} €"
         )
-        print_field(
+        console.print_field(
             "Statut", "Signé ✓" if contract.is_signed else "Non signé ✗"
         )
-        print_field(
+        console.print_field(
             "Date de création", contract.created_at.strftime("%Y-%m-%d")
         )
-        print_separator()
+        console.print_separator()
 
-    print_success(f"Total: {len(contracts)} contrat(s) non soldé(s)")
+    console.print_success(f"Total: {len(contracts)} contrat(s) non soldé(s)")
 
 
 @app.command()
@@ -976,46 +963,48 @@ def filter_unassigned_events(**kwargs):
     container = Container()
     event_service = container.event_service()
 
-    print_separator()
-    print_header("Événements sans contact support")
-    print_separator()
+    console.print_separator()
+    console.print_header("Événements sans contact support")
+    console.print_separator()
 
     events = event_service.get_unassigned_events()
 
     if not events:
-        print_success("Aucun événement sans contact support")
+        console.print_success("Aucun événement sans contact support")
         return
 
     for event in events:
-        print_field("Event ID", str(event.id))
-        print_field("Contract ID", str(event.contract_id))
-        print_field(
+        console.print_field("Event ID", str(event.id))
+        console.print_field("Contract ID", str(event.contract_id))
+        console.print_field(
             "Client name",
             f"{event.contract.client.first_name} {event.contract.client.last_name}",
         )
-        print_field(
+        console.print_field(
             "Client contact",
             f"{event.contract.client.email}\n{event.contract.client.phone}",
         )
-        print_field(
+        console.print_field(
             "Event date start", format_event_datetime(event.event_start)
         )
-        print_field("Event date end", format_event_datetime(event.event_end))
-        print_field("Support contact", "Non assigné")
-        print_field("Location", event.location)
-        print_field("Attendees", str(event.attendees))
+        console.print_field("Event date end", format_event_datetime(event.event_end))
+        console.print_field("Support contact", "Non assigné")
+        console.print_field("Location", event.location)
+        console.print_field("Attendees", str(event.attendees))
         if event.notes:
-            print_field("Notes", event.notes)
-        print_separator()
+            console.print_field("Notes", event.notes)
+        console.print_separator()
 
-    print_success(f"Total: {len(events)} événement(s) sans contact support")
+    console.print_success(f"Total: {len(events)} événement(s) sans contact support")
 
 
 @app.command()
 @require_department(Department.SUPPORT, Department.GESTION)
 def filter_my_events(
     support_contact_id: int = typer.Option(
-        ..., prompt="ID du contact support", callback=validate_user_id_callback
+        ...,
+        prompt="ID du contact support",
+        callback=validators.validate_user_id_callback,
     ),
     **kwargs,  # For receiving current_user from decorator
 ):
@@ -1041,56 +1030,56 @@ def filter_my_events(
     event_service = container.event_service()
     user_service = container.user_service()
 
-    print_separator()
-    print_header("Mes événements")
-    print_separator()
+    console.print_separator()
+    console.print_header("Mes événements")
+    console.print_separator()
 
     # Vérifier que l'utilisateur existe et est du département SUPPORT
     user = user_service.get_user(support_contact_id)
     if not user:
-        print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
+        console.print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
         raise typer.Exit(code=1)
 
     try:
-        validate_user_is_support(user)
+        validators.validate_user_is_support(user)
     except ValueError as e:
-        print_error(str(e))
+        console.print_error(str(e))
         raise typer.Exit(code=1)
 
     events = event_service.get_events_by_support_contact(support_contact_id)
 
     if not events:
-        print_error(
+        console.print_error(
             f"Aucun événement assigné à {user.first_name} {user.last_name}"
         )
         return
 
     for event in events:
-        print_field("Event ID", str(event.id))
-        print_field("Contract ID", str(event.contract_id))
-        print_field(
+        console.print_field("Event ID", str(event.id))
+        console.print_field("Contract ID", str(event.contract_id))
+        console.print_field(
             "Client name",
             f"{event.contract.client.first_name} {event.contract.client.last_name}",
         )
-        print_field(
+        console.print_field(
             "Client contact",
             f"{event.contract.client.email}\n{event.contract.client.phone}",
         )
-        print_field(
+        console.print_field(
             "Event date start", format_event_datetime(event.event_start)
         )
-        print_field("Event date end", format_event_datetime(event.event_end))
-        print_field(
+        console.print_field("Event date end", format_event_datetime(event.event_end))
+        console.print_field(
             "Support contact",
             f"{user.first_name} {user.last_name} (ID: {user.id})",
         )
-        print_field("Location", event.location)
-        print_field("Attendees", str(event.attendees))
+        console.print_field("Location", event.location)
+        console.print_field("Attendees", str(event.attendees))
         if event.notes:
-            print_field("Notes", event.notes)
-        print_separator()
+            console.print_field("Notes", event.notes)
+        console.print_separator()
 
-    print_success(
+    console.print_success(
         f"Total: {len(events)} événement(s) assigné(s) à {user.first_name} {user.last_name}"
     )
 
@@ -1099,7 +1088,9 @@ def filter_my_events(
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def update_client(
     client_id: int = typer.Option(
-        ..., prompt="ID du client", callback=validate_client_id_callback
+        ...,
+        prompt="ID du client",
+        callback=validators.validate_client_id_callback,
     ),
     first_name: str = typer.Option(
         None, prompt="Nouveau prénom (laisser vide pour ne pas modifier)"
@@ -1146,14 +1137,14 @@ def update_client(
     container = Container()
     client_service = container.client_service()
 
-    print_separator()
-    print_header("Mise à jour d'un client")
-    print_separator()
+    console.print_separator()
+    console.print_header("Mise à jour d'un client")
+    console.print_separator()
 
     # Vérifier que le client existe
     client = client_service.get_client(client_id)
     if not client:
-        print_error(f"Client avec l'ID {client_id} n'existe pas")
+        console.print_error(f"Client avec l'ID {client_id} n'existe pas")
         raise typer.Exit(code=1)
 
     # Nettoyer les champs vides
@@ -1165,11 +1156,11 @@ def update_client(
 
     # Validation des champs si fournis
     if first_name and len(first_name) < 2:
-        print_error("Le prénom doit avoir au moins 2 caractères")
+        console.print_error("Le prénom doit avoir au moins 2 caractères")
         raise typer.Exit(code=1)
 
     if last_name and len(last_name) < 2:
-        print_error("Le nom doit avoir au moins 2 caractères")
+        console.print_error("Le nom doit avoir au moins 2 caractères")
         raise typer.Exit(code=1)
 
     try:
@@ -1188,45 +1179,47 @@ def update_client(
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
         if "unique" in error_msg or "duplicate" in error_msg:
-            print_error(f"Un client avec l'email '{email}' existe déjà")
+            console.print_error(f"Un client avec l'email '{email}' existe déjà")
         else:
-            print_error(f"Erreur d'intégrité: {error_msg}")
+            console.print_error(f"Erreur d'intégrité: {error_msg}")
         raise typer.Exit(code=1)
 
     except Exception as e:
-        print_error(f"Erreur inattendue: {e}")
+        console.print_error(f"Erreur inattendue: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    print_separator()
-    print_success(f"Client mis à jour avec succès!")
-    print_field("ID", str(updated_client.id))
-    print_field(
+    console.print_separator()
+    console.print_success(f"Client mis à jour avec succès!")
+    console.print_field("ID", str(updated_client.id))
+    console.print_field(
         "Nom", f"{updated_client.first_name} {updated_client.last_name}"
     )
-    print_field("Email", updated_client.email)
-    print_field("Téléphone", updated_client.phone)
-    print_field("Entreprise", updated_client.company_name)
-    print_field(
+    console.print_field("Email", updated_client.email)
+    console.print_field("Téléphone", updated_client.phone)
+    console.print_field("Entreprise", updated_client.company_name)
+    console.print_field(
         "Contact commercial",
         f"{updated_client.sales_contact.first_name} {updated_client.sales_contact.last_name} (ID: {updated_client.sales_contact_id})",
     )
-    print_field(
+    console.print_field(
         "Date de création",
         updated_client.created_at.strftime("%Y-%m-%d %H:%M:%S"),
     )
-    print_field(
+    console.print_field(
         "Dernière mise à jour",
         updated_client.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
     )
-    print_separator()
+    console.print_separator()
 
 
 @app.command()
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def update_contract(
     contract_id: int = typer.Option(
-        ..., prompt="ID du contrat", callback=validate_contract_id_callback
+        ...,
+        prompt="ID du contrat",
+        callback=validators.validate_contract_id_callback,
     ),
     total_amount: str = typer.Option(
         None,
@@ -1266,14 +1259,14 @@ def update_contract(
     container = Container()
     contract_service = container.contract_service()
 
-    print_separator()
-    print_header("Mise à jour d'un contrat")
-    print_separator()
+    console.print_separator()
+    console.print_header("Mise à jour d'un contrat")
+    console.print_separator()
 
     # Vérifier que le contrat existe
     contract = contract_service.get_contract(contract_id)
     if not contract:
-        print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
+        console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
         raise typer.Exit(code=1)
 
     # Nettoyer et convertir les montants
@@ -1285,7 +1278,7 @@ def update_contract(
         try:
             total_decimal = Decimal(total_amount)
         except Exception:
-            print_error("Montant total invalide")
+            console.print_error("Montant total invalide")
             raise typer.Exit(code=1)
 
     if remaining_amount:
@@ -1293,16 +1286,16 @@ def update_contract(
         try:
             remaining_decimal = Decimal(remaining_amount)
         except Exception:
-            print_error("Montant restant invalide")
+            console.print_error("Montant restant invalide")
             raise typer.Exit(code=1)
 
     # Validation des montants
     if total_decimal is not None and total_decimal < 0:
-        print_error("Le montant total doit être positif")
+        console.print_error("Le montant total doit être positif")
         raise typer.Exit(code=1)
 
     if remaining_decimal is not None and remaining_decimal < 0:
-        print_error("Le montant restant doit être positif")
+        console.print_error("Le montant restant doit être positif")
         raise typer.Exit(code=1)
 
     # Mettre à jour les valeurs
@@ -1315,53 +1308,57 @@ def update_contract(
 
     # Validation finale
     if contract.remaining_amount > contract.total_amount:
-        print_error("Le montant restant ne peut pas dépasser le montant total")
+        console.print_error("Le montant restant ne peut pas dépasser le montant total")
         raise typer.Exit(code=1)
 
     try:
         updated_contract = contract_service.update_contract(contract)
     except Exception as e:
-        print_error(f"Erreur lors de la mise à jour: {e}")
+        console.print_error(f"Erreur lors de la mise à jour: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    print_separator()
-    print_success("Contrat mis à jour avec succès!")
-    print_field("ID", str(updated_contract.id))
-    print_field(
+    console.print_separator()
+    console.print_success("Contrat mis à jour avec succès!")
+    console.print_field("ID", str(updated_contract.id))
+    console.print_field(
         "Client",
         f"{updated_contract.client.first_name} {updated_contract.client.last_name} ({updated_contract.client.company_name})",
     )
-    print_field(
+    console.print_field(
         "Contact commercial",
         f"{updated_contract.client.sales_contact.first_name} {updated_contract.client.sales_contact.last_name} (ID: {updated_contract.client.sales_contact_id})",
     )
-    print_field("Montant total", f"{updated_contract.total_amount} €")
-    print_field(
+    console.print_field("Montant total", f"{updated_contract.total_amount} €")
+    console.print_field(
         "Montant restant à payer", f"{updated_contract.remaining_amount} €"
     )
-    print_field(
+    console.print_field(
         "Statut", "Signé ✓" if updated_contract.is_signed else "Non signé ✗"
     )
-    print_field(
+    console.print_field(
         "Date de création",
         updated_contract.created_at.strftime("%Y-%m-%d %H:%M:%S"),
     )
-    print_field(
+    console.print_field(
         "Dernière mise à jour",
         updated_contract.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
     )
-    print_separator()
+    console.print_separator()
 
 
 @app.command()
 @require_department(Department.GESTION, Department.SUPPORT)
 def update_event_attendees(
     event_id: int = typer.Option(
-        ..., prompt="ID de l'événement", callback=validate_event_id_callback
+        ...,
+        prompt="ID de l'événement",
+        callback=validators.validate_event_id_callback,
     ),
     attendees: int = typer.Option(
-        ..., prompt="Nouveau nombre de participants", callback=validate_attendees_callback
+        ...,
+        prompt="Nouveau nombre de participants",
+        callback=validators.validate_attendees_callback,
     ),
     **kwargs,  # For receiving current_user from decorator
 ):
@@ -1389,56 +1386,52 @@ def update_event_attendees(
     container = Container()
     event_service = container.event_service()
 
-    print_separator()
-    print_header("Mise à jour du nombre de participants")
-    print_separator()
+    console.print_separator()
+    console.print_header("Mise à jour du nombre de participants")
+    console.print_separator()
 
     # Vérifier que l'événement existe
     event = event_service.get_event(event_id)
     if not event:
-        print_error(f"Événement avec l'ID {event_id} n'existe pas")
+        console.print_error(f"Événement avec l'ID {event_id} n'existe pas")
         raise typer.Exit(code=1)
 
     # Business validation: validate attendees is positive
     try:
-        validate_attendees_positive(attendees)
+        validators.validate_attendees_positive(attendees)
     except ValueError as e:
-        print_error(str(e))
+        console.print_error(str(e))
         raise typer.Exit(code=1)
 
     # Mettre à jour le nombre de participants
     try:
         updated_event = event_service.update_attendees(event_id, attendees)
         if not updated_event:
-            print_error(f"Événement avec l'ID {event_id} n'existe pas")
+            console.print_error(f"Événement avec l'ID {event_id} n'existe pas")
             raise typer.Exit(code=1)
     except Exception as e:
-        print_error(f"Erreur lors de la mise à jour: {e}")
+        console.print_error(f"Erreur lors de la mise à jour: {e}")
         raise typer.Exit(code=1)
 
     # Success message
-    print_separator()
-    print_success(
+    console.print_separator()
+    console.print_success(
         f"Nombre de participants mis à jour avec succès pour l'événement #{event_id}!"
     )
-    print_field("ID", str(updated_event.id))
-    print_field("Nom de l'événement", updated_event.name)
-    print_field("Contrat ID", str(updated_event.contract_id))
-    print_field(
-        "Début", format_event_datetime(updated_event.event_start)
-    )
-    print_field(
-        "Fin", format_event_datetime(updated_event.event_end)
-    )
-    print_field("Lieu", updated_event.location)
-    print_field("Nombre de participants", str(updated_event.attendees))
+    console.print_field("ID", str(updated_event.id))
+    console.print_field("Nom de l'événement", updated_event.name)
+    console.print_field("Contrat ID", str(updated_event.contract_id))
+    console.print_field("Début", format_event_datetime(updated_event.event_start))
+    console.print_field("Fin", format_event_datetime(updated_event.event_end))
+    console.print_field("Lieu", updated_event.location)
+    console.print_field("Nombre de participants", str(updated_event.attendees))
     if updated_event.support_contact:
-        print_field(
+        console.print_field(
             "Support contact",
             f"{updated_event.support_contact.first_name} {updated_event.support_contact.last_name} (ID: {updated_event.support_contact_id})",
         )
     else:
-        print_field("Support contact", "Non assigné")
+        console.print_field("Support contact", "Non assigné")
     if updated_event.notes:
-        print_field("Notes", updated_event.notes)
-    print_separator()
+        console.print_field("Notes", updated_event.notes)
+    console.print_separator()
