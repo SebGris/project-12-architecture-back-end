@@ -9,7 +9,6 @@ from typing import Callable
 import typer
 
 from src.cli.console import print_error, print_separator
-from src.containers import Container
 from src.models.user import Department, User
 
 
@@ -47,12 +46,6 @@ def require_department(*allowed_departments: Department):
         def wrapper(*args, **kwargs):
             # Get auth_service from kwargs (injected by dependency_injector)
             auth_service = kwargs.get("auth_service")
-
-            if not auth_service:
-                # If auth_service is not in kwargs, create one manually
-                container = Container()
-                container.wire(modules=[__name__])
-                auth_service = container.auth_service()
 
             # Check if user is authenticated
             user = auth_service.get_current_user()
