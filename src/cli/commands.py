@@ -10,9 +10,41 @@ from src.cli.permissions import require_department
 
 app = typer.Typer()
 
-# Constants for field labels to avoid string duplication
+# Constants for field labels to avoid string duplication (SonarQube python:S1192)
 LABEL_USERNAME = "Nom d'utilisateur"
 LABEL_DEPARTMENT = "Département"
+LABEL_ID = "ID"
+LABEL_EMAIL = "Email"
+LABEL_PHONE = "Téléphone"
+LABEL_CONTACT_COMMERCIAL = "Contact commercial"
+LABEL_SUPPORT_CONTACT = "Support contact"
+LABEL_DATE_CREATION = "Date de création"
+LABEL_MONTANT_TOTAL = "Montant total"
+LABEL_MONTANT_RESTANT = "Montant restant à payer"
+LABEL_CLIENT = "Client"
+LABEL_EVENT_ID = "Event ID"
+LABEL_CONTRACT_ID = "Contract ID"
+LABEL_CLIENT_NAME = "Client name"
+LABEL_CLIENT_CONTACT = "Client contact"
+LABEL_EVENT_DATE_START = "Event date start"
+LABEL_EVENT_DATE_END = "Event date end"
+LABEL_LOCATION = "Location"
+LABEL_ATTENDEES = "Attendees"
+LABEL_NOTES = "Notes"
+LABEL_STATUT = "Statut"
+LABEL_NON_ASSIGNE = "Non assigné"
+
+# Constants for formats
+FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S"
+FORMAT_DATE = "%Y-%m-%d"
+
+# Constants for status messages
+STATUS_SIGNED = "Signé ✓"
+STATUS_UNSIGNED = "Non signé ✗"
+
+# Constants for error messages
+ERROR_UNEXPECTED = "Erreur inattendue: {e}"
+ERROR_INTEGRITY = "Erreur d'intégrité de la base de données: {error_msg}"
 
 
 def format_event_datetime(dt: datetime) -> str:
@@ -161,11 +193,11 @@ def whoami():
         raise typer.Exit(code=1)
 
     # Display user info
-    console.print_field("ID", str(user.id))
+    console.print_field(LABEL_ID, str(user.id))
     console.print_field(LABEL_USERNAME, user.username)
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
-    console.print_field("Email", user.email)
-    console.print_field("Téléphone", user.phone)
+    console.print_field(LABEL_EMAIL,user.email)
+    console.print_field(LABEL_PHONE,user.phone)
     console.print_field(LABEL_DEPARTMENT, user.department.value)
     console.print_separator()
 
@@ -240,7 +272,7 @@ def create_client(
         if current_user.department == Department.COMMERCIAL:
             sales_contact_id = current_user.id
             console.print_field(
-                "Contact commercial", f"Auto-assigné à {current_user.username}"
+                LABEL_CONTACT_COMMERCIAL, f"Auto-assigné à {current_user.username}"
             )
         else:
             console.print_error("Vous devez spécifier un ID de contact commercial")
@@ -290,12 +322,12 @@ def create_client(
             )
         else:
             console.print_error(
-                f"Erreur d'intégrité de la base de données: {error_msg}"
+                ERROR_INTEGRITY.format(error_msg=error_msg)
             )
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(f"Erreur inattendue: {e}")
+        console.print_error(ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
@@ -303,16 +335,16 @@ def create_client(
     console.print_success(
         f"Client {client.first_name} {client.last_name} créé avec succès!"
     )
-    console.print_field("ID", str(client.id))
-    console.print_field("Email", client.email)
-    console.print_field("Téléphone", client.phone)
+    console.print_field(LABEL_ID, str(client.id))
+    console.print_field(LABEL_EMAIL,client.email)
+    console.print_field(LABEL_PHONE,client.phone)
     console.print_field("Entreprise", client.company_name)
     console.print_field(
-        "Contact commercial",
+        LABEL_CONTACT_COMMERCIAL,
         f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
     console.print_field(
-        "Date de création", client.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        LABEL_DATE_CREATION,client.created_at.strftime(FORMAT_DATETIME)
     )
     console.print_separator()
 
@@ -421,20 +453,20 @@ def create_user(
                 )
         else:
             console.print_error(
-                f"Erreur d'intégrité de la base de données: {error_msg}"
+                ERROR_INTEGRITY.format(error_msg=error_msg)
             )
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(f"Erreur inattendue: {e}")
+        console.print_error(ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
     console.print_separator()
     console.print_success(f"Utilisateur {user.username} créé avec succès!")
-    console.print_field("ID", str(user.id))
+    console.print_field(LABEL_ID, str(user.id))
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
-    console.print_field("Email", user.email)
+    console.print_field(LABEL_EMAIL,user.email)
     console.print_field(LABEL_DEPARTMENT, user.department.value)
     console.print_separator()
 
@@ -534,12 +566,12 @@ def create_contract(
             console.print_error(f"Le client (ID: {client_id}) n'existe pas")
         else:
             console.print_error(
-                f"Erreur d'intégrité de la base de données: {error_msg}"
+                ERROR_INTEGRITY.format(error_msg=error_msg)
             )
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(f"Erreur inattendue: {e}")
+        console.print_error(ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
@@ -549,18 +581,18 @@ def create_contract(
     )
     console.print_field("ID du contrat", str(contract.id))
     console.print_field(
-        "Client",
+        LABEL_CLIENT,
         f"{client.first_name} {client.last_name} ({client.company_name})",
     )
     console.print_field(
-        "Contact commercial",
+        LABEL_CONTACT_COMMERCIAL,
         f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
-    console.print_field("Montant total", f"{contract.total_amount} €")
-    console.print_field("Montant restant à payer", f"{contract.remaining_amount} €")
-    console.print_field("Statut", "Signé ✓" if contract.is_signed else "Non signé ✗")
+    console.print_field(LABEL_MONTANT_TOTAL,f"{contract.total_amount} €")
+    console.print_field(LABEL_MONTANT_RESTANT,f"{contract.remaining_amount} €")
+    console.print_field(LABEL_STATUT, STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED)
     console.print_field(
-        "Date de création", contract.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        LABEL_DATE_CREATION,contract.created_at.strftime(FORMAT_DATETIME)
     )
     console.print_separator()
 
@@ -705,39 +737,39 @@ def create_event(
                 )
         else:
             console.print_error(
-                f"Erreur d'intégrité de la base de données: {error_msg}"
+                ERROR_INTEGRITY.format(error_msg=error_msg)
             )
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(f"Erreur inattendue: {e}")
+        console.print_error(ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
     console.print_separator()
     console.print_success(f"Événement '{event.name}' créé avec succès!")
-    console.print_field("Event ID", str(event.id))
-    console.print_field("Contract ID", str(contract.id))
+    console.print_field(LABEL_EVENT_ID, str(event.id))
+    console.print_field(LABEL_CONTRACT_ID, str(contract.id))
     console.print_field(
-        "Client name",
+        LABEL_CLIENT_NAME,
         f"{contract.client.first_name} {contract.client.last_name}",
     )
     console.print_field(
-        "Client contact", f"{contract.client.email}\n{contract.client.phone}"
+        LABEL_CLIENT_CONTACT, f"{contract.client.email}\n{contract.client.phone}"
     )
-    console.print_field("Event date start", format_event_datetime(event.event_start))
-    console.print_field("Event date end", format_event_datetime(event.event_end))
+    console.print_field(LABEL_EVENT_DATE_START,format_event_datetime(event.event_start))
+    console.print_field(LABEL_EVENT_DATE_END,format_event_datetime(event.event_end))
     if event.support_contact:
         console.print_field(
-            "Support contact",
+            LABEL_SUPPORT_CONTACT,
             f"{event.support_contact.first_name} {event.support_contact.last_name} (ID: {event.support_contact_id})",
         )
     else:
-        console.print_field("Support contact", "Non assigné")
-    console.print_field("Location", event.location)
-    console.print_field("Attendees", str(event.attendees))
+        console.print_field(LABEL_SUPPORT_CONTACT, "Non assigné")
+    console.print_field(LABEL_LOCATION,event.location)
+    console.print_field(LABEL_ATTENDEES,str(event.attendees))
     if event.notes:
-        console.print_field("Notes", event.notes)
+        console.print_field(LABEL_NOTES,event.notes)
     console.print_separator()
 
 
@@ -816,30 +848,30 @@ def assign_support(
     console.print_success(
         f"Contact support assigné avec succès à l'événement '{updated_event.name}'!"
     )
-    console.print_field("Event ID", str(updated_event.id))
-    console.print_field("Contract ID", str(updated_event.contract_id))
+    console.print_field(LABEL_EVENT_ID, str(updated_event.id))
+    console.print_field(LABEL_CONTRACT_ID, str(updated_event.contract_id))
     console.print_field(
-        "Client name",
+        LABEL_CLIENT_NAME,
         f"{updated_event.contract.client.first_name} {updated_event.contract.client.last_name}",
     )
     console.print_field(
-        "Client contact",
+        LABEL_CLIENT_CONTACT,
         f"{updated_event.contract.client.email}\n{updated_event.contract.client.phone}",
     )
     console.print_field(
         "Event date start", format_event_datetime(updated_event.event_start)
     )
     console.print_field(
-        "Event date end", format_event_datetime(updated_event.event_end)
+        LABEL_EVENT_DATE_END,format_event_datetime(updated_event.event_end)
     )
     console.print_field(
         "Support contact",
         f"{user.first_name} {user.last_name} (ID: {user.id})",
     )
-    console.print_field("Location", updated_event.location)
-    console.print_field("Attendees", str(updated_event.attendees))
+    console.print_field(LABEL_LOCATION,updated_event.location)
+    console.print_field(LABEL_ATTENDEES,str(updated_event.attendees))
     if updated_event.notes:
-        console.print_field("Notes", updated_event.notes)
+        console.print_field(LABEL_NOTES,updated_event.notes)
     console.print_separator()
 
 
@@ -872,21 +904,21 @@ def filter_unsigned_contracts(**kwargs):
         return
 
     for contract in contracts:
-        console.print_field("ID", str(contract.id))
+        console.print_field(LABEL_ID, str(contract.id))
         console.print_field(
-            "Client",
+            LABEL_CLIENT,
             f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
         )
         console.print_field(
-            "Contact commercial",
+            LABEL_CONTACT_COMMERCIAL,
             f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
-        console.print_field("Montant total", f"{contract.total_amount} €")
+        console.print_field(LABEL_MONTANT_TOTAL,f"{contract.total_amount} €")
         console.print_field(
-            "Montant restant à payer", f"{contract.remaining_amount} €"
+            LABEL_MONTANT_RESTANT,f"{contract.remaining_amount} €"
         )
         console.print_field(
-            "Date de création", contract.created_at.strftime("%Y-%m-%d")
+            LABEL_DATE_CREATION,contract.created_at.strftime(FORMAT_DATE)
         )
         console.print_separator()
 
@@ -922,24 +954,24 @@ def filter_unpaid_contracts(**kwargs):
         return
 
     for contract in contracts:
-        console.print_field("ID", str(contract.id))
+        console.print_field(LABEL_ID, str(contract.id))
         console.print_field(
-            "Client",
+            LABEL_CLIENT,
             f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
         )
         console.print_field(
-            "Contact commercial",
+            LABEL_CONTACT_COMMERCIAL,
             f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
-        console.print_field("Montant total", f"{contract.total_amount} €")
+        console.print_field(LABEL_MONTANT_TOTAL,f"{contract.total_amount} €")
         console.print_field(
-            "Montant restant à payer", f"{contract.remaining_amount} €"
+            LABEL_MONTANT_RESTANT,f"{contract.remaining_amount} €"
         )
         console.print_field(
-            "Statut", "Signé ✓" if contract.is_signed else "Non signé ✗"
+            LABEL_STATUT, STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED
         )
         console.print_field(
-            "Date de création", contract.created_at.strftime("%Y-%m-%d")
+            LABEL_DATE_CREATION,contract.created_at.strftime(FORMAT_DATE)
         )
         console.print_separator()
 
@@ -975,25 +1007,25 @@ def filter_unassigned_events(**kwargs):
         return
 
     for event in events:
-        console.print_field("Event ID", str(event.id))
-        console.print_field("Contract ID", str(event.contract_id))
+        console.print_field(LABEL_EVENT_ID, str(event.id))
+        console.print_field(LABEL_CONTRACT_ID, str(event.contract_id))
         console.print_field(
-            "Client name",
+            LABEL_CLIENT_NAME,
             f"{event.contract.client.first_name} {event.contract.client.last_name}",
         )
         console.print_field(
-            "Client contact",
+            LABEL_CLIENT_CONTACT,
             f"{event.contract.client.email}\n{event.contract.client.phone}",
         )
         console.print_field(
-            "Event date start", format_event_datetime(event.event_start)
+            LABEL_EVENT_DATE_START,format_event_datetime(event.event_start)
         )
-        console.print_field("Event date end", format_event_datetime(event.event_end))
-        console.print_field("Support contact", "Non assigné")
-        console.print_field("Location", event.location)
-        console.print_field("Attendees", str(event.attendees))
+        console.print_field(LABEL_EVENT_DATE_END,format_event_datetime(event.event_end))
+        console.print_field(LABEL_SUPPORT_CONTACT, "Non assigné")
+        console.print_field(LABEL_LOCATION,event.location)
+        console.print_field(LABEL_ATTENDEES,str(event.attendees))
         if event.notes:
-            console.print_field("Notes", event.notes)
+            console.print_field(LABEL_NOTES,event.notes)
         console.print_separator()
 
     console.print_success(f"Total: {len(events)} événement(s) sans contact support")
@@ -1056,28 +1088,28 @@ def filter_my_events(
         return
 
     for event in events:
-        console.print_field("Event ID", str(event.id))
-        console.print_field("Contract ID", str(event.contract_id))
+        console.print_field(LABEL_EVENT_ID, str(event.id))
+        console.print_field(LABEL_CONTRACT_ID, str(event.contract_id))
         console.print_field(
-            "Client name",
+            LABEL_CLIENT_NAME,
             f"{event.contract.client.first_name} {event.contract.client.last_name}",
         )
         console.print_field(
-            "Client contact",
+            LABEL_CLIENT_CONTACT,
             f"{event.contract.client.email}\n{event.contract.client.phone}",
         )
         console.print_field(
-            "Event date start", format_event_datetime(event.event_start)
+            LABEL_EVENT_DATE_START,format_event_datetime(event.event_start)
         )
-        console.print_field("Event date end", format_event_datetime(event.event_end))
+        console.print_field(LABEL_EVENT_DATE_END,format_event_datetime(event.event_end))
         console.print_field(
-            "Support contact",
+            LABEL_SUPPORT_CONTACT,
             f"{user.first_name} {user.last_name} (ID: {user.id})",
         )
-        console.print_field("Location", event.location)
-        console.print_field("Attendees", str(event.attendees))
+        console.print_field(LABEL_LOCATION,event.location)
+        console.print_field(LABEL_ATTENDEES,str(event.attendees))
         if event.notes:
-            console.print_field("Notes", event.notes)
+            console.print_field(LABEL_NOTES,event.notes)
         console.print_separator()
 
     console.print_success(
@@ -1186,30 +1218,30 @@ def update_client(
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(f"Erreur inattendue: {e}")
+        console.print_error(ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
     console.print_separator()
     console.print_success(f"Client mis à jour avec succès!")
-    console.print_field("ID", str(updated_client.id))
+    console.print_field(LABEL_ID, str(updated_client.id))
     console.print_field(
         "Nom", f"{updated_client.first_name} {updated_client.last_name}"
     )
-    console.print_field("Email", updated_client.email)
-    console.print_field("Téléphone", updated_client.phone)
+    console.print_field(LABEL_EMAIL,updated_client.email)
+    console.print_field(LABEL_PHONE,updated_client.phone)
     console.print_field("Entreprise", updated_client.company_name)
     console.print_field(
-        "Contact commercial",
+        LABEL_CONTACT_COMMERCIAL,
         f"{updated_client.sales_contact.first_name} {updated_client.sales_contact.last_name} (ID: {updated_client.sales_contact_id})",
     )
     console.print_field(
         "Date de création",
-        updated_client.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        updated_client.created_at.strftime(FORMAT_DATETIME),
     )
     console.print_field(
         "Dernière mise à jour",
-        updated_client.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+        updated_client.updated_at.strftime(FORMAT_DATETIME),
     )
     console.print_separator()
 
@@ -1321,29 +1353,29 @@ def update_contract(
     # Success message
     console.print_separator()
     console.print_success("Contrat mis à jour avec succès!")
-    console.print_field("ID", str(updated_contract.id))
+    console.print_field(LABEL_ID, str(updated_contract.id))
     console.print_field(
-        "Client",
+        LABEL_CLIENT,
         f"{updated_contract.client.first_name} {updated_contract.client.last_name} ({updated_contract.client.company_name})",
     )
     console.print_field(
-        "Contact commercial",
+        LABEL_CONTACT_COMMERCIAL,
         f"{updated_contract.client.sales_contact.first_name} {updated_contract.client.sales_contact.last_name} (ID: {updated_contract.client.sales_contact_id})",
     )
-    console.print_field("Montant total", f"{updated_contract.total_amount} €")
+    console.print_field(LABEL_MONTANT_TOTAL,f"{updated_contract.total_amount} €")
     console.print_field(
         "Montant restant à payer", f"{updated_contract.remaining_amount} €"
     )
     console.print_field(
-        "Statut", "Signé ✓" if updated_contract.is_signed else "Non signé ✗"
+        "Statut", STATUS_SIGNED if updated_contract.is_signed else STATUS_UNSIGNED
     )
     console.print_field(
         "Date de création",
-        updated_contract.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        updated_contract.created_at.strftime(FORMAT_DATETIME),
     )
     console.print_field(
         "Dernière mise à jour",
-        updated_contract.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+        updated_contract.updated_at.strftime(FORMAT_DATETIME),
     )
     console.print_separator()
 
@@ -1419,7 +1451,7 @@ def update_event_attendees(
     console.print_success(
         f"Nombre de participants mis à jour avec succès pour l'événement #{event_id}!"
     )
-    console.print_field("ID", str(updated_event.id))
+    console.print_field(LABEL_ID, str(updated_event.id))
     console.print_field("Nom de l'événement", updated_event.name)
     console.print_field("Contrat ID", str(updated_event.contract_id))
     console.print_field("Début", format_event_datetime(updated_event.event_start))
@@ -1428,11 +1460,11 @@ def update_event_attendees(
     console.print_field("Nombre de participants", str(updated_event.attendees))
     if updated_event.support_contact:
         console.print_field(
-            "Support contact",
+            LABEL_SUPPORT_CONTACT,
             f"{updated_event.support_contact.first_name} {updated_event.support_contact.last_name} (ID: {updated_event.support_contact_id})",
         )
     else:
-        console.print_field("Support contact", "Non assigné")
+        console.print_field(LABEL_SUPPORT_CONTACT, "Non assigné")
     if updated_event.notes:
-        console.print_field("Notes", updated_event.notes)
+        console.print_field(LABEL_NOTES,updated_event.notes)
     console.print_separator()
