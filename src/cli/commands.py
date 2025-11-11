@@ -10,6 +10,10 @@ from src.cli.permissions import require_department
 
 app = typer.Typer()
 
+# Constants for field labels to avoid string duplication
+LABEL_USERNAME = "Nom d'utilisateur"
+LABEL_DEPARTMENT = "Département"
+
 
 def format_event_datetime(dt: datetime) -> str:
     """Format datetime for event display (e.g., '4 Jun 2023 @ 1PM')."""
@@ -27,7 +31,7 @@ def format_event_datetime(dt: datetime) -> str:
 
 @app.command()
 def login(
-    username: str = typer.Option(..., prompt="Nom d'utilisateur"),
+    username: str = typer.Option(..., prompt=LABEL_USERNAME),
     password: str = typer.Option(..., prompt="Mot de passe", hide_input=True),
 ):
     """
@@ -75,7 +79,7 @@ def login(
     # Success message
     console.print_separator()
     console.print_success(f"Bienvenue {user.first_name} {user.last_name} !")
-    console.print_field("Département", user.department.value)
+    console.print_field(LABEL_DEPARTMENT, user.department.value)
     console.print_field("Session", f"Valide pour 24 heures")
     console.print_separator()
 
@@ -158,11 +162,11 @@ def whoami():
 
     # Display user info
     console.print_field("ID", str(user.id))
-    console.print_field("Nom d'utilisateur", user.username)
+    console.print_field(LABEL_USERNAME, user.username)
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
     console.print_field("Email", user.email)
     console.print_field("Téléphone", user.phone)
-    console.print_field("Département", user.department.value)
+    console.print_field(LABEL_DEPARTMENT, user.department.value)
     console.print_separator()
 
 
@@ -318,7 +322,7 @@ def create_client(
 def create_user(
     username: str = typer.Option(
         ...,
-        prompt="Nom d'utilisateur",
+        prompt=LABEL_USERNAME,
         callback=validators.validate_username_callback,
     ),
     first_name: str = typer.Option(
@@ -431,7 +435,7 @@ def create_user(
     console.print_field("ID", str(user.id))
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
     console.print_field("Email", user.email)
-    console.print_field("Département", user.department.value)
+    console.print_field(LABEL_DEPARTMENT, user.department.value)
     console.print_separator()
 
 
