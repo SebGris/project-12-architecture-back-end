@@ -6,10 +6,7 @@ from src.cli import console
 from src.cli import validators
 from src.models.user import Department
 from src.containers import Container
-from src.cli.permissions import (
-    require_auth,
-    require_department,
-)
+from src.cli.permissions import require_department
 
 app = typer.Typer()
 
@@ -843,7 +840,7 @@ def assign_support(
 
 
 @app.command()
-@require_auth
+@require_department()
 def filter_unsigned_contracts(**kwargs):
     """
     Afficher tous les contrats non signés.
@@ -893,7 +890,7 @@ def filter_unsigned_contracts(**kwargs):
 
 
 @app.command()
-@require_auth
+@require_department()
 def filter_unpaid_contracts(**kwargs):
     """
     Afficher tous les contrats non soldés (montant restant > 0).
@@ -946,7 +943,7 @@ def filter_unpaid_contracts(**kwargs):
 
 
 @app.command()
-@require_auth
+@require_department()
 def filter_unassigned_events(**kwargs):
     """
     Afficher tous les événements sans contact support assigné.
