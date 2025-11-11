@@ -7,7 +7,7 @@ import secrets
 import os
 from src.sentry_config import add_breadcrumb, capture_message
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -130,7 +130,7 @@ class AuthService:
         Returns:
             JWT token as a string
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expiration = now + timedelta(hours=self.TOKEN_EXPIRATION_HOURS)
 
         payload = {

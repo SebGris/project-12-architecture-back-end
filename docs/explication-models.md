@@ -347,7 +347,7 @@ __table_args__ = (
 - Coût adaptatif contre les attaques par force brute
 - Méthodes `set_password()` et `verify_password()` dédiées
 
-### Q6 : Pourquoi utiliser `server_default=func.now()` au lieu de `default=datetime.utcnow()` ?
+### Q6 : Pourquoi utiliser `server_default=func.now()` au lieu de `default=datetime.now(timezone.utc)` ?
 **Réponse :**
 - **Timestamp généré par la base de données** : garantit la cohérence même si plusieurs serveurs ont des horloges différentes
 - **Évite les bugs de référence** : pas besoin d'appeler la fonction avec des parenthèses

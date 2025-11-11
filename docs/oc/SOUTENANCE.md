@@ -708,7 +708,7 @@ $2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5jtRq5CcH6RM6
 
 ```python
 def generate_token(self, user: User) -> str:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     expiration = now + timedelta(hours=24)
 
     payload = {
