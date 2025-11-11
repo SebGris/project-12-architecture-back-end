@@ -3,7 +3,10 @@
 This module handles user authentication, JWT token generation and validation.
 """
 
+import secrets
 import os
+from src.sentry_config import add_breadcrumb, capture_message
+
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -30,7 +33,9 @@ class AuthService:
 
     # JWT Configuration
     TOKEN_EXPIRATION_HOURS = 24
-    ALGORITHM = "HS256"  # Secure algorithm (not HS512 which has vulnerabilities)
+    ALGORITHM = (
+        "HS256"  # Secure algorithm (not HS512 which has vulnerabilities)
+    )
     TOKEN_FILE = Path.home() / ".epicevents" / "token"
 
     def __init__(self, repository: UserRepository) -> None:
@@ -57,7 +62,6 @@ class AuthService:
         if not secret_key:
             # For development, generate a secure random key
             # In production, this should ALWAYS be set via environment variable
-            import secrets
             secret_key = secrets.token_hex(32)  # 256 bits
 
         return secret_key
@@ -72,13 +76,12 @@ class AuthService:
         Returns:
             User instance if authentication successful, None otherwise
         """
-        from src.sentry_config import add_breadcrumb, capture_message
 
         # Add breadcrumb for login attempt
         add_breadcrumb(
             f"Tentative de connexion pour l'utilisateur: {username}",
             category="auth",
-            level="info"
+            level="info",
         )
 
         user = self.repository.get_by_username(username)
@@ -88,7 +91,7 @@ class AuthService:
             capture_message(
                 f"Tentative de connexion échouée - utilisateur inexistant: {username}",
                 level="warning",
-                context={"username": username, "reason": "user_not_found"}
+                context={"username": username, "reason": "user_not_found"},
             )
             return None
 
@@ -97,7 +100,7 @@ class AuthService:
             capture_message(
                 f"Tentative de connexion échouée - mot de passe incorrect: {username}",
                 level="warning",
-                context={"username": username, "reason": "wrong_password"}
+                context={"username": username, "reason": "wrong_password"},
             )
             return None
 
@@ -106,7 +109,7 @@ class AuthService:
             f"Connexion réussie pour l'utilisateur: {username}",
             category="auth",
             level="info",
-            data={"user_id": user.id, "department": user.department.value}
+            data={"user_id": user.id, "department": user.department.value},
         )
 
         return user
@@ -141,7 +144,7 @@ class AuthService:
         token = jwt.encode(payload, self._secret_key, algorithm=self.ALGORITHM)
         return token
 
-    def validate_token(self, token: str) -> Optional[dict]:
+    def validate_token(self, token: str) -> Optional[dict]:  # todo
         """Validate a JWT token and return its payload.
 
         Args:
@@ -152,9 +155,7 @@ class AuthService:
         """
         try:
             payload = jwt.decode(
-                token,
-                self._secret_key,
-                algorithms=[self.ALGORITHM]
+                token, self._secret_key, algorithms=[self.ALGORITHM]
             )
             return payload
         except jwt.ExpiredSignatureError:
@@ -185,7 +186,7 @@ class AuthService:
             # On Windows, this might not work, but that's okay
             pass
 
-    def load_token(self) -> Optional[str]:
+    def load_token(self) -> Optional[str]:  # rename
         """Load the JWT token from disk.
 
         Returns:
@@ -194,23 +195,19 @@ class AuthService:
         if not self.TOKEN_FILE.exists():
             return None
 
-        try:
-            token = self.TOKEN_FILE.read_text().strip()
+        token = self.TOKEN_FILE.read_text().strip()  # pas de try
 
-            # Validate the token before returning it
-            if self.validate_token(token):
-                return token
-            else:
-                # Token is invalid or expired, delete it
-                self.delete_token()
-                return None
-        except Exception:
+        # Validate the token before returning it
+        if self.validate_token(token):
+            return token
+        else:
+            # Token is invalid or expired, delete it
+            self.delete_token()
             return None
 
     def delete_token(self) -> None:
         """Delete the stored JWT token (logout)."""
-        if self.TOKEN_FILE.exists():
-            self.TOKEN_FILE.unlink()
+        self.TOKEN_FILE.unlink(missing_ok=True)
 
     def get_current_user(self) -> Optional[User]:
         """Get the currently authenticated user from the stored token.
@@ -223,13 +220,13 @@ class AuthService:
         if not token:
             return None
 
-        payload = self.validate_token(token)
+        payload = self.validate_token(token)  # 2 fois todo
 
         if not payload:
             return None
 
         # Get user from database
-        user_id = payload.get("user_id")
+        user_id = payload.get("user_id")  # pas none todo erreur
         if not user_id:
             return None
 
