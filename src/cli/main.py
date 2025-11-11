@@ -5,7 +5,9 @@ This module is referenced in pyproject.toml for the 'epicevents' command.
 
 from src.containers import Container
 from src.cli import commands, permissions
-from src.sentry_config import init_sentry
+from src.sentry_config import (
+    init_sentry,
+)  # todo sentry dashboard + README CODE MIGRATION
 
 
 def main():
@@ -27,6 +29,7 @@ def main():
     except Exception as e:
         # Capture unhandled exceptions in Sentry
         from src.sentry_config import capture_exception
+
         capture_exception(e, context={"location": "main"})
         raise
     finally:
