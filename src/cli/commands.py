@@ -46,6 +46,12 @@ STATUS_UNSIGNED = "Non signé ✗"
 ERROR_UNEXPECTED = "Erreur inattendue: {e}"
 ERROR_INTEGRITY = "Erreur d'intégrité de la base de données: {error_msg}"
 
+# Additional constants for prompts and error checks
+LABEL_ID_CONTRAT = "ID du contrat"
+PROMPT_TELEPHONE = "Téléphone"
+PROMPT_ID_CONTRAT = "ID du contrat"
+ERROR_FOREIGN_KEY = "foreign key"
+
 
 def format_event_datetime(dt: datetime) -> str:
     """Format datetime for event display (e.g., '4 Jun 2023 @ 1PM')."""
@@ -215,7 +221,7 @@ def create_client(
         ..., prompt="Email", callback=validators.validate_email_callback
     ),
     phone: str = typer.Option(
-        ..., prompt="Téléphone", callback=validators.validate_phone_callback
+        ..., prompt=PROMPT_TELEPHONE, callback=validators.validate_phone_callback
     ),
     company_name: str = typer.Option(
         ...,
@@ -316,7 +322,7 @@ def create_client(
                 console.print_error(
                     "Erreur: Un client avec ces informations existe déjà"
                 )
-        elif "foreign key" in error_msg:
+        elif ERROR_FOREIGN_KEY in error_msg:
             console.print_error(
                 f"Le contact commercial (ID: {sales_contact_id}) n'existe pas"
             )
@@ -367,7 +373,7 @@ def create_user(
         ..., prompt="Email", callback=validators.validate_email_callback
     ),
     phone: str = typer.Option(
-        ..., prompt="Téléphone", callback=validators.validate_phone_callback
+        ..., prompt=PROMPT_TELEPHONE, callback=validators.validate_phone_callback
     ),
     password: str = typer.Option(
         ...,
@@ -562,7 +568,7 @@ def create_contract(
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
 
-        if "foreign key" in error_msg:
+        if ERROR_FOREIGN_KEY in error_msg:
             console.print_error(f"Le client (ID: {client_id}) n'existe pas")
         else:
             console.print_error(
@@ -579,7 +585,7 @@ def create_contract(
     console.print_success(
         f"Contrat créé avec succès pour le client {client.first_name} {client.last_name}!"
     )
-    console.print_field("ID du contrat", str(contract.id))
+    console.print_field(LABEL_ID_CONTRAT, str(contract.id))
     console.print_field(
         LABEL_CLIENT,
         f"{client.first_name} {client.last_name} ({client.company_name})",
@@ -607,7 +613,7 @@ def create_event(
     ),
     contract_id: int = typer.Option(
         ...,
-        prompt="ID du contrat",
+        prompt=PROMPT_ID_CONTRAT,
         callback=validators.validate_contract_id_callback,
     ),
     event_start: str = typer.Option(
@@ -728,7 +734,7 @@ def create_event(
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
 
-        if "foreign key" in error_msg:
+        if ERROR_FOREIGN_KEY in error_msg:
             if "contract" in error_msg:
                 console.print_error(f"Le contrat (ID: {contract_id}) n'existe pas")
             elif "support" in error_msg:
@@ -765,7 +771,7 @@ def create_event(
             f"{event.support_contact.first_name} {event.support_contact.last_name} (ID: {event.support_contact_id})",
         )
     else:
-        console.print_field(LABEL_SUPPORT_CONTACT, "Non assigné")
+        console.print_field(LABEL_SUPPORT_CONTACT, LABEL_NON_ASSIGNE)
     console.print_field(LABEL_LOCATION,event.location)
     console.print_field(LABEL_ATTENDEES,str(event.attendees))
     if event.notes:
@@ -1021,7 +1027,7 @@ def filter_unassigned_events(**kwargs):
             LABEL_EVENT_DATE_START,format_event_datetime(event.event_start)
         )
         console.print_field(LABEL_EVENT_DATE_END,format_event_datetime(event.event_end))
-        console.print_field(LABEL_SUPPORT_CONTACT, "Non assigné")
+        console.print_field(LABEL_SUPPORT_CONTACT, LABEL_NON_ASSIGNE)
         console.print_field(LABEL_LOCATION,event.location)
         console.print_field(LABEL_ATTENDEES,str(event.attendees))
         if event.notes:
@@ -1236,7 +1242,7 @@ def update_client(
         f"{updated_client.sales_contact.first_name} {updated_client.sales_contact.last_name} (ID: {updated_client.sales_contact_id})",
     )
     console.print_field(
-        "Date de création",
+        LABEL_DATE_CREATION,
         updated_client.created_at.strftime(FORMAT_DATETIME),
     )
     console.print_field(
@@ -1251,7 +1257,7 @@ def update_client(
 def update_contract(
     contract_id: int = typer.Option(
         ...,
-        prompt="ID du contrat",
+        prompt=PROMPT_ID_CONTRAT,
         callback=validators.validate_contract_id_callback,
     ),
     total_amount: str = typer.Option(
@@ -1370,7 +1376,7 @@ def update_contract(
         "Statut", STATUS_SIGNED if updated_contract.is_signed else STATUS_UNSIGNED
     )
     console.print_field(
-        "Date de création",
+        LABEL_DATE_CREATION,
         updated_contract.created_at.strftime(FORMAT_DATETIME),
     )
     console.print_field(
@@ -1464,7 +1470,7 @@ def update_event_attendees(
             f"{updated_event.support_contact.first_name} {updated_event.support_contact.last_name} (ID: {updated_event.support_contact_id})",
         )
     else:
-        console.print_field(LABEL_SUPPORT_CONTACT, "Non assigné")
+        console.print_field(LABEL_SUPPORT_CONTACT, LABEL_NON_ASSIGNE)
     if updated_event.notes:
         console.print_field(LABEL_NOTES,updated_event.notes)
     console.print_separator()
