@@ -250,9 +250,17 @@ def create_events(session, contracts, users):
 
         contract = session.query(Contract).get(event_data["contract_id"])
         client = session.query(Client).get(contract.client_id)
-        support_status = (
-            f"Support: {users['support1'].first_name if event_data.get('support_contact_id') == users['support1'].id else users['support2'].first_name if event_data.get('support_contact_id') else 'Non assigné'}"
-        )
+
+        # Determine support status
+        support_id = event_data.get('support_contact_id')
+        if support_id == users['support1'].id:
+            support_name = users['support1'].first_name
+        elif support_id == users['support2'].id:
+            support_name = users['support2'].first_name
+        else:
+            support_name = 'Non assigné'
+
+        support_status = f"Support: {support_name}"
 
         print(
             f"- Événement créé: {event_data['name']} - "
@@ -349,7 +357,7 @@ def main():
         # Créer les données de test
         clients = create_clients(session, users)
         contracts = create_contracts(session, clients)
-        events = create_events(session, contracts, users)
+        create_events(session, contracts, users)
 
         # Afficher le résumé
         display_summary(session)
