@@ -274,10 +274,10 @@ Ce document regroupe toutes les ressources web utiles pour développer une appli
 
 ```bash
 # Avec Poetry (recommandé)
-poetry add typer[all] rich sqlalchemy python-jose[cryptography] passlib[bcrypt] python-dotenv
+poetry add typer[all] rich sqlalchemy pyjwt bcrypt python-dotenv
 
 # Ou avec pip
-pip install "typer[all]" rich sqlalchemy "python-jose[cryptography]" "passlib[bcrypt]" python-dotenv
+pip install "typer[all]" rich sqlalchemy pyjwt bcrypt python-dotenv
 ```
 
 ### Commandes utiles

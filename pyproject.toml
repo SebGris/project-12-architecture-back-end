@@ -12,7 +12,6 @@ typer = "^0.17.0"
 rich = "^14.1.0"
 sqlalchemy = "^2.0.43"
 alembic = "^1.16.5"
-python-jose = {extras = ["cryptography"], version = "^3.5.0"}
 pydantic = "^2.11.10"
 sentry-sdk = "^2.40.0"
 python-dotenv = "^1.1.1"
