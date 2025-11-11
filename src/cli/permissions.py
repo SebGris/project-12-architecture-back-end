@@ -60,10 +60,13 @@ def require_department(*allowed_departments: Department):
                 raise typer.Exit(code=1)
 
             # Check if user has the required department (only if departments are specified)
-            if allowed_departments and user.department not in allowed_departments:
+            if (
+                allowed_departments
+                and user.department not in allowed_departments
+            ):
                 dept_names = ", ".join([d.value for d in allowed_departments])
                 print_separator()
-                print_error(f"Action non autorisée pour votre département")
+                print_error("Action non autorisée pour votre département")
                 print_error(f"Départements autorisés : {dept_names}")
                 print_error(f"Votre département : {user.department.value}")
                 print_separator()

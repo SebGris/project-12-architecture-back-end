@@ -58,7 +58,7 @@ def validate_phone_callback(value: str) -> str:
         raise typer.BadParameter(f"Format de téléphone invalide: {value}")
     # Extrait uniquement les chiffres en supprimant tous les caractères non-numériques
     # Ex: "+33 1 23 45 67 89" devient "33123456789"
-    digits = re.sub(r"[^0-9]", "", cleaned)
+    digits = re.sub(r"\D", "", cleaned)
     if len(digits) < 10:
         raise typer.BadParameter(
             "Le téléphone doit avoir au moins 10 chiffres"
@@ -80,7 +80,9 @@ def validate_sales_contact_id_callback(value: int) -> int:
     Accepts 0 for auto-assignment or positive integers for specific sales contact.
     """
     if value < 0:
-        raise typer.BadParameter("L'ID du contact doit être 0 (auto-assignation) ou positif")
+        raise typer.BadParameter(
+            "L'ID du contact doit être 0 (auto-assignation) ou positif"
+        )
     return value
 
 
@@ -200,9 +202,13 @@ def validate_event_name_callback(value: str) -> str:
     """Validate and clean event name."""
     cleaned = value.strip()
     if len(cleaned) < 3:
-        raise typer.BadParameter("Le nom de l'événement doit avoir au moins 3 caractères")
+        raise typer.BadParameter(
+            "Le nom de l'événement doit avoir au moins 3 caractères"
+        )
     if len(cleaned) > 100:
-        raise typer.BadParameter("Le nom de l'événement ne peut pas dépasser 100 caractères")
+        raise typer.BadParameter(
+            "Le nom de l'événement ne peut pas dépasser 100 caractères"
+        )
     return cleaned
 
 
@@ -212,14 +218,18 @@ def validate_location_callback(value: str) -> str:
     if not cleaned:
         raise typer.BadParameter("L'emplacement est requis")
     if len(cleaned) > 255:
-        raise typer.BadParameter("L'emplacement ne peut pas dépasser 255 caractères")
+        raise typer.BadParameter(
+            "L'emplacement ne peut pas dépasser 255 caractères"
+        )
     return cleaned
 
 
 def validate_attendees_callback(value: int) -> int:
     """Validate number of attendees."""
     if value < 0:
-        raise typer.BadParameter("Le nombre de participants doit être positif ou zéro")
+        raise typer.BadParameter(
+            "Le nombre de participants doit être positif ou zéro"
+        )
     return value
 
 
@@ -263,7 +273,9 @@ def validate_user_is_support(user) -> None:
         )
 
 
-def validate_event_dates(event_start: datetime, event_end: datetime, attendees: int) -> None:
+def validate_event_dates(
+    event_start: datetime, event_end: datetime, attendees: int
+) -> None:
     """
     Validate event dates and attendees business rules.
 

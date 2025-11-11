@@ -118,7 +118,7 @@ def login(
     console.print_separator()
     console.print_success(f"Bienvenue {user.first_name} {user.last_name} !")
     console.print_field(LABEL_DEPARTMENT, user.department.value)
-    console.print_field("Session", f"Valide pour 24 heures")
+    console.print_field("Session", "Valide pour 24 heures")
     console.print_separator()
 
 
@@ -202,8 +202,8 @@ def whoami():
     console.print_field(LABEL_ID, str(user.id))
     console.print_field(LABEL_USERNAME, user.username)
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
-    console.print_field(LABEL_EMAIL,user.email)
-    console.print_field(LABEL_PHONE,user.phone)
+    console.print_field(LABEL_EMAIL, user.email)
+    console.print_field(LABEL_PHONE, user.phone)
     console.print_field(LABEL_DEPARTMENT, user.department.value)
     console.print_separator()
 
@@ -221,7 +221,9 @@ def create_client(
         ..., prompt="Email", callback=validators.validate_email_callback
     ),
     phone: str = typer.Option(
-        ..., prompt=PROMPT_TELEPHONE, callback=validators.validate_phone_callback
+        ...,
+        prompt=PROMPT_TELEPHONE,
+        callback=validators.validate_phone_callback,
     ),
     company_name: str = typer.Option(
         ...,
@@ -278,17 +280,22 @@ def create_client(
         if current_user.department == Department.COMMERCIAL:
             sales_contact_id = current_user.id
             console.print_field(
-                LABEL_CONTACT_COMMERCIAL, f"Auto-assigné à {current_user.username}"
+                LABEL_CONTACT_COMMERCIAL,
+                f"Auto-assigné à {current_user.username}",
             )
         else:
-            console.print_error("Vous devez spécifier un ID de contact commercial")
+            console.print_error(
+                "Vous devez spécifier un ID de contact commercial"
+            )
             raise typer.Exit(code=1)
 
     # Business validation: check if sales contact exists and is from COMMERCIAL dept
     user = user_service.get_user(sales_contact_id)
 
     if not user:
-        console.print_error(f"Utilisateur avec l'ID {sales_contact_id} n'existe pas")
+        console.print_error(
+            f"Utilisateur avec l'ID {sales_contact_id} n'existe pas"
+        )
         raise typer.Exit(code=1)
 
     try:
@@ -327,9 +334,7 @@ def create_client(
                 f"Le contact commercial (ID: {sales_contact_id}) n'existe pas"
             )
         else:
-            console.print_error(
-                ERROR_INTEGRITY.format(error_msg=error_msg)
-            )
+            console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
         raise typer.Exit(code=1)
 
     except Exception as e:
@@ -342,15 +347,15 @@ def create_client(
         f"Client {client.first_name} {client.last_name} créé avec succès!"
     )
     console.print_field(LABEL_ID, str(client.id))
-    console.print_field(LABEL_EMAIL,client.email)
-    console.print_field(LABEL_PHONE,client.phone)
+    console.print_field(LABEL_EMAIL, client.email)
+    console.print_field(LABEL_PHONE, client.phone)
     console.print_field("Entreprise", client.company_name)
     console.print_field(
         LABEL_CONTACT_COMMERCIAL,
         f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
     console.print_field(
-        LABEL_DATE_CREATION,client.created_at.strftime(FORMAT_DATETIME)
+        LABEL_DATE_CREATION, client.created_at.strftime(FORMAT_DATETIME)
     )
     console.print_separator()
 
@@ -373,7 +378,9 @@ def create_user(
         ..., prompt="Email", callback=validators.validate_email_callback
     ),
     phone: str = typer.Option(
-        ..., prompt=PROMPT_TELEPHONE, callback=validators.validate_phone_callback
+        ...,
+        prompt=PROMPT_TELEPHONE,
+        callback=validators.validate_phone_callback,
     ),
     password: str = typer.Option(
         ...,
@@ -458,9 +465,7 @@ def create_user(
                     "Erreur: Un utilisateur avec ces informations existe déjà"
                 )
         else:
-            console.print_error(
-                ERROR_INTEGRITY.format(error_msg=error_msg)
-            )
+            console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
         raise typer.Exit(code=1)
 
     except Exception as e:
@@ -472,7 +477,7 @@ def create_user(
     console.print_success(f"Utilisateur {user.username} créé avec succès!")
     console.print_field(LABEL_ID, str(user.id))
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
-    console.print_field(LABEL_EMAIL,user.email)
+    console.print_field(LABEL_EMAIL, user.email)
     console.print_field(LABEL_DEPARTMENT, user.department.value)
     console.print_separator()
 
@@ -571,9 +576,7 @@ def create_contract(
         if ERROR_FOREIGN_KEY in error_msg:
             console.print_error(f"Le client (ID: {client_id}) n'existe pas")
         else:
-            console.print_error(
-                ERROR_INTEGRITY.format(error_msg=error_msg)
-            )
+            console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
         raise typer.Exit(code=1)
 
     except Exception as e:
@@ -594,11 +597,15 @@ def create_contract(
         LABEL_CONTACT_COMMERCIAL,
         f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
-    console.print_field(LABEL_MONTANT_TOTAL,f"{contract.total_amount} €")
-    console.print_field(LABEL_MONTANT_RESTANT,f"{contract.remaining_amount} €")
-    console.print_field(LABEL_STATUT, STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED)
+    console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
     console.print_field(
-        LABEL_DATE_CREATION,contract.created_at.strftime(FORMAT_DATETIME)
+        LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
+    )
+    console.print_field(
+        LABEL_STATUT, STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED
+    )
+    console.print_field(
+        LABEL_DATE_CREATION, contract.created_at.strftime(FORMAT_DATETIME)
     )
     console.print_separator()
 
@@ -704,7 +711,9 @@ def create_event(
     if support_id:
         user = user_service.get_user(support_id)
         if not user:
-            console.print_error(f"Utilisateur avec l'ID {support_id} n'existe pas")
+            console.print_error(
+                f"Utilisateur avec l'ID {support_id} n'existe pas"
+            )
             raise typer.Exit(code=1)
         try:
             validators.validate_user_is_support(user)
@@ -736,15 +745,15 @@ def create_event(
 
         if ERROR_FOREIGN_KEY in error_msg:
             if "contract" in error_msg:
-                console.print_error(f"Le contrat (ID: {contract_id}) n'existe pas")
+                console.print_error(
+                    f"Le contrat (ID: {contract_id}) n'existe pas"
+                )
             elif "support" in error_msg:
                 console.print_error(
                     f"Le contact support (ID: {support_id}) n'existe pas"
                 )
         else:
-            console.print_error(
-                ERROR_INTEGRITY.format(error_msg=error_msg)
-            )
+            console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
         raise typer.Exit(code=1)
 
     except Exception as e:
@@ -761,10 +770,15 @@ def create_event(
         f"{contract.client.first_name} {contract.client.last_name}",
     )
     console.print_field(
-        LABEL_CLIENT_CONTACT, f"{contract.client.email}\n{contract.client.phone}"
+        LABEL_CLIENT_CONTACT,
+        f"{contract.client.email}\n{contract.client.phone}",
     )
-    console.print_field(LABEL_EVENT_DATE_START,format_event_datetime(event.event_start))
-    console.print_field(LABEL_EVENT_DATE_END,format_event_datetime(event.event_end))
+    console.print_field(
+        LABEL_EVENT_DATE_START, format_event_datetime(event.event_start)
+    )
+    console.print_field(
+        LABEL_EVENT_DATE_END, format_event_datetime(event.event_end)
+    )
     if event.support_contact:
         console.print_field(
             LABEL_SUPPORT_CONTACT,
@@ -772,10 +786,10 @@ def create_event(
         )
     else:
         console.print_field(LABEL_SUPPORT_CONTACT, LABEL_NON_ASSIGNE)
-    console.print_field(LABEL_LOCATION,event.location)
-    console.print_field(LABEL_ATTENDEES,str(event.attendees))
+    console.print_field(LABEL_LOCATION, event.location)
+    console.print_field(LABEL_ATTENDEES, str(event.attendees))
     if event.notes:
-        console.print_field(LABEL_NOTES,event.notes)
+        console.print_field(LABEL_NOTES, event.notes)
     console.print_separator()
 
 
@@ -831,7 +845,9 @@ def assign_support(
     # Vérifier que l'utilisateur existe et est du département SUPPORT
     user = user_service.get_user(support_contact_id)
     if not user:
-        console.print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
+        console.print_error(
+            f"Utilisateur avec l'ID {support_contact_id} n'existe pas"
+        )
         raise typer.Exit(code=1)
 
     try:
@@ -868,16 +884,16 @@ def assign_support(
         "Event date start", format_event_datetime(updated_event.event_start)
     )
     console.print_field(
-        LABEL_EVENT_DATE_END,format_event_datetime(updated_event.event_end)
+        LABEL_EVENT_DATE_END, format_event_datetime(updated_event.event_end)
     )
     console.print_field(
         "Support contact",
         f"{user.first_name} {user.last_name} (ID: {user.id})",
     )
-    console.print_field(LABEL_LOCATION,updated_event.location)
-    console.print_field(LABEL_ATTENDEES,str(updated_event.attendees))
+    console.print_field(LABEL_LOCATION, updated_event.location)
+    console.print_field(LABEL_ATTENDEES, str(updated_event.attendees))
     if updated_event.notes:
-        console.print_field(LABEL_NOTES,updated_event.notes)
+        console.print_field(LABEL_NOTES, updated_event.notes)
     console.print_separator()
 
 
@@ -919,12 +935,12 @@ def filter_unsigned_contracts(**kwargs):
             LABEL_CONTACT_COMMERCIAL,
             f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
-        console.print_field(LABEL_MONTANT_TOTAL,f"{contract.total_amount} €")
+        console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
         console.print_field(
-            LABEL_MONTANT_RESTANT,f"{contract.remaining_amount} €"
+            LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
         )
         console.print_field(
-            LABEL_DATE_CREATION,contract.created_at.strftime(FORMAT_DATE)
+            LABEL_DATE_CREATION, contract.created_at.strftime(FORMAT_DATE)
         )
         console.print_separator()
 
@@ -969,15 +985,16 @@ def filter_unpaid_contracts(**kwargs):
             LABEL_CONTACT_COMMERCIAL,
             f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
-        console.print_field(LABEL_MONTANT_TOTAL,f"{contract.total_amount} €")
+        console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
         console.print_field(
-            LABEL_MONTANT_RESTANT,f"{contract.remaining_amount} €"
+            LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
         )
         console.print_field(
-            LABEL_STATUT, STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED
+            LABEL_STATUT,
+            STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED,
         )
         console.print_field(
-            LABEL_DATE_CREATION,contract.created_at.strftime(FORMAT_DATE)
+            LABEL_DATE_CREATION, contract.created_at.strftime(FORMAT_DATE)
         )
         console.print_separator()
 
@@ -1024,17 +1041,21 @@ def filter_unassigned_events(**kwargs):
             f"{event.contract.client.email}\n{event.contract.client.phone}",
         )
         console.print_field(
-            LABEL_EVENT_DATE_START,format_event_datetime(event.event_start)
+            LABEL_EVENT_DATE_START, format_event_datetime(event.event_start)
         )
-        console.print_field(LABEL_EVENT_DATE_END,format_event_datetime(event.event_end))
+        console.print_field(
+            LABEL_EVENT_DATE_END, format_event_datetime(event.event_end)
+        )
         console.print_field(LABEL_SUPPORT_CONTACT, LABEL_NON_ASSIGNE)
-        console.print_field(LABEL_LOCATION,event.location)
-        console.print_field(LABEL_ATTENDEES,str(event.attendees))
+        console.print_field(LABEL_LOCATION, event.location)
+        console.print_field(LABEL_ATTENDEES, str(event.attendees))
         if event.notes:
-            console.print_field(LABEL_NOTES,event.notes)
+            console.print_field(LABEL_NOTES, event.notes)
         console.print_separator()
 
-    console.print_success(f"Total: {len(events)} événement(s) sans contact support")
+    console.print_success(
+        f"Total: {len(events)} événement(s) sans contact support"
+    )
 
 
 @app.command()
@@ -1076,7 +1097,9 @@ def filter_my_events(
     # Vérifier que l'utilisateur existe et est du département SUPPORT
     user = user_service.get_user(support_contact_id)
     if not user:
-        console.print_error(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
+        console.print_error(
+            f"Utilisateur avec l'ID {support_contact_id} n'existe pas"
+        )
         raise typer.Exit(code=1)
 
     try:
@@ -1105,17 +1128,19 @@ def filter_my_events(
             f"{event.contract.client.email}\n{event.contract.client.phone}",
         )
         console.print_field(
-            LABEL_EVENT_DATE_START,format_event_datetime(event.event_start)
+            LABEL_EVENT_DATE_START, format_event_datetime(event.event_start)
         )
-        console.print_field(LABEL_EVENT_DATE_END,format_event_datetime(event.event_end))
+        console.print_field(
+            LABEL_EVENT_DATE_END, format_event_datetime(event.event_end)
+        )
         console.print_field(
             LABEL_SUPPORT_CONTACT,
             f"{user.first_name} {user.last_name} (ID: {user.id})",
         )
-        console.print_field(LABEL_LOCATION,event.location)
-        console.print_field(LABEL_ATTENDEES,str(event.attendees))
+        console.print_field(LABEL_LOCATION, event.location)
+        console.print_field(LABEL_ATTENDEES, str(event.attendees))
         if event.notes:
-            console.print_field(LABEL_NOTES,event.notes)
+            console.print_field(LABEL_NOTES, event.notes)
         console.print_separator()
 
     console.print_success(
@@ -1218,7 +1243,9 @@ def update_client(
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
         if "unique" in error_msg or "duplicate" in error_msg:
-            console.print_error(f"Un client avec l'email '{email}' existe déjà")
+            console.print_error(
+                f"Un client avec l'email '{email}' existe déjà"
+            )
         else:
             console.print_error(f"Erreur d'intégrité: {error_msg}")
         raise typer.Exit(code=1)
@@ -1229,13 +1256,13 @@ def update_client(
 
     # Success message
     console.print_separator()
-    console.print_success(f"Client mis à jour avec succès!")
+    console.print_success("Client mis à jour avec succès!")
     console.print_field(LABEL_ID, str(updated_client.id))
     console.print_field(
         "Nom", f"{updated_client.first_name} {updated_client.last_name}"
     )
-    console.print_field(LABEL_EMAIL,updated_client.email)
-    console.print_field(LABEL_PHONE,updated_client.phone)
+    console.print_field(LABEL_EMAIL, updated_client.email)
+    console.print_field(LABEL_PHONE, updated_client.phone)
     console.print_field("Entreprise", updated_client.company_name)
     console.print_field(
         LABEL_CONTACT_COMMERCIAL,
@@ -1347,7 +1374,9 @@ def update_contract(
 
     # Validation finale
     if contract.remaining_amount > contract.total_amount:
-        console.print_error("Le montant restant ne peut pas dépasser le montant total")
+        console.print_error(
+            "Le montant restant ne peut pas dépasser le montant total"
+        )
         raise typer.Exit(code=1)
 
     try:
@@ -1368,12 +1397,15 @@ def update_contract(
         LABEL_CONTACT_COMMERCIAL,
         f"{updated_contract.client.sales_contact.first_name} {updated_contract.client.sales_contact.last_name} (ID: {updated_contract.client.sales_contact_id})",
     )
-    console.print_field(LABEL_MONTANT_TOTAL,f"{updated_contract.total_amount} €")
+    console.print_field(
+        LABEL_MONTANT_TOTAL, f"{updated_contract.total_amount} €"
+    )
     console.print_field(
         "Montant restant à payer", f"{updated_contract.remaining_amount} €"
     )
     console.print_field(
-        "Statut", STATUS_SIGNED if updated_contract.is_signed else STATUS_UNSIGNED
+        "Statut",
+        STATUS_SIGNED if updated_contract.is_signed else STATUS_UNSIGNED,
     )
     console.print_field(
         LABEL_DATE_CREATION,
@@ -1460,7 +1492,9 @@ def update_event_attendees(
     console.print_field(LABEL_ID, str(updated_event.id))
     console.print_field("Nom de l'événement", updated_event.name)
     console.print_field("Contrat ID", str(updated_event.contract_id))
-    console.print_field("Début", format_event_datetime(updated_event.event_start))
+    console.print_field(
+        "Début", format_event_datetime(updated_event.event_start)
+    )
     console.print_field("Fin", format_event_datetime(updated_event.event_end))
     console.print_field("Lieu", updated_event.location)
     console.print_field("Nombre de participants", str(updated_event.attendees))
@@ -1472,5 +1506,5 @@ def update_event_attendees(
     else:
         console.print_field(LABEL_SUPPORT_CONTACT, LABEL_NON_ASSIGNE)
     if updated_event.notes:
-        console.print_field(LABEL_NOTES,updated_event.notes)
+        console.print_field(LABEL_NOTES, updated_event.notes)
     console.print_separator()
