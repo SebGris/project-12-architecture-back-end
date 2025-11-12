@@ -235,7 +235,7 @@ def create_client(
         prompt="ID du contact commercial (0 pour auto-assignation)",
         callback=validators.validate_sales_contact_id_callback,
     ),
-    **kwargs,  # For receiving current_user from decorator
+    # **kwargs,  # For receiving current_user from decorator
 ):
     """
     Créer un nouveau client dans le système CRM.
@@ -1059,9 +1059,9 @@ def filter_unassigned_events(**kwargs):
 
 
 @app.command()
-@require_department(Department.SUPPORT, Department.GESTION)
+@require_department(Department.SUPPORT)  # old Department.GESTION
 def filter_my_events(
-    support_contact_id: int = typer.Option(
+    support_contact_id: int = typer.Option(  # curent user id
         ...,
         prompt="ID du contact support",
         callback=validators.validate_user_id_callback,

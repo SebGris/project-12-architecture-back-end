@@ -12,7 +12,9 @@ from src.cli.console import print_error, print_separator
 from src.models.user import Department, User
 
 
-def require_department(*allowed_departments: Department):
+def require_department(
+    *allowed_departments: Department,
+):  # todo initialise authserv
     """Decorator to require authentication and optionally specific department(s).
 
     This decorator checks if the user is authenticated before executing the command.
