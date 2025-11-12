@@ -104,9 +104,6 @@ epicevents --help
 ```bash
 # Créer un utilisateur
 epicevents create-user
-
-# Saluer quelqu'un (commande de test)
-epicevents hello "Nom"
 ```
 
 ### Alternative en mode développement
@@ -115,6 +112,10 @@ Si vous ne voulez pas utiliser Poetry shell, vous pouvez exécuter les commandes
 
 ```bash
 # Avec Poetry run
+poetry run epicevents login
+poetry run epicevents whoami
+poetry run epicevents logout
+
 poetry run epicevents create-user
 poetry run epicevents create-client
 
