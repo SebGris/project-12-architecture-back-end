@@ -41,6 +41,8 @@ pip install poetry
 
 # Installer les dépendances du projet
 poetry install
+# ou si Poetry n'est pas dans le PATH
+python -m poetry install
 
 # Activer l'environnement virtuel
 poetry shell
