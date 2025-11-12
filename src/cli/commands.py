@@ -235,7 +235,6 @@ def create_client(
         prompt="ID du contact commercial (0 pour auto-assignation)",
         callback=validators.validate_sales_contact_id_callback,
     ),
-    # **kwargs,  # For receiving current_user from decorator
 ):
     """
     Créer un nouveau client dans le système CRM.
@@ -272,7 +271,7 @@ def create_client(
     console.print_header("Création d'un nouveau client")
     console.print_separator()
 
-    # Get current user for auto-assignment
+    # Get current user from auth_service (decorator already verified authentication)
     current_user = auth_service.get_current_user()
 
     # Auto-assign for COMMERCIAL users if no sales_contact_id provided
@@ -393,7 +392,6 @@ def create_user(
         prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.GESTION.value}\n3. {Department.SUPPORT.value}\n\nChoisir un département (numéro)",
         callback=validators.validate_department_callback,
     ),
-    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Créer un nouvel utilisateur dans le système CRM.
@@ -501,7 +499,6 @@ def create_contract(
         callback=validators.validate_amount_callback,
     ),
     is_signed: bool = typer.Option(False, prompt="Contrat signé ?"),
-    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Créer un nouveau contrat dans le système CRM.
@@ -641,7 +638,6 @@ def create_event(
     support_contact_id: int = typer.Option(
         0, prompt="ID du contact support (0 si aucun)"
     ),
-    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Créer un nouvel événement dans le système CRM.
@@ -806,7 +802,6 @@ def assign_support(
         prompt="ID du contact support",
         callback=validators.validate_user_id_callback,
     ),
-    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Assigner un contact support à un événement.
@@ -899,7 +894,7 @@ def assign_support(
 
 @app.command()
 @require_department()
-def filter_unsigned_contracts(**kwargs):
+def filter_unsigned_contracts():
     """
     Afficher tous les contrats non signés.
 
@@ -949,7 +944,7 @@ def filter_unsigned_contracts(**kwargs):
 
 @app.command()
 @require_department()
-def filter_unpaid_contracts(**kwargs):
+def filter_unpaid_contracts():
     """
     Afficher tous les contrats non soldés (montant restant > 0).
 
@@ -1003,7 +998,7 @@ def filter_unpaid_contracts(**kwargs):
 
 @app.command()
 @require_department()
-def filter_unassigned_events(**kwargs):
+def filter_unassigned_events():
     """
     Afficher tous les événements sans contact support assigné.
 
@@ -1066,7 +1061,6 @@ def filter_my_events(
         prompt="ID du contact support",
         callback=validators.validate_user_id_callback,
     ),
-    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Afficher les événements assignés à un contact support spécifique.
@@ -1172,7 +1166,6 @@ def update_client(
         None,
         prompt="Nouveau nom d'entreprise (laisser vide pour ne pas modifier)",
     ),
-    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Mettre à jour les informations d'un client.
@@ -1296,7 +1289,6 @@ def update_contract(
         prompt="Nouveau montant restant (laisser vide pour ne pas modifier)",
     ),
     is_signed: bool = typer.Option(None, prompt="Marquer comme signé ? (o/n)"),
-    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Mettre à jour les informations d'un contrat.
@@ -1431,7 +1423,6 @@ def update_event_attendees(
         prompt="Nouveau nombre de participants",
         callback=validators.validate_attendees_callback,
     ),
-    **kwargs,  # For receiving current_user from decorator
 ):
     """
     Mettre à jour le nombre de participants d'un événement.

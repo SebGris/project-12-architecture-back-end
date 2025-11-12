@@ -5,6 +5,7 @@ This module provides decorators to enforce permissions based on user roles/depar
 
 from functools import wraps
 from typing import Callable
+import inspect
 
 import typer
 
@@ -14,12 +15,15 @@ from src.models.user import Department, User
 
 def require_department(
     *allowed_departments: Department,
-):  # todo initialise authserv
+):
     """Decorator to require authentication and optionally specific department(s).
 
     This decorator checks if the user is authenticated before executing the command.
     If departments are specified, it also checks if the user belongs to one of them.
     If no departments are specified, it only requires authentication (behaves like require_auth).
+
+    The decorator instantiates auth_service internally and injects current_user
+    as an explicit parameter to the decorated function.
 
     Args:
         *allowed_departments: Variable number of Department enums (optional)
@@ -31,23 +35,25 @@ def require_department(
         # Require only authentication (no department restriction)
         @app.command()
         @require_department()
-        def my_command(**kwargs):
-            current_user = kwargs.get('current_user')
+        def my_command(current_user: User):
+            # current_user is automatically injected
             pass
 
         # Require specific department(s)
         @app.command()
         @require_department(Department.GESTION, Department.COMMERCIAL)
-        def restricted_command(**kwargs):
-            current_user = kwargs.get('current_user')
+        def restricted_command(current_user: User):
+            # current_user is automatically injected
             pass
     """
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Get auth_service from kwargs (injected by dependency_injector)
-            auth_service = kwargs.get("auth_service")
+            # Instantiate auth_service directly from container
+            from src.containers import Container
+            container = Container()
+            auth_service = container.auth_service()
 
             # Check if user is authenticated
             user = auth_service.get_current_user()
@@ -74,8 +80,10 @@ def require_department(
                 print_separator()
                 raise typer.Exit(code=1)
 
-            # Add user to kwargs for the command function
-            kwargs["current_user"] = user
+            # Inject current_user only if the function expects it
+            sig = inspect.signature(func)
+            if "current_user" in sig.parameters:
+                kwargs["current_user"] = user
 
             return func(*args, **kwargs)
 
