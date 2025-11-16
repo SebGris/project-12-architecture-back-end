@@ -83,7 +83,7 @@ poetry run epicevents login
 ```
 
 **Dire** :
-> "Je me connecte avec un utilisateur du département GESTION. L'application génère un token JWT signé avec HMAC-SHA256, valide pour 24 heures, et le stocke dans ~/.epicevents/token.
+> "Je me connecte avec un utilisateur du département GESTION. L'application génère un token JWT signé avec HMAC-SHA256, valide pour 24 heures, et le stocke dans `C:\Users\<nom utilisateur>\.epicevents\token` sous Windows ou `~/.epicevents/token` sous Linux/Mac.
 >
 > Notez le message '[INFO] Sentry initialisé' - toutes les actions sont loggées dans Sentry pour le monitoring de sécurité."
 
