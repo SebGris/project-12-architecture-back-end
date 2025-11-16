@@ -36,17 +36,21 @@ cd project-12-architecture-back-end
 
 2. **Installer les dépendances avec Poetry**
 ```bash
-# Installer Poetry si nécessaire
-pip install poetry
+# Vérifier si Python est installé
+py --version
+
+# Installer Poetry avec le lanceur Python
+py -m pip install poetry
+
+# Vérifier l'installation de Poetry
+py -m poetry --version
 
 # Installer les dépendances du projet
-poetry install
-# ou si Poetry n'est pas dans le PATH
-python -m poetry install
+py -m poetry install
 
-# Activer l'environnement virtuel
-poetry shell
 ```
+
+> **Note** : Sur Windows, utilisez toujours `py -m poetry` au lieu de `poetry` car le dossier Scripts n'est généralement pas dans le PATH.
 
 > **Note** : SQLite est inclus par défaut dans Python, aucune installation supplémentaire n'est nécessaire !
 
@@ -54,51 +58,37 @@ poetry shell
 
 Créer un fichier `.env` à la racine (vous pouvez copier `.env.example`) :
 ```env
-DATABASE_URL=sqlite:///epic_events_crm.db
+DATABASE_URL=sqlite:///data/epic_events_crm.db
+EPICEVENTS_SECRET_KEY=your_secret_key_here_256_bits_minimum
 SENTRY_DSN=votre_dsn_sentry
-SECRET_KEY=votre_cle_secrete
+ENVIRONMENT=development
 ```
 
 4. **Initialiser la base de données**
 ```bash
 # Appliquer les migrations
-poetry run alembic upgrade head
-```
-
-### Exemple de connexion SQLAlchemy
-
-```python
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-# Créer le moteur de connexion SQLite
-engine = create_engine('sqlite:///epic_events_crm.db')
-
-# Créer une session
-Session = sessionmaker(bind=engine)
-session = Session()
-
-# Tester la connexion
-try:
-    connection = engine.connect()
-    print("✅ Connexion à SQLite réussie!")
-    connection.close()
-except Exception as e:
-    print(f"❌ Erreur de connexion: {e}")
+py -m poetry run alembic upgrade head
 ```
 
 ## 🚀 Utilisation
 
 ### Installation de la commande
 
-Après avoir installé les dépendances avec Poetry, la commande `epicevents` est automatiquement disponible dans votre environnement virtuel :
+Après avoir installé les dépendances avec Poetry, la commande `epicevents` est automatiquement disponible dans votre environnement virtuel.
 
+**Option 1 : Activer l'environnement virtuel manuellement**
 ```bash
-# Activer l'environnement Poetry
-poetry shell
+# Activer l'environnement virtuel
+.venv\Scripts\activate
 
 # La commande epicevents est maintenant disponible
 epicevents --help
+```
+
+**Option 2 : Utiliser poetry run (recommandé)**
+```bash
+# Exécuter directement sans activer l'environnement
+py -m poetry run epicevents --help
 ```
 
 ### Commandes principales
@@ -114,19 +104,19 @@ Si vous ne voulez pas utiliser Poetry shell, vous pouvez exécuter les commandes
 
 ```bash
 # Avec Poetry run
-poetry run epicevents login
-poetry run epicevents whoami
-poetry run epicevents logout
+py -m poetry run epicevents login
+py -m poetry run epicevents whoami
+py -m poetry run epicevents logout
 
-poetry run epicevents create-user
-poetry run epicevents create-client
+py -m poetry run epicevents create-user
+py -m poetry run epicevents create-client
 
 # Afficher l'aide
-poetry run epicevents --help
-poetry run epicevents create-user --help
+py -m poetry run epicevents --help
+py -m poetry run epicevents create-user --help
 
 # Ou en tant que module Python
-poetry run python -m src.cli.main
+py -m poetry run python -m src.cli.main
 ```
 
 ## 🔐 Sécurité
@@ -256,19 +246,19 @@ Pour plus de détails, voir :
 
 ```bash
 # Lancer tous les tests
-poetry run pytest
+py -m poetry run pytest
 
 # Tests avec couverture
-poetry run pytest --cov=src tests/
+py -m poetry run pytest --cov=src tests/
 
 # Tests unitaires uniquement
-poetry run pytest tests/unit/ -v
+py -m poetry run pytest tests/unit/ -v
 
 # Tests d'intégration uniquement
-poetry run pytest tests/integration/ -v
+py -m poetry run pytest tests/integration/ -v
 
 # Tests de contrat uniquement
-poetry run pytest tests/contract/ -v
+py -m poetry run pytest tests/contract/ -v
 ```
 
 ## 💻 Aide-mémoire
@@ -277,22 +267,22 @@ poetry run pytest tests/contract/ -v
 
 ```bash
 # Installer les dépendances
-poetry install
+py -m poetry install
 
 # Activer l'environnement virtuel
-poetry shell
+py -m poetry shell
 
 # Ajouter une dépendance
-poetry add nom-du-package
+py -m poetry add nom-du-package
 
 # Ajouter une dépendance de développement
-poetry add --group dev nom-du-package
+py -m poetry add --group dev nom-du-package
 
 # Mettre à jour les dépendances
-poetry update
+py -m poetry update
 
 # Exécuter une commande sans activer le shell
-poetry run epicevents create-user
+py -m poetry run epicevents create-user
 
 # Quitter l'environnement virtuel
 exit
@@ -327,10 +317,10 @@ SELECT name FROM sqlite_master WHERE type='table';  -- Lister les tables
 
 ```bash
 # Ou sans activer le shell
-poetry run pytest
+py -m poetry run pytest
 
 # Tests avec couverture
-poetry run pytest --cov=src tests/
+py -m poetry run pytest --cov=src tests/
 ```
 
 ### Résolution de problèmes courants
