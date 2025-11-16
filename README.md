@@ -37,20 +37,20 @@ cd project-12-architecture-back-end
 2. **Installer les dépendances avec Poetry**
 ```bash
 # Vérifier si Python est installé
-py --version
+python --version
 
-# Installer Poetry avec le lanceur Python
-py -m pip install poetry
+# Installer Poetry
+python -m pip install poetry
 
 # Vérifier l'installation de Poetry
-py -m poetry --version
+python -m poetry --version
 
 # Installer les dépendances du projet
-py -m poetry install
+python -m poetry install
 
 ```
 
-> **Note** : Sur Windows, utilisez toujours `py -m poetry` au lieu de `poetry` car le dossier Scripts n'est généralement pas dans le PATH.
+> **Note** : Sur Windows, utilisez toujours `python -m poetry` au lieu de `poetry` car le dossier Scripts n'est généralement pas dans le PATH.
 
 > **Note** : SQLite est inclus par défaut dans Python, aucune installation supplémentaire n'est nécessaire !
 
@@ -67,7 +67,7 @@ ENVIRONMENT=development
 4. **Initialiser la base de données**
 ```bash
 # Appliquer les migrations
-py -m poetry run alembic upgrade head
+python -m poetry run alembic upgrade head
 ```
 
 ## 🚀 Utilisation
@@ -88,7 +88,7 @@ epicevents --help
 **Option 2 : Utiliser poetry run (recommandé)**
 ```bash
 # Exécuter directement sans activer l'environnement
-py -m poetry run epicevents --help
+python -m poetry run epicevents --help
 ```
 
 ### Liste des commandes
@@ -97,19 +97,19 @@ Si vous ne voulez pas utiliser Poetry shell, vous pouvez exécuter les commandes
 
 ```bash
 # Avec Poetry run
-py -m poetry run epicevents login
-py -m poetry run epicevents whoami
-py -m poetry run epicevents logout
+python -m poetry run epicevents login
+python -m poetry run epicevents whoami
+python -m poetry run epicevents logout
 
-py -m poetry run epicevents create-user
-py -m poetry run epicevents create-client
+python -m poetry run epicevents create-user
+python -m poetry run epicevents create-client
 
 # Afficher l'aide
-py -m poetry run epicevents --help
-py -m poetry run epicevents create-user --help
+python -m poetry run epicevents --help
+python -m poetry run epicevents create-user --help
 
 # Ou en tant que module Python
-py -m poetry run python -m src.cli.main
+python -m poetry run python -m src.cli.main
 ```
 
 ## 🔐 Sécurité
@@ -239,19 +239,19 @@ Pour plus de détails, voir :
 
 ```bash
 # Lancer tous les tests
-py -m poetry run pytest
+python -m poetry run pytest
 
 # Tests avec couverture
-py -m poetry run pytest --cov=src tests/
+python -m poetry run pytest --cov=src tests/
 
 # Tests unitaires uniquement
-py -m poetry run pytest tests/unit/ -v
+python -m poetry run pytest tests/unit/ -v
 
 # Tests d'intégration uniquement
-py -m poetry run pytest tests/integration/ -v
+python -m poetry run pytest tests/integration/ -v
 
 # Tests de contrat uniquement
-py -m poetry run pytest tests/contract/ -v
+python -m poetry run pytest tests/contract/ -v
 ```
 
 ## 💻 Aide-mémoire
@@ -260,22 +260,22 @@ py -m poetry run pytest tests/contract/ -v
 
 ```bash
 # Installer les dépendances
-py -m poetry install
+python -m poetry install
 
 # Activer l'environnement virtuel
-py -m poetry shell
+python -m poetry shell
 
 # Ajouter une dépendance
-py -m poetry add nom-du-package
+python -m poetry add nom-du-package
 
 # Ajouter une dépendance de développement
-py -m poetry add --group dev nom-du-package
+python -m poetry add --group dev nom-du-package
 
 # Mettre à jour les dépendances
-py -m poetry update
+python -m poetry update
 
 # Exécuter une commande sans activer le shell
-py -m poetry run epicevents create-user
+python -m poetry run epicevents create-user
 
 # Quitter l'environnement virtuel
 exit
@@ -310,10 +310,10 @@ SELECT name FROM sqlite_master WHERE type='table';  -- Lister les tables
 
 ```bash
 # Ou sans activer le shell
-py -m poetry run pytest
+python -m poetry run pytest
 
 # Tests avec couverture
-py -m poetry run pytest --cov=src tests/
+python -m poetry run pytest --cov=src tests/
 ```
 
 ### Résolution de problèmes courants
