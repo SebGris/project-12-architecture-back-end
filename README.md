@@ -91,14 +91,7 @@ epicevents --help
 py -m poetry run epicevents --help
 ```
 
-### Commandes principales
-
-```bash
-# Créer un utilisateur
-epicevents create-user
-```
-
-### Alternative en mode développement
+### Liste des commandes
 
 Si vous ne voulez pas utiliser Poetry shell, vous pouvez exécuter les commandes directement :
 
