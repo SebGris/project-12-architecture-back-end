@@ -210,6 +210,48 @@ project-12-architecture-back-end/
 
 Pour plus de détails, voir [docs/database-schema.md](docs/database-schema.md) et [docs/explication-models.md](docs/explication-models.md)
 
+## 🔒 Permissions granulaires
+
+Le système implémente des **permissions granulaires par département** pour sécuriser l'accès aux données :
+
+### Matrice de permissions
+
+| Commande | GESTION | COMMERCIAL | SUPPORT |
+|----------|---------|------------|---------|
+| **Clients** | | | |
+| `create-client` | ✅ Tous | ✅ Auto-assigné | ❌ |
+| `update-client` | ✅ Tous | ✅ **Ses clients** | ❌ |
+| **Contrats** | | | |
+| `create-contract` | ✅ Tous | ✅ Ses clients | ❌ |
+| `update-contract` | ✅ Tous | ✅ **Ses contrats** | ❌ |
+| **Événements** | | | |
+| `create-event` | ✅ | ✅ | ❌ |
+| `update-event-attendees` | ✅ Tous | ❌ | ✅ **Ses events** |
+| `assign-support` | ✅ | ❌ | ❌ |
+| `filter-my-events` | ❌ | ❌ | ✅ Auto-détection |
+
+### Principe de moindre privilège
+
+- **GESTION** : Accès complet à toutes les ressources
+- **COMMERCIAL** : Peut gérer uniquement ses clients et leurs contrats
+- **SUPPORT** : Peut gérer uniquement ses événements assignés
+
+### Exemples
+
+```bash
+# En tant que COMMERCIAL
+epicevents update-client  # ✅ OK si c'est son client
+# ID du client: 1 (assigné à cet utilisateur)
+
+epicevents update-client  # ❌ REFUSÉ si c'est le client d'un autre
+# ID du client: 2 (assigné à un autre commercial)
+# [ERREUR] Vous ne pouvez modifier que vos propres clients
+```
+
+Pour plus de détails, voir :
+- [PERMISSIONS_GRANULAIRES.md](PERMISSIONS_GRANULAIRES.md) - Documentation complète
+- [docs/AMELIORATIONS_PERMISSIONS.md](docs/AMELIORATIONS_PERMISSIONS.md) - Récapitulatif technique
+
 ## 🧪 Tests
 
 ```bash
