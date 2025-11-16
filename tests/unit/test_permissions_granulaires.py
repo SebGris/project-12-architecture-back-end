@@ -1,8 +1,9 @@
 """Tests unitaires pour les permissions granulaires."""
 
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 from typer.testing import CliRunner
+from functools import wraps
 
 from src.cli.commands import app
 from src.models.user import Department, User
@@ -11,6 +12,23 @@ from src.models.contract import Contract
 from src.models.event import Event
 from datetime import datetime
 from decimal import Decimal
+
+
+def create_mock_decorator(mock_user):
+    """Create a mock decorator that bypasses authentication and injects mock_user."""
+    def mock_require_department(*allowed_departments):
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                # Inject the mock user if the function expects it
+                import inspect
+                sig = inspect.signature(func)
+                if "current_user" in sig.parameters:
+                    kwargs["current_user"] = mock_user
+                return func(*args, **kwargs)
+            return wrapper
+        return decorator
+    return mock_require_department
 
 
 @pytest.fixture
@@ -122,12 +140,16 @@ def mock_event_owned_by_other():
 class TestUpdateClientPermissions:
     """Tests for update-client command permissions."""
 
+    @patch('src.cli.permissions.require_department')
     @patch('src.cli.commands.Container')
     def test_commercial_can_update_own_client(
-        self, mock_container, runner, mock_commercial_user, mock_client_owned_by_commercial
+        self, mock_container, mock_decorator, runner, mock_commercial_user, mock_client_owned_by_commercial
     ):
         """Test that a COMMERCIAL user can update their own client."""
-        # Setup mocks
+        # Setup decorator mock
+        mock_decorator.side_effect = create_mock_decorator(mock_commercial_user)
+
+        # Setup container mocks
         container_instance = Mock()
         mock_container.return_value = container_instance
 
@@ -136,13 +158,33 @@ class TestUpdateClientPermissions:
 
         mock_client_service = Mock()
         mock_client_service.get_client.return_value = mock_client_owned_by_commercial
-        mock_client_service.update_client.return_value = mock_client_owned_by_commercial
+
+        # Setup update to return updated client
+        updated_client = Mock(spec=Client)
+        updated_client.id = 1
+        updated_client.first_name = "NewName"
+        updated_client.last_name = mock_client_owned_by_commercial.last_name
+        updated_client.email = mock_client_owned_by_commercial.email
+        updated_client.phone = mock_client_owned_by_commercial.phone
+        updated_client.company_name = mock_client_owned_by_commercial.company_name
+        updated_client.sales_contact = mock_client_owned_by_commercial.sales_contact
+        updated_client.sales_contact_id = mock_client_owned_by_commercial.sales_contact_id
+        updated_client.created_at = datetime(2025, 1, 1, 10, 0)
+        updated_client.updated_at = datetime(2025, 1, 2, 10, 0)
+
+        mock_client_service.update_client.return_value = updated_client
 
         container_instance.auth_service.return_value = mock_auth_service
         container_instance.client_service.return_value = mock_client_service
 
+        # Reload the module to apply the decorator mock
+        import importlib
+        import src.cli.commands
+        importlib.reload(src.cli.commands)
+        from src.cli.commands import app as reloaded_app
+
         # Execute command with inputs
-        result = runner.invoke(app, ['update-client'], input='1\nNewName\n\n\n\n\n')
+        result = runner.invoke(reloaded_app, ['update-client'], input='1\nNewName\n\n\n\n\n')
 
         # Verify
         assert result.exit_code == 0 or "mis à jour avec succès" in result.stdout
