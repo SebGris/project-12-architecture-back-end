@@ -1054,27 +1054,16 @@ def filter_unassigned_events():
 
 
 @app.command()
-@require_department(Department.SUPPORT)  # old Department.GESTION
-def filter_my_events(
-    support_contact_id: int = typer.Option(  # curent user id
-        ...,
-        prompt="ID du contact support",
-        callback=validators.validate_user_id_callback,
-    ),
-):
+@require_department(Department.SUPPORT)
+def filter_my_events():
     """
-    Afficher les événements assignés à un contact support spécifique.
+    Afficher mes événements assignés.
 
-    Cette commande liste tous les événements assignés à un utilisateur SUPPORT.
-
-    Args:
-        support_contact_id: ID de l'utilisateur SUPPORT
+    Cette commande liste tous les événements assignés à l'utilisateur SUPPORT connecté.
+    Aucun paramètre n'est nécessaire, l'utilisateur est automatiquement détecté.
 
     Returns:
-        None. Affiche la liste des événements assignés.
-
-    Raises:
-        typer.Exit: En cas d'erreur (utilisateur inexistant ou non SUPPORT)
+        None. Affiche la liste des événements assignés à l'utilisateur connecté.
 
     Examples:
         epicevents filter-my-events
@@ -1082,27 +1071,16 @@ def filter_my_events(
     # Manually get services from container
     container = Container()
     event_service = container.event_service()
-    user_service = container.user_service()
+    auth_service = container.auth_service()
 
     console.print_separator()
     console.print_header("Mes événements")
     console.print_separator()
 
-    # Vérifier que l'utilisateur existe et est du département SUPPORT
-    user = user_service.get_user(support_contact_id)
-    if not user:
-        console.print_error(
-            f"Utilisateur avec l'ID {support_contact_id} n'existe pas"
-        )
-        raise typer.Exit(code=1)
+    # Get current user (already validated as SUPPORT by decorator)
+    user = auth_service.get_current_user()
 
-    try:
-        validators.validate_user_is_support(user)
-    except ValueError as e:
-        console.print_error(str(e))
-        raise typer.Exit(code=1)
-
-    events = event_service.get_events_by_support_contact(support_contact_id)
+    events = event_service.get_events_by_support_contact(user.id)
 
     if not events:
         console.print_error(
@@ -1193,16 +1171,31 @@ def update_client(
     # Manually get services from container
     container = Container()
     client_service = container.client_service()
+    auth_service = container.auth_service()
 
     console.print_separator()
     console.print_header("Mise à jour d'un client")
     console.print_separator()
+
+    # Get current user for permission check
+    current_user = auth_service.get_current_user()
 
     # Vérifier que le client existe
     client = client_service.get_client(client_id)
     if not client:
         console.print_error(f"Client avec l'ID {client_id} n'existe pas")
         raise typer.Exit(code=1)
+
+    # Permission check: COMMERCIAL can only update their own clients
+    if current_user.department == Department.COMMERCIAL:
+        if client.sales_contact_id != current_user.id:
+            console.print_error(
+                "Vous ne pouvez modifier que vos propres clients"
+            )
+            console.print_error(
+                f"Ce client est assigné à {client.sales_contact.first_name} {client.sales_contact.last_name}"
+            )
+            raise typer.Exit(code=1)
 
     # Nettoyer les champs vides
     first_name = first_name.strip() if first_name else None
@@ -1316,16 +1309,32 @@ def update_contract(
     # Manually get services from container
     container = Container()
     contract_service = container.contract_service()
+    auth_service = container.auth_service()
 
     console.print_separator()
     console.print_header("Mise à jour d'un contrat")
     console.print_separator()
+
+    # Get current user for permission check
+    current_user = auth_service.get_current_user()
 
     # Vérifier que le contrat existe
     contract = contract_service.get_contract(contract_id)
     if not contract:
         console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
         raise typer.Exit(code=1)
+
+    # Permission check: COMMERCIAL can only update contracts of their own clients
+    if current_user.department == Department.COMMERCIAL:
+        if contract.client.sales_contact_id != current_user.id:
+            console.print_error(
+                "Vous ne pouvez modifier que les contrats de vos propres clients"
+            )
+            console.print_error(
+                f"Ce contrat appartient au client {contract.client.first_name} {contract.client.last_name}, "
+                f"assigné à {contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name}"
+            )
+            raise typer.Exit(code=1)
 
     # Nettoyer et convertir les montants
     total_decimal = None
@@ -1447,16 +1456,34 @@ def update_event_attendees(
     # Manually get services from container
     container = Container()
     event_service = container.event_service()
+    auth_service = container.auth_service()
 
     console.print_separator()
     console.print_header("Mise à jour du nombre de participants")
     console.print_separator()
+
+    # Get current user for permission check
+    current_user = auth_service.get_current_user()
 
     # Vérifier que l'événement existe
     event = event_service.get_event(event_id)
     if not event:
         console.print_error(f"Événement avec l'ID {event_id} n'existe pas")
         raise typer.Exit(code=1)
+
+    # Permission check: SUPPORT can only update their own events
+    if current_user.department == Department.SUPPORT:
+        if not event.support_contact_id or event.support_contact_id != current_user.id:
+            console.print_error(
+                "Vous ne pouvez modifier que vos propres événements"
+            )
+            if event.support_contact:
+                console.print_error(
+                    f"Cet événement est assigné à {event.support_contact.first_name} {event.support_contact.last_name}"
+                )
+            else:
+                console.print_error("Cet événement n'a pas encore de contact support assigné")
+            raise typer.Exit(code=1)
 
     # Business validation: validate attendees is positive
     try:
