@@ -30,7 +30,7 @@ Système CRM sécurisé développé en ligne de commande pour Epic Events, perme
 
 1. **Cloner le dépôt**
 ```bash
-git clone <url-du-repo>
+git clone https://github.com/SebGris/project-12-architecture-back-end
 cd project-12-architecture-back-end
 ```
 
