@@ -144,7 +144,7 @@ class AuthService:
         token = jwt.encode(payload, self._secret_key, algorithm=self.ALGORITHM)
         return token
 
-    def validate_token(self, token: str) -> Optional[dict]:  # todo
+    def validate_token(self, token: str) -> Optional[dict]:
         """Validate a JWT token and return its payload.
 
         Args:

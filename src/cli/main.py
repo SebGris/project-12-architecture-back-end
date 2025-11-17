@@ -5,9 +5,7 @@ This module is referenced in pyproject.toml for the 'epicevents' command.
 
 from src.containers import Container
 from src.cli import commands, permissions
-from src.sentry_config import (
-    init_sentry,
-)  # todo sentry dashboard + README CODE MIGRATION
+from src.sentry_config import init_sentry
 
 
 def main():
