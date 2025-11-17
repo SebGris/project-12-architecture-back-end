@@ -1,0 +1,25 @@
+[run]
+source = src
+omit =
+    */tests/*
+    */test_*.py
+    */.venv/*
+    */venv/*
+    */virtualenv/*
+    */site-packages/*
+    */dependency_injector/*.pyx
+    */dependency_injector/containers.pyx
+    */dependency_injector/providers.pyx
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+
+[html]
+directory = htmlcov
