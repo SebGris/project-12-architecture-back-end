@@ -186,24 +186,16 @@ class AuthService:
             # On Windows, this might not work, but that's okay
             pass
 
-    def load_token(self) -> Optional[str]:  # rename
+    def load_token(self) -> Optional[str]:
         """Load the JWT token from disk.
 
         Returns:
-            The JWT token if it exists and is valid, None otherwise
+            The JWT token string if file exists, None otherwise
         """
         if not self.TOKEN_FILE.exists():
             return None
 
-        token = self.TOKEN_FILE.read_text().strip()  # pas de try
-
-        # Validate the token before returning it
-        if self.validate_token(token):
-            return token
-        else:
-            # Token is invalid or expired, delete it
-            self.delete_token()
-            return None
+        return self.TOKEN_FILE.read_text().strip()
 
     def delete_token(self) -> None:
         """Delete the stored JWT token (logout)."""
@@ -220,13 +212,15 @@ class AuthService:
         if not token:
             return None
 
-        payload = self.validate_token(token)  # 2 fois todo
+        payload = self.validate_token(token)
 
         if not payload:
+            # Token is invalid or expired, delete it
+            self.delete_token()
             return None
 
         # Get user from database
-        user_id = payload.get("user_id")  # pas none todo erreur
+        user_id = payload.get("user_id")
         if not user_id:
             return None
 
