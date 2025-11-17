@@ -232,7 +232,7 @@ def create_client(
     ),
     sales_contact_id: int = typer.Option(
         0,
-        prompt="ID du contact commercial (0 pour auto-assignation)",
+        prompt="ID du contact commercial, ENTRER pour auto-assignation (valeur par défaut: 0)",
         callback=validators.validate_sales_contact_id_callback,
     ),
 ):
@@ -1473,7 +1473,10 @@ def update_event_attendees(
 
     # Permission check: SUPPORT can only update their own events
     if current_user.department == Department.SUPPORT:
-        if not event.support_contact_id or event.support_contact_id != current_user.id:
+        if (
+            not event.support_contact_id
+            or event.support_contact_id != current_user.id
+        ):
             console.print_error(
                 "Vous ne pouvez modifier que vos propres événements"
             )
@@ -1482,7 +1485,9 @@ def update_event_attendees(
                     f"Cet événement est assigné à {event.support_contact.first_name} {event.support_contact.last_name}"
                 )
             else:
-                console.print_error("Cet événement n'a pas encore de contact support assigné")
+                console.print_error(
+                    "Cet événement n'a pas encore de contact support assigné"
+                )
             raise typer.Exit(code=1)
 
     # Business validation: validate attendees is positive

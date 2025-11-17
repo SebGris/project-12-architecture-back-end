@@ -220,12 +220,12 @@ Démontrer les filtres contextuels et la modification sécurisée des données.
 ```bash
 # Déjà connecté en tant que commercial1
 poetry run epicevents create-client
-# Prénom: Jean
+# Prénom: JeanDeux
 # Nom: Dupont
-# Email: jean.dupont@example.com
+# Email: jean2.dupont@example.com
 # Téléphone: 0612345678
 # Entreprise: DupontCorp
-# ID contact commercial: (laisser vide - ENTRER)
+# ID contact commercial: (ENTRER pour auto-assignation - valeur par défaut: 0)
 ```
 
 **Dire** :
