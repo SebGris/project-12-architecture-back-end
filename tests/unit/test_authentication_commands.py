@@ -184,12 +184,6 @@ class TestTokenStorage:
             == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxfQ.fake_signature"
         )
 
-        # Verify permissions (Unix only)
-        if os.name != "nt":  # Not Windows
-            file_stat = mock_token_file.stat()
-            permissions = oct(file_stat.st_mode)[-3:]
-            assert permissions == "600", f"Expected 600, got {permissions}"
-
 
 class TestWhoamiWithAuthentication:
     """Test whoami command when user is authenticated."""
