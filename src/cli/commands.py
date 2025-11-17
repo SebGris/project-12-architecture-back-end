@@ -1281,7 +1281,7 @@ def update_contract(
         None,
         prompt="Nouveau montant restant (laisser vide pour ne pas modifier)",
     ),
-    is_signed: bool = typer.Option(None, prompt="Marquer comme signé ? (o/n)"),
+    is_signed: bool = typer.Option(None, prompt="Marquer comme signé ?"),
 ):
     """
     Mettre à jour les informations d'un contrat.

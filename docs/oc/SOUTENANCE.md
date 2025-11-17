@@ -265,9 +265,9 @@ poetry run epicevents filter-unsigned-contracts
 # Toujours connecté en tant que commercial1
 poetry run epicevents update-contract
 # ID du contrat: 1
-# Nouveau montant total (laisser vide pour ne pas modifier): 15000
-# Nouveau montant restant (laisser vide pour ne pas modifier): 5000
-# Marquer comme signé ? (o/n): o
+# Nouveau montant total (laisser vide pour ne pas modifier): 10000
+# Nouveau montant restant (laisser vide pour ne pas modifier): 2000
+# Marquer comme signé ? [y/n]: y
 ```
 
 **Dire** :
@@ -278,8 +278,8 @@ poetry run epicevents update-contract
 +-----------------------------------------------------------------------------+
 | ✓ Contrat mis à jour avec succès!                                          |
 | ID               : 1                                                        |
-| Montant total    : 15000.00 €                                               |
-| Montant restant  : 5000.00 €                                                |
+| Montant total    : 10000.00 €                                               |
+| Montant restant  : 2000.00 €                                                |
 | Signé            : Oui                                                      |
 +-----------------------------------------------------------------------------+
 ```
