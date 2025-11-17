@@ -361,3 +361,83 @@ class TestGetUnassignedEvents:
         result = event_service.get_unassigned_events()
 
         assert result == []
+
+
+class TestGetEventsByContract:
+    """Test get_events_by_contract method."""
+
+    def test_get_events_by_contract_success(self, event_service, mock_repository):
+        """GIVEN contract with events / WHEN get_events_by_contract() / THEN returns list"""
+        # Arrange
+        events = [
+            Event(
+                id=1, name="Conference", contract_id=10,
+                event_start=datetime(2025, 3, 15, 9, 0),
+                event_end=datetime(2025, 3, 15, 17, 0),
+                location="Paris", attendees=100
+            ),
+            Event(
+                id=2, name="Workshop", contract_id=10,
+                event_start=datetime(2025, 4, 10, 14, 0),
+                event_end=datetime(2025, 4, 10, 18, 0),
+                location="Lyon", attendees=50
+            ),
+        ]
+        mock_repository.get_by_contract_id.return_value = events
+
+        # Act
+        result = event_service.get_events_by_contract(contract_id=10)
+
+        # Assert
+        mock_repository.get_by_contract_id.assert_called_once_with(10)
+        assert len(result) == 2
+        assert all(event.contract_id == 10 for event in result)
+
+    def test_get_events_by_contract_empty(self, event_service, mock_repository):
+        """GIVEN contract with no events / WHEN get_events_by_contract() / THEN returns empty list"""
+        mock_repository.get_by_contract_id.return_value = []
+
+        result = event_service.get_events_by_contract(contract_id=999)
+
+        assert result == []
+
+
+class TestGetUpcomingEvents:
+    """Test get_upcoming_events method."""
+
+    def test_get_upcoming_events_success(self, event_service, mock_repository):
+        """GIVEN upcoming events / WHEN get_upcoming_events() / THEN returns future events"""
+        # Arrange
+        from_date = datetime(2025, 3, 1)
+        upcoming_events = [
+            Event(
+                id=5, name="Future Conference", contract_id=20,
+                event_start=datetime(2025, 5, 15, 9, 0),
+                event_end=datetime(2025, 5, 15, 17, 0),
+                location="Paris", attendees=200
+            ),
+            Event(
+                id=6, name="Future Workshop", contract_id=21,
+                event_start=datetime(2025, 6, 10, 14, 0),
+                event_end=datetime(2025, 6, 10, 18, 0),
+                location="Marseille", attendees=80
+            ),
+        ]
+        mock_repository.get_upcoming_events.return_value = upcoming_events
+
+        # Act
+        result = event_service.get_upcoming_events(from_date=from_date)
+
+        # Assert
+        mock_repository.get_upcoming_events.assert_called_once_with(from_date)
+        assert len(result) == 2
+        assert all(event.event_start >= from_date for event in result)
+
+    def test_get_upcoming_events_empty(self, event_service, mock_repository):
+        """GIVEN no upcoming events / WHEN get_upcoming_events() / THEN returns empty list"""
+        from_date = datetime(2025, 12, 31)
+        mock_repository.get_upcoming_events.return_value = []
+
+        result = event_service.get_upcoming_events(from_date=from_date)
+
+        assert result == []

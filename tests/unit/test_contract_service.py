@@ -321,3 +321,32 @@ class TestGetUnpaidContracts:
         result = contract_service.get_unpaid_contracts()
 
         assert result == []
+
+
+class TestGetContractsByClient:
+    """Test get_contracts_by_client method."""
+
+    def test_get_contracts_by_client_success(self, contract_service, mock_repository):
+        """GIVEN client with contracts / WHEN get_contracts_by_client() / THEN returns list"""
+        # Arrange
+        contracts = [
+            Contract(id=1, client_id=5, total_amount=Decimal("10000"), remaining_amount=Decimal("5000"), is_signed=False),
+            Contract(id=2, client_id=5, total_amount=Decimal("20000"), remaining_amount=Decimal("0"), is_signed=True),
+        ]
+        mock_repository.get_by_client_id.return_value = contracts
+
+        # Act
+        result = contract_service.get_contracts_by_client(client_id=5)
+
+        # Assert
+        mock_repository.get_by_client_id.assert_called_once_with(5)
+        assert len(result) == 2
+        assert all(contract.client_id == 5 for contract in result)
+
+    def test_get_contracts_by_client_empty(self, contract_service, mock_repository):
+        """GIVEN client with no contracts / WHEN get_contracts_by_client() / THEN returns empty list"""
+        mock_repository.get_by_client_id.return_value = []
+
+        result = contract_service.get_contracts_by_client(client_id=999)
+
+        assert result == []

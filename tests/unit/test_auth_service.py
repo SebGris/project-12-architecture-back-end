@@ -212,8 +212,12 @@ class TestValidateToken:
         # Arrange - Generate valid token
         token = auth_service.generate_token(mock_user)
 
-        # Tamper with token (change last character)
-        tampered_token = token[:-1] + ("A" if token[-1] != "A" else "B")
+        # Tamper with token significantly (change payload section)
+        # JWT has 3 parts: header.payload.signature
+        parts = token.split('.')
+        # Change the payload (middle part) by replacing a few characters
+        tampered_payload = 'X' + parts[1][1:-1] + 'Y'
+        tampered_token = f"{parts[0]}.{tampered_payload}.{parts[2]}"
 
         # Act
         payload = auth_service.validate_token(tampered_token)
