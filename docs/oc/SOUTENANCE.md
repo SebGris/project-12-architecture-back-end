@@ -259,37 +259,33 @@ poetry run epicevents filter-unsigned-contracts
 +-----------------------------------------------------------------------------+
 ```
 
-#### Étape 3 : Validation des données utilisateur (1 min)
+#### Étape 3 : Modification sécurisée d'un contrat (1 min)
 
 ```bash
-poetry run epicevents create-client
-# Prénom: Jean
-# Nom: Dupont
-# Email: invalid-email  (EMAIL INVALIDE)
+# Toujours connecté en tant que commercial1
+poetry run epicevents update-contract
+# ID du contrat: 1
+# Nouveau montant total (laisser vide pour ne pas modifier): 15000
+# Nouveau montant restant (laisser vide pour ne pas modifier): 5000
+# Marquer comme signé ? (o/n): o
 ```
 
 **Dire** :
-> "Toutes les données utilisateur sont validées avec des regex et des type checks. Ici, l'email est invalide - l'application le détecte immédiatement."
+> "Un commercial ne peut modifier que les contrats de ses propres clients. Ici, commercial1 modifie un contrat qui lui appartient. Si un autre commercial tentait de modifier ce contrat, l'accès serait refusé avec un message explicite indiquant à qui appartient le contrat."
 
 **Résultat attendu** :
 ```
-[ERREUR] Format d'email invalide
++-----------------------------------------------------------------------------+
+| ✓ Contrat mis à jour avec succès!                                          |
+| ID               : 1                                                        |
+| Montant total    : 15000.00 €                                               |
+| Montant restant  : 5000.00 €                                                |
+| Signé            : Oui                                                      |
++-----------------------------------------------------------------------------+
 ```
 
-**Ensuite, tester avec un email déjà existant** :
-
-```bash
-poetry run epicevents create-client
-# ... (mêmes données qu'avant avec jean.dupont@example.com)
-```
-
-**Dire** :
-> "SQLAlchemy détecte les violations d'unicité. L'application affiche un message d'erreur clair sans exposer de détails techniques sensibles."
-
-**Résultat attendu** :
-```
-[ERREUR] Un client avec l'email 'jean.dupont@example.com' existe déjà dans le système
-```
+**Dire ensuite** :
+> "Cette approche garantit que chaque commercial ne peut modifier que ses propres données, respectant ainsi le principe de séparation des responsabilités et du moindre privilège."
 
 ---
 
