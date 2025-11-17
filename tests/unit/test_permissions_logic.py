@@ -1,6 +1,5 @@
 """Tests unitaires pour la logique de permissions granulaires."""
 
-import pytest
 from unittest.mock import Mock
 
 from src.models.user import Department, User
@@ -200,7 +199,10 @@ class TestPermissionMatrix:
         # COMMERCIAL manages clients and contracts
         commercial = Mock(spec=User)
         commercial.department = Department.COMMERCIAL
-        assert commercial.department in [Department.COMMERCIAL, Department.GESTION]
+        assert commercial.department in [
+            Department.COMMERCIAL,
+            Department.GESTION,
+        ]
 
         # SUPPORT manages events
         support = Mock(spec=User)

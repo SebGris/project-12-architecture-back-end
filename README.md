@@ -235,25 +235,6 @@ Pour plus de détails, voir :
 - [PERMISSIONS_GRANULAIRES.md](PERMISSIONS_GRANULAIRES.md) - Documentation complète
 - [docs/AMELIORATIONS_PERMISSIONS.md](docs/AMELIORATIONS_PERMISSIONS.md) - Récapitulatif technique
 
-## 🧪 Tests
-
-```bash
-# Lancer tous les tests
-python -m poetry run pytest
-
-# Tests avec couverture
-python -m poetry run pytest --cov=src tests/
-
-# Tests unitaires uniquement
-python -m poetry run pytest tests/unit/ -v
-
-# Tests d'intégration uniquement
-python -m poetry run pytest tests/integration/ -v
-
-# Tests de contrat uniquement
-python -m poetry run pytest tests/contract/ -v
-```
-
 ## 💻 Aide-mémoire
 
 ### Gestion avec Poetry
@@ -309,11 +290,10 @@ SELECT name FROM sqlite_master WHERE type='table';  -- Lister les tables
 ### Lancer les tests avec Poetry
 
 ```bash
-# Ou sans activer le shell
-python -m poetry run pytest
+pytest
 
 # Tests avec couverture
-python -m poetry run pytest --cov=src tests/
+pytest --cov=src tests/
 ```
 
 ### Résolution de problèmes courants
