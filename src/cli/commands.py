@@ -361,7 +361,38 @@ def create_client(
 
 @app.command()
 @require_department(Department.GESTION)
-def create_user():
+def create_user(
+    username: str = typer.Option(
+        ...,
+        prompt=LABEL_USERNAME,
+        callback=validators.validate_username_callback,
+    ),
+    first_name: str = typer.Option(
+        ..., prompt="Prénom", callback=validators.validate_first_name_callback
+    ),
+    last_name: str = typer.Option(
+        ..., prompt="Nom", callback=validators.validate_last_name_callback
+    ),
+    email: str = typer.Option(
+        ..., prompt="Email", callback=validators.validate_email_callback
+    ),
+    phone: str = typer.Option(
+        ...,
+        prompt=PROMPT_TELEPHONE,
+        callback=validators.validate_phone_callback,
+    ),
+    password: str = typer.Option(
+        ...,
+        prompt="Mot de passe",
+        hide_input=True,
+        callback=validators.validate_password_callback,
+    ),
+    department_choice: int = typer.Option(
+        ...,
+        prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.GESTION.value}\n3. {Department.SUPPORT.value}\n\nChoisir un département (numéro)",
+        callback=validators.validate_department_callback,
+    ),
+):
     """
     Créer un nouvel utilisateur dans le système CRM.
 
@@ -396,32 +427,6 @@ def create_user():
     console.print_separator()
     console.print_header("Création d'un nouvel utilisateur")
     console.print_separator()
-
-    # Prompt for user input (AFTER permission check)
-    username = typer.prompt(LABEL_USERNAME)
-    username = validators.validate_username(username)
-
-    first_name = typer.prompt("Prénom")
-    first_name = validators.validate_first_name(first_name)
-
-    last_name = typer.prompt("Nom")
-    last_name = validators.validate_last_name(last_name)
-
-    email = typer.prompt("Email")
-    email = validators.validate_email(email)
-
-    phone = typer.prompt(PROMPT_TELEPHONE)
-    phone = validators.validate_phone(phone)
-
-    password = typer.prompt("Mot de passe", hide_input=True)
-    password = validators.validate_password(password)
-
-    console.print("\nDépartements disponibles:")
-    console.print("1. COMMERCIAL")
-    console.print("2. GESTION")
-    console.print("3. SUPPORT")
-    department_choice = typer.prompt("\nChoisir un département (numéro)", type=int)
-    department_choice = validators.validate_department(department_choice)
 
     # Convert department choice (int) to Department enum
     departments = list(Department)

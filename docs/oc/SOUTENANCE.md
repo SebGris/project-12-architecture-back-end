@@ -193,21 +193,18 @@ poetry run epicevents login
 # Password: Commercial123!
 
 poetry run epicevents create-user
+# (Entrer n'importe quelles données)
 ```
 
 **Dire** :
-> "Un utilisateur COMMERCIAL tente de créer un utilisateur. Le système vérifie les permissions **avant** de demander les données. L'accès est immédiatement refusé - seul GESTION a cette permission."
+> "Un utilisateur COMMERCIAL tente de créer un utilisateur. L'accès est refusé - seul GESTION a cette permission."
 
 **Résultat attendu** :
 ```
-[INFO] Sentry initialisé avec succès (environnement: development)
-
 [ERREUR] Action non autorisée pour votre département
 [ERREUR] Départements autorisés : GESTION
 [ERREUR] Votre département : COMMERCIAL
 ```
-
-**Note importante** : Le message d'erreur s'affiche **IMMÉDIATEMENT**, sans aucune saisie requise. C'est une bonne pratique UX qui évite de faire perdre du temps à l'utilisateur.
 
 ---
 
