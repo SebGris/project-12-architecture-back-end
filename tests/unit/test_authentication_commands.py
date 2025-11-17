@@ -54,10 +54,7 @@ class TestWhoamiWithoutAuthentication:
         THEN it should display an error message and exit with code 1
         """
         mock_container = mocker.patch("src.cli.commands.Container")
-        # Mock auth_service to return None (no user authenticated)
-        mock_auth_service = mocker.MagicMock()
-        mock_auth_service.get_current_user.return_value = None
-        mock_container.return_value.auth_service.return_value = mock_auth_service
+        mock_container.return_value.auth_service.return_value.get_current_user.return_value = None
 
         # Execute whoami command
         result = runner.invoke(app, ["whoami"])
@@ -264,10 +261,7 @@ class TestLogoutCommand:
         THEN it should display an error message
         """
         mock_container = mocker.patch("src.cli.commands.Container")
-        # Mock auth_service to return None (no user)
-        mock_auth_service = mocker.MagicMock()
-        mock_auth_service.get_current_user.return_value = None
-        mock_container.return_value.auth_service.return_value = mock_auth_service
+        mock_container.return_value.auth_service.return_value.get_current_user.return_value = None
 
         # Execute logout
         result = runner.invoke(app, ["logout"])
