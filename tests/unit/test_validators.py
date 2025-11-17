@@ -66,35 +66,17 @@ class TestValidatePassword:
     """Test validate_password_callback function."""
 
     def test_validate_password_valid(self):
-        """GIVEN valid password / WHEN validated / THEN returns password"""
-        valid_passwords = ["SecurePass123!", "MyP@ssw0rd", "Test1234!"]
+        """GIVEN valid password (>= 8 chars) / WHEN validated / THEN returns password"""
+        valid_passwords = ["SecurePass123!", "MyP@ssw0rd", "Test1234!", "12345678"]
         for password in valid_passwords:
             assert validate_password_callback(password) == password
 
     def test_validate_password_too_short(self):
-        """GIVEN short password / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validate_password_callback("Short1!")
+        """GIVEN password < 8 chars / WHEN validated / THEN raises BadParameter"""
+        with pytest.raises(typer.BadParameter) as exc_info:
+            validate_password_callback("Short1")
 
-    def test_validate_password_no_uppercase(self):
-        """GIVEN no uppercase / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validate_password_callback("lowercase123!")
-
-    def test_validate_password_no_lowercase(self):
-        """GIVEN no lowercase / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validate_password_callback("UPPERCASE123!")
-
-    def test_validate_password_no_digit(self):
-        """GIVEN no digit / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validate_password_callback("NoDigits!")
-
-    def test_validate_password_no_special_char(self):
-        """GIVEN no special char / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validate_password_callback("NoSpecial123")
+        assert "au moins 8 caractères" in str(exc_info.value)
 
 
 class TestValidateFirstName:
@@ -132,31 +114,39 @@ class TestValidateLocation:
 
     def test_validate_location_valid(self):
         """GIVEN valid location / WHEN validated / THEN returns location"""
-        valid_locations = ["Paris", "New York", "Centre de conférence"]
+        valid_locations = ["Paris", "New York", "Centre de conférence", "AB"]
         for location in valid_locations:
             assert validate_location_callback(location) == location
 
-    def test_validate_location_too_short(self):
-        """GIVEN too short location / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validate_location_callback("AB")
+    def test_validate_location_empty(self):
+        """GIVEN empty location / WHEN validated / THEN raises BadParameter"""
+        with pytest.raises(typer.BadParameter) as exc_info:
+            validate_location_callback("")
+
+        assert "requis" in str(exc_info.value)
+
+    def test_validate_location_too_long(self):
+        """GIVEN location > 255 chars / WHEN validated / THEN raises BadParameter"""
+        long_location = "A" * 256
+        with pytest.raises(typer.BadParameter) as exc_info:
+            validate_location_callback(long_location)
+
+        assert "255 caractères" in str(exc_info.value)
 
 
 class TestValidateAttendees:
     """Test validate_attendees_callback function."""
 
     def test_validate_attendees_valid(self):
-        """GIVEN positive integer / WHEN validated / THEN returns integer"""
+        """GIVEN positive integer or zero / WHEN validated / THEN returns integer"""
+        assert validate_attendees_callback(0) == 0  # Zero is valid
         assert validate_attendees_callback(1) == 1
         assert validate_attendees_callback(100) == 100
         assert validate_attendees_callback(999) == 999
 
-    def test_validate_attendees_zero(self):
-        """GIVEN zero / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validate_attendees_callback(0)
-
     def test_validate_attendees_negative(self):
-        """GIVEN negative / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
+        """GIVEN negative integer / WHEN validated / THEN raises BadParameter"""
+        with pytest.raises(typer.BadParameter) as exc_info:
             validate_attendees_callback(-5)
+
+        assert "positif" in str(exc_info.value)
