@@ -99,8 +99,12 @@ class TestAssignSupportCommand:
         mock_user_service.get_user.return_value = mock_commercial_user
 
         # Wire container
-        mock_container.return_value.event_service.return_value = mock_event_service
-        mock_container.return_value.user_service.return_value = mock_user_service
+        mock_container.return_value.event_service.return_value = (
+            mock_event_service
+        )
+        mock_container.return_value.user_service.return_value = (
+            mock_user_service
+        )
 
         # Execute command
         result = runner.invoke(
@@ -111,5 +115,8 @@ class TestAssignSupportCommand:
 
         # Verify
         assert result.exit_code == 1
-        assert "support" in result.stdout.lower() or "département" in result.stdout.lower()
+        assert (
+            "support" in result.stdout.lower()
+            or "département" in result.stdout.lower()
+        )
         mock_event_service.assign_support_contact.assert_not_called()

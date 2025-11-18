@@ -7,6 +7,7 @@ This test verifies that:
 - UNIQUE constraints work (username, email)
 - Required fields are present
 """
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -19,7 +20,7 @@ from src.models.user import Department, User
 def db_session():
     """Creates an in-memory SQLite database for tests."""
     # Temporary in-memory database
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:")  # todo
     Base.metadata.create_all(engine)
 
     Session = sessionmaker(bind=engine)
@@ -46,7 +47,7 @@ def test_create_user_success(db_session):
         first_name="Test",
         last_name="User",
         phone="+33123456789",
-        department=Department.COMMERCIAL
+        department=Department.COMMERCIAL,
     )
     user.set_password("TestPassword123!")
 
@@ -81,7 +82,7 @@ def test_password_is_hashed(db_session):
         first_name="Test",
         last_name="User",
         phone="+33123456789",
-        department=Department.GESTION
+        department=Department.GESTION,
     )
     user.set_password(password)
 
@@ -89,7 +90,9 @@ def test_password_is_hashed(db_session):
     db_session.commit()
 
     # Verify that the hash is correct
-    assert user.password_hash != password  # The hash is different from the password
+    assert (
+        user.password_hash != password
+    )  # The hash is different from the password
     assert user.password_hash.startswith("$2b$")  # bcrypt format
     assert len(user.password_hash) == 60  # Standard bcrypt length
 
@@ -109,7 +112,7 @@ def test_password_verification(db_session):
         first_name="Test",
         last_name="User",
         phone="+33123456789",
-        department=Department.SUPPORT
+        department=Department.SUPPORT,
     )
     user.set_password(password)
 
@@ -143,7 +146,7 @@ def test_create_multiple_users(db_session):
             first_name="Test",
             last_name="User",
             phone="+33123456789",
-            department=department
+            department=department,
         )
         user.set_password("Password123!")
         db_session.add(user)
@@ -154,9 +157,20 @@ def test_create_multiple_users(db_session):
     assert db_session.query(User).count() == 3
 
     # Verify each department
-    assert db_session.query(User).filter_by(department=Department.GESTION).count() == 1
-    assert db_session.query(User).filter_by(department=Department.COMMERCIAL).count() == 1
-    assert db_session.query(User).filter_by(department=Department.SUPPORT).count() == 1
+    assert (
+        db_session.query(User).filter_by(department=Department.GESTION).count()
+        == 1
+    )
+    assert (
+        db_session.query(User)
+        .filter_by(department=Department.COMMERCIAL)
+        .count()
+        == 1
+    )
+    assert (
+        db_session.query(User).filter_by(department=Department.SUPPORT).count()
+        == 1
+    )
 
 
 def test_username_must_be_unique(db_session):
@@ -173,7 +187,7 @@ def test_username_must_be_unique(db_session):
         first_name="User",
         last_name="One",
         phone="+33123456789",
-        department=Department.COMMERCIAL
+        department=Department.COMMERCIAL,
     )
     user1.set_password("Password123!")
     db_session.add(user1)
@@ -187,7 +201,7 @@ def test_username_must_be_unique(db_session):
         first_name="User",
         last_name="Two",
         phone="+33198765432",
-        department=Department.COMMERCIAL
+        department=Department.COMMERCIAL,
     )
     user2.set_password("Password123!")
     db_session.add(user2)
@@ -211,7 +225,7 @@ def test_email_must_be_unique(db_session):
         first_name="User",
         last_name="One",
         phone="+33123456789",
-        department=Department.COMMERCIAL
+        department=Department.COMMERCIAL,
     )
     user1.set_password("Password123!")
     db_session.add(user1)
@@ -225,7 +239,7 @@ def test_email_must_be_unique(db_session):
         first_name="User",
         last_name="Two",
         phone="+33198765432",
-        department=Department.COMMERCIAL
+        department=Department.COMMERCIAL,
     )
     user2.set_password("Password123!")
     db_session.add(user2)
@@ -248,7 +262,7 @@ def test_user_has_timestamps(db_session):
         first_name="Test",
         last_name="User",
         phone="+33123456789",
-        department=Department.COMMERCIAL
+        department=Department.COMMERCIAL,
     )
     user.set_password("Password123!")
 
@@ -273,7 +287,7 @@ def test_user_repr(db_session):
         first_name="Test",
         last_name="User",
         phone="+33123456789",
-        department=Department.COMMERCIAL
+        department=Department.COMMERCIAL,
     )
     user.set_password("Password123!")
 

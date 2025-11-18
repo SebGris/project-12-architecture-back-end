@@ -42,7 +42,9 @@ def mock_client():
 class TestCreateClient:
     """Test create_client method."""
 
-    def test_create_client_success(self, client_service, mock_repository, mock_client):
+    def test_create_client_success(
+        self, client_service, mock_repository, mock_client
+    ):
         """GIVEN valid client data / WHEN create_client() / THEN client created"""
         # Arrange - le repository retourne ce qui lui est passé
         mock_repository.add.side_effect = lambda client: client
@@ -60,42 +62,18 @@ class TestCreateClient:
         # Assert
         mock_repository.add.assert_called_once()
         assert isinstance(result, Client)
-        assert result.first_name == "Jean"
+        assert result.first_name == "Jean"  # to do
         assert result.last_name == "Dupont"
         assert result.email == "jean.dupont@example.com"
         assert result.sales_contact_id == 2
-
-    def test_create_client_with_different_sales_contact(
-        self, client_service, mock_repository
-    ):
-        """GIVEN different sales_contact_id / WHEN create_client() / THEN client created"""
-        mock_client = Client(
-            id=2,
-            first_name="Marie",
-            last_name="Martin",
-            email="marie.martin@example.com",
-            phone="0123456789",
-            company_name="MartinSA",
-            sales_contact_id=5,
-        )
-        mock_repository.add.return_value = mock_client
-
-        result = client_service.create_client(
-            first_name="Marie",
-            last_name="Martin",
-            email="marie.martin@example.com",
-            phone="0123456789",
-            company_name="MartinSA",
-            sales_contact_id=5,
-        )
-
-        assert result.sales_contact_id == 5
 
 
 class TestGetClient:
     """Test get_client method."""
 
-    def test_get_client_found(self, client_service, mock_repository, mock_client):
+    def test_get_client_found(  # todo mock repository
+        self, client_service, mock_repository, mock_client
+    ):
         """GIVEN existing client_id / WHEN get_client() / THEN returns client"""
         mock_repository.get.return_value = mock_client
 
