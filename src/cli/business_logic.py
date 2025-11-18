@@ -228,6 +228,72 @@ def create_contract_logic(
     return contract
 
 
+def update_contract_logic(
+    contract_id: int,
+    total_amount: Optional[Decimal],
+    remaining_amount: Optional[Decimal],
+    is_signed: Optional[bool],
+    current_user: User,
+    container: Container
+) -> Contract:
+    """Update an existing contract.
+
+    Args:
+        contract_id: ID of the contract to update
+        total_amount: New total amount (optional)
+        remaining_amount: New remaining amount (optional)
+        is_signed: New signature status (optional)
+        current_user: Currently authenticated user
+        container: Dependency injection container
+
+    Returns:
+        Updated Contract instance
+
+    Raises:
+        ValueError: If validation fails or unauthorized
+    """
+    contract_service = container.contract_service()
+
+    # Get contract
+    contract = contract_service.get_contract(contract_id)
+    if not contract:
+        raise ValueError(f"Contrat avec l'ID {contract_id} introuvable")
+
+    # Check permissions: COMMERCIAL can only update contracts of their own clients
+    # GESTION can update any contract
+    if current_user.department == Department.COMMERCIAL:
+        if contract.client.sales_contact_id != current_user.id:
+            raise ValueError(
+                f"Vous ne pouvez modifier que les contrats de vos propres clients. "
+                f"Ce contrat appartient au client {contract.client.first_name} {contract.client.last_name}, "
+                f"assigné à {contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name}"
+            )
+
+    # Validate and update amounts if provided
+    if total_amount is not None:
+        if total_amount < 0:
+            raise ValueError("Le montant total doit être positif")
+        contract.total_amount = total_amount
+
+    if remaining_amount is not None:
+        if remaining_amount < 0:
+            raise ValueError("Le montant restant doit être positif")
+        contract.remaining_amount = remaining_amount
+
+    # Update signature status if provided
+    if is_signed is not None:
+        contract.is_signed = is_signed
+
+    # Final validation: remaining cannot exceed total
+    if contract.remaining_amount > contract.total_amount:
+        raise ValueError("Le montant restant ne peut pas dépasser le montant total")
+
+    # Update contract
+    updated_contract = contract_service.update_contract(contract)
+
+    return updated_contract
+
+
 def update_contract_payment_logic(
     contract_id: int,
     amount_paid: Decimal,

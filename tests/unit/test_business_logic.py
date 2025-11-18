@@ -12,6 +12,7 @@ from src.cli.business_logic import (
     create_client_logic,
     update_client_logic,
     create_contract_logic,
+    update_contract_logic,
     update_contract_payment_logic,
     sign_contract_logic
 )
@@ -262,6 +263,113 @@ class TestCreateContractLogic:
                 total_amount=Decimal("10000.00"),
                 remaining_amount=Decimal("15000.00"),  # More than total
                 is_signed=False,
+                current_user=mock_commercial_user,
+                container=mock_container
+            )
+
+
+class TestUpdateContractLogic:
+    """Test update_contract_logic function."""
+
+    def test_update_contract_success(self, mocker, mock_container, mock_commercial_user, mock_contract):
+        """GIVEN authorized user / WHEN update_contract_logic() / THEN updates contract"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+
+        # Ensure contract belongs to current user
+        mock_contract.client.sales_contact_id = mock_commercial_user.id
+        mock_contract.total_amount = Decimal("10000.00")
+        mock_contract.remaining_amount = Decimal("10000.00")
+        mock_contract_service.get_contract.return_value = mock_contract
+
+        updated_contract = mocker.Mock(spec=Contract)
+        updated_contract.total_amount = Decimal("15000.00")
+        updated_contract.is_signed = True
+        mock_contract_service.update_contract.return_value = updated_contract
+
+        # Act
+        result = update_contract_logic(
+            contract_id=100,
+            total_amount=Decimal("15000.00"),
+            remaining_amount=None,
+            is_signed=True,
+            current_user=mock_commercial_user,
+            container=mock_container
+        )
+
+        # Assert
+        mock_contract_service.get_contract.assert_called_once_with(100)
+        mock_contract_service.update_contract.assert_called_once()
+        assert result == updated_contract
+
+    def test_update_contract_validates_negative_amounts(self, mocker, mock_container, mock_commercial_user, mock_contract):
+        """GIVEN negative amounts / WHEN update_contract_logic() / THEN raises ValueError"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+
+        # Ensure contract belongs to current user
+        mock_contract.client.sales_contact_id = mock_commercial_user.id
+        mock_contract_service.get_contract.return_value = mock_contract
+
+        # Act & Assert - negative total
+        with pytest.raises(ValueError, match="montant total doit être positif"):
+            update_contract_logic(
+                contract_id=100,
+                total_amount=Decimal("-1000.00"),
+                remaining_amount=None,
+                is_signed=None,
+                current_user=mock_commercial_user,
+                container=mock_container
+            )
+
+    def test_update_contract_validates_remaining_exceeds_total(self, mocker, mock_container, mock_commercial_user, mock_contract):
+        """GIVEN remaining > total / WHEN update_contract_logic() / THEN raises ValueError"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+
+        # Ensure contract belongs to current user
+        mock_contract.client.sales_contact_id = mock_commercial_user.id
+        # Set initial contract values
+        mock_contract.total_amount = Decimal("10000.00")
+        mock_contract.remaining_amount = Decimal("5000.00")
+        mock_contract_service.get_contract.return_value = mock_contract
+
+        # Act & Assert - update remaining to exceed total
+        with pytest.raises(ValueError, match="dépasser le montant total"):
+            update_contract_logic(
+                contract_id=100,
+                total_amount=None,
+                remaining_amount=Decimal("15000.00"),  # Exceeds current total
+                is_signed=None,
+                current_user=mock_commercial_user,
+                container=mock_container
+            )
+
+    def test_update_contract_unauthorized(self, mocker, mock_container, mock_commercial_user, mock_contract):
+        """GIVEN unauthorized user / WHEN update_contract_logic() / THEN raises ValueError"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+
+        # Contract belongs to another commercial
+        mock_contract.client.sales_contact_id = 999
+        mock_contract.client.first_name = "Other"
+        mock_contract.client.last_name = "Client"
+        mock_contract.client.sales_contact = mocker.Mock()
+        mock_contract.client.sales_contact.first_name = "Other"
+        mock_contract.client.sales_contact.last_name = "Commercial"
+        mock_contract_service.get_contract.return_value = mock_contract
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="propres clients"):
+            update_contract_logic(
+                contract_id=100,
+                total_amount=Decimal("20000.00"),
+                remaining_amount=None,
+                is_signed=None,
                 current_user=mock_commercial_user,
                 container=mock_container
             )

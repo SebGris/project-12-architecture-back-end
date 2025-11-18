@@ -13,6 +13,7 @@ from src.cli.business_logic import (
     create_user_logic,
     update_client_logic,
     create_contract_logic,
+    update_contract_logic,
 )
 
 app = typer.Typer()
@@ -1303,37 +1304,17 @@ def update_contract(
     """
     from decimal import Decimal
 
-    # Manually get services from container
+    # Get container and current user
     container = Container()
-    contract_service = container.contract_service()
     auth_service = container.auth_service()
+    current_user = auth_service.get_current_user()
 
+    # Show header
     console.print_separator()
     console.print_header("Mise à jour d'un contrat")
     console.print_separator()
 
-    # Get current user for permission check
-    current_user = auth_service.get_current_user()
-
-    # Vérifier que le contrat existe
-    contract = contract_service.get_contract(contract_id)
-    if not contract:
-        console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
-        raise typer.Exit(code=1)
-
-    # Permission check: COMMERCIAL can only update contracts of their own clients
-    if current_user.department == Department.COMMERCIAL:
-        if contract.client.sales_contact_id != current_user.id:
-            console.print_error(
-                "Vous ne pouvez modifier que les contrats de vos propres clients"
-            )
-            console.print_error(
-                f"Ce contrat appartient au client {contract.client.first_name} {contract.client.last_name}, "
-                f"assigné à {contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name}"
-            )
-            raise typer.Exit(code=1)
-
-    # Nettoyer et convertir les montants
+    # Clean and convert amounts
     total_decimal = None
     remaining_decimal = None
 
@@ -1353,32 +1334,24 @@ def update_contract(
             console.print_error("Montant restant invalide")
             raise typer.Exit(code=1)
 
-    # Validation des montants
-    if total_decimal is not None and total_decimal < 0:
-        console.print_error("Le montant total doit être positif")
-        raise typer.Exit(code=1)
-
-    if remaining_decimal is not None and remaining_decimal < 0:
-        console.print_error("Le montant restant doit être positif")
-        raise typer.Exit(code=1)
-
-    # Mettre à jour les valeurs
-    if total_decimal is not None:
-        contract.total_amount = total_decimal
-    if remaining_decimal is not None:
-        contract.remaining_amount = remaining_decimal
-    if is_signed is not None:
-        contract.is_signed = is_signed
-
-    # Validation finale
-    if contract.remaining_amount > contract.total_amount:
-        console.print_error(
-            "Le montant restant ne peut pas dépasser le montant total"
-        )
-        raise typer.Exit(code=1)
-
     try:
-        updated_contract = contract_service.update_contract(contract)
+        # Call business logic
+        updated_contract = update_contract_logic(
+            contract_id=contract_id,
+            total_amount=total_decimal,
+            remaining_amount=remaining_decimal,
+            is_signed=is_signed,
+            current_user=current_user,
+            container=container
+        )
+
+    except ValueError as e:
+        # Business logic errors (validation, authorization, etc.)
+        console.print_separator()
+        console.print_error(str(e))
+        console.print_separator()
+        raise typer.Exit(code=1)
+
     except Exception as e:
         console.print_error(f"Erreur lors de la mise à jour: {e}")
         raise typer.Exit(code=1)
