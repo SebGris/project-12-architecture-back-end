@@ -39,49 +39,57 @@ from src.models.user import Department
 class TestValidateEmail:
     """Test validate_email_callback function."""
 
-    def test_validate_email_valid(self):
-        """GIVEN valid email / WHEN validated / THEN returns email"""
-        valid_emails = [
+    @pytest.mark.parametrize(
+        "email",
+        [
             "user@example.com",
             "test.user@example.com",
             "user+tag@example.co.uk",
-        ]
-        for email in valid_emails:
-            assert validators.validate_email_callback(email) == email
+        ],
+    )
+    def test_validate_email_valid(self, email):
+        """GIVEN valid email / WHEN validated / THEN returns email"""
+        assert validators.validate_email_callback(email) == email
 
-    def test_validate_email_invalid(self):
+    @pytest.mark.parametrize("email", ["invalid", "invalid@", "@example.com"])
+    def test_validate_email_invalid(self, email):
         """GIVEN invalid email / WHEN validated / THEN raises BadParameter"""
-        invalid_emails = ["invalid", "invalid@", "@example.com"]
-        for email in invalid_emails:
-            with pytest.raises(typer.BadParameter):
-                validators.validate_email_callback(email)
+        with pytest.raises(typer.BadParameter):
+            validators.validate_email_callback(email)
 
 
 class TestValidatePhone:
     """Test validate_phone_callback function."""
 
-    def test_validate_phone_valid(self):
+    @pytest.mark.parametrize(
+        "phone", ["0612345678", "01 23 45 67 89", "+33612345678"]
+    )
+    def test_validate_phone_valid(self, phone):
         """GIVEN valid phone / WHEN validated / THEN returns phone"""
-        valid_phones = ["0612345678", "01 23 45 67 89", "+33612345678"]
-        for phone in valid_phones:
-            assert validators.validate_phone_callback(phone) == phone
+        assert validators.validate_phone_callback(phone) == phone
 
-    def test_validate_phone_invalid(self):
+    @pytest.mark.parametrize("phone", ["123", "abcdefghij"])
+    def test_validate_phone_invalid(self, phone):
         """GIVEN invalid phone / WHEN validated / THEN raises BadParameter"""
-        invalid_phones = ["123", "abcdefghij"]
-        for phone in invalid_phones:
-            with pytest.raises(typer.BadParameter):
-                validators.validate_phone_callback(phone)
+        with pytest.raises(typer.BadParameter):
+            validators.validate_phone_callback(phone)
 
 
 class TestValidatePassword:
     """Test validate_password_callback function."""
 
-    def test_validate_password_valid(self):
+    @pytest.mark.parametrize(
+        "password",
+        [
+            "SecurePass123!",
+            "MyP@ssw0rd",
+            "Test1234!",
+            "12345678",
+        ],
+    )
+    def test_validate_password_valid(self, password):
         """GIVEN valid password (>= 8 chars) / WHEN validated / THEN returns password"""
-        valid_passwords = ["SecurePass123!", "MyP@ssw0rd", "Test1234!", "12345678"]
-        for password in valid_passwords:
-            assert validators.validate_password_callback(password) == password
+        assert validators.validate_password_callback(password) == password
 
     def test_validate_password_too_short(self):
         """GIVEN password < 8 chars / WHEN validated / THEN raises BadParameter"""
@@ -94,11 +102,10 @@ class TestValidatePassword:
 class TestValidateFirstName:
     """Test validate_first_name_callback function."""
 
-    def test_validate_first_name_valid(self):
+    @pytest.mark.parametrize("name", ["Jean", "Marie-Claire", "Anne"])
+    def test_validate_first_name_valid(self, name):
         """GIVEN valid first name / WHEN validated / THEN returns name"""
-        valid_names = ["Jean", "Marie-Claire", "Anne"]
-        for name in valid_names:
-            assert validators.validate_first_name_callback(name) == name
+        assert validators.validate_first_name_callback(name) == name
 
     def test_validate_first_name_too_short(self):
         """GIVEN too short name / WHEN validated / THEN raises BadParameter"""
@@ -109,11 +116,10 @@ class TestValidateFirstName:
 class TestValidateLastName:
     """Test validate_last_name_callback function."""
 
-    def test_validate_last_name_valid(self):
+    @pytest.mark.parametrize("name", ["Dupont", "Martin-Dubois", "De La Fontaine"])
+    def test_validate_last_name_valid(self, name):
         """GIVEN valid last name / WHEN validated / THEN returns name"""
-        valid_names = ["Dupont", "Martin-Dubois", "De La Fontaine"]
-        for name in valid_names:
-            assert validators.validate_last_name_callback(name) == name
+        assert validators.validate_last_name_callback(name) == name
 
     def test_validate_last_name_too_short(self):
         """GIVEN too short name / WHEN validated / THEN raises BadParameter"""
@@ -124,11 +130,12 @@ class TestValidateLastName:
 class TestValidateLocation:
     """Test validate_location_callback function."""
 
-    def test_validate_location_valid(self):
+    @pytest.mark.parametrize(
+        "location", ["Paris", "New York", "Centre de conférence", "AB"]
+    )
+    def test_validate_location_valid(self, location):
         """GIVEN valid location / WHEN validated / THEN returns location"""
-        valid_locations = ["Paris", "New York", "Centre de conférence", "AB"]
-        for location in valid_locations:
-            assert validators.validate_location_callback(location) == location
+        assert validators.validate_location_callback(location) == location
 
     def test_validate_location_empty(self):
         """GIVEN empty location / WHEN validated / THEN raises BadParameter"""
@@ -167,11 +174,18 @@ class TestValidateAttendees:
 class TestValidateUsername:
     """Test validate_username_callback function."""
 
-    def test_validate_username_valid(self):
+    @pytest.mark.parametrize(
+        "username",
+        [
+            "user123",
+            "john_doe",
+            "admin-user",
+            "test_user_123",
+        ],
+    )
+    def test_validate_username_valid(self, username):
         """GIVEN valid username / WHEN validated / THEN returns username"""
-        valid_usernames = ["user123", "john_doe", "admin-user", "test_user_123"]
-        for username in valid_usernames:
-            assert validators.validate_username_callback(username) == username
+        assert validators.validate_username_callback(username) == username
 
     def test_validate_username_too_short(self):
         """GIVEN username < 4 chars / WHEN validated / THEN raises BadParameter"""
@@ -187,11 +201,10 @@ class TestValidateUsername:
 class TestValidateCompanyName:
     """Test validate_company_name_callback function."""
 
-    def test_validate_company_name_valid(self):
+    @pytest.mark.parametrize("name", ["Acme Corp", "Tech Solutions", "ABC Company"])
+    def test_validate_company_name_valid(self, name):
         """GIVEN valid company name / WHEN validated / THEN returns name"""
-        valid_names = ["Acme Corp", "Tech Solutions", "ABC Company"]
-        for name in valid_names:
-            assert validators.validate_company_name_callback(name) == name
+        assert validators.validate_company_name_callback(name) == name
 
     def test_validate_company_name_empty(self):
         """GIVEN empty company name / WHEN validated / THEN raises BadParameter"""
@@ -209,7 +222,9 @@ class TestValidateSalesContactId:
 
     def test_validate_sales_contact_id_valid(self):
         """GIVEN valid ID (0 or positive) / WHEN validated / THEN returns ID"""
-        assert validators.validate_sales_contact_id_callback(0) == 0  # Auto-assign
+        assert (
+            validators.validate_sales_contact_id_callback(0) == 0
+        )  # Auto-assign
         assert validators.validate_sales_contact_id_callback(1) == 1
         assert validators.validate_sales_contact_id_callback(999) == 999
 
@@ -287,7 +302,9 @@ class TestValidateSupportContactId:
 
     def test_validate_support_contact_id_valid(self):
         """GIVEN valid ID (0 or positive) / WHEN validated / THEN returns ID"""
-        assert validators.validate_support_contact_id_callback(0) == 0  # Optional
+        assert (
+            validators.validate_support_contact_id_callback(0) == 0
+        )  # Optional
         assert validators.validate_support_contact_id_callback(1) == 1
         assert validators.validate_support_contact_id_callback(999) == 999
 
@@ -300,11 +317,10 @@ class TestValidateSupportContactId:
 class TestValidateEventName:
     """Test validate_event_name_callback function."""
 
-    def test_validate_event_name_valid(self):
+    @pytest.mark.parametrize("name", ["Conference 2025", "Tech Workshop", "ABC"])
+    def test_validate_event_name_valid(self, name):
         """GIVEN valid event name / WHEN validated / THEN returns name"""
-        valid_names = ["Conference 2025", "Tech Workshop", "ABC"]
-        for name in valid_names:
-            assert validators.validate_event_name_callback(name) == name
+        assert validators.validate_event_name_callback(name) == name
 
     def test_validate_event_name_too_short(self):
         """GIVEN name < 3 chars / WHEN validated / THEN raises BadParameter"""
@@ -486,7 +502,9 @@ class TestValidateEventDates:
         start = datetime.now() + timedelta(days=1)
         end = start + timedelta(hours=2)
 
-        validators.validate_event_dates(event_start=start, event_end=end, attendees=50)
+        validators.validate_event_dates(
+            event_start=start, event_end=end, attendees=50
+        )
 
     def test_validate_event_dates_end_before_start(self):
         """GIVEN end <= start / WHEN validated / THEN raises ValueError"""
@@ -494,7 +512,9 @@ class TestValidateEventDates:
         end = start - timedelta(hours=1)  # End before start
 
         with pytest.raises(ValueError) as exc_info:
-            validators.validate_event_dates(event_start=start, event_end=end, attendees=50)
+            validators.validate_event_dates(
+                event_start=start, event_end=end, attendees=50
+            )
         assert "postérieure" in str(exc_info.value)
 
     def test_validate_event_dates_negative_attendees(self):
@@ -503,7 +523,9 @@ class TestValidateEventDates:
         end = start + timedelta(hours=2)
 
         with pytest.raises(ValueError):
-            validators.validate_event_dates(event_start=start, event_end=end, attendees=-5)
+            validators.validate_event_dates(
+                event_start=start, event_end=end, attendees=-5
+            )
 
     def test_validate_event_dates_in_past(self):
         """GIVEN start in past / WHEN validated / THEN raises ValueError"""
@@ -511,7 +533,9 @@ class TestValidateEventDates:
         end = start + timedelta(hours=2)
 
         with pytest.raises(ValueError) as exc_info:
-            validators.validate_event_dates(event_start=start, event_end=end, attendees=50)
+            validators.validate_event_dates(
+                event_start=start, event_end=end, attendees=50
+            )
         assert "futur" in str(exc_info.value)
 
 
