@@ -8,16 +8,7 @@ from src.cli import validators
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
-from src.cli.business_logic import (
-    create_client_logic,
-    create_contract_logic,
-    create_event_logic,
-    create_user_logic,
-    sign_contract_logic,
-    update_client_logic,
-    update_contract_logic,
-    update_contract_payment_logic,
-)
+from src.cli import business_logic as bl
 
 app = typer.Typer()
 
@@ -298,7 +289,7 @@ def create_client(
 
     try:
         # Call business logic
-        client = create_client_logic(
+        client = bl.create_client_logic(
             first_name=first_name,
             last_name=last_name,
             email=email,
@@ -441,7 +432,7 @@ def create_user(
 
     try:
         # Call business logic
-        user = create_user_logic(
+        user = bl.create_user_logic(
             username=username,
             first_name=first_name,
             last_name=last_name,
@@ -565,7 +556,7 @@ def create_contract(
 
     try:
         # Call business logic
-        contract = create_contract_logic(
+        contract = bl.create_contract_logic(
             client_id=client_id,
             total_amount=total_decimal,
             remaining_amount=remaining_decimal,
@@ -668,7 +659,7 @@ def sign_contract(
 
     try:
         # Call business logic
-        contract = sign_contract_logic(
+        contract = bl.sign_contract_logic(
             contract_id=contract_id,
             current_user=current_user,
             container=container,
@@ -766,7 +757,7 @@ def update_contract_payment(
 
     try:
         # Call business logic
-        contract = update_contract_payment_logic(
+        contract = bl.update_contract_payment_logic(
             contract_id=contract_id,
             amount_paid=amount_decimal,
             current_user=current_user,
@@ -895,7 +886,7 @@ def create_event(
 
     # Call business logic
     try:
-        event = create_event_logic(
+        event = bl.create_event_logic(
             name=name,
             contract_id=contract_id,
             event_start=start_dt,
@@ -1363,7 +1354,7 @@ def update_client(
 
     try:
         # Call business logic
-        updated_client = update_client_logic(
+        updated_client = bl.update_client_logic(
             client_id=client_id,
             first_name=first_name,
             last_name=last_name,
@@ -1495,7 +1486,7 @@ def update_contract(
 
     try:
         # Call business logic
-        updated_contract = update_contract_logic(
+        updated_contract = bl.update_contract_logic(
             contract_id=contract_id,
             total_amount=total_decimal,
             remaining_amount=remaining_decimal,
