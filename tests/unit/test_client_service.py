@@ -10,86 +10,63 @@ Tests couverts:
 import pytest
 
 from src.models.client import Client
+from src.repositories.sqlalchemy_client_repository import SqlAlchemyClientRepository
 from src.services.client_service import ClientService
 
 
 @pytest.fixture
-def mock_repository(mocker):
-    """Create a mock ClientRepository."""
-    return mocker.Mock()
-
-
-@pytest.fixture
-def client_service(mock_repository):
-    """Create a ClientService instance with mock repository."""
-    return ClientService(repository=mock_repository)
-
-
-@pytest.fixture
-def mock_client():
-    """Create a mock client for testing."""
-    return Client(
-        id=1,
-        first_name="Jean",
-        last_name="Dupont",
-        email="jean.dupont@example.com",
-        phone="0612345678",
-        company_name="DupontCorp",
-        sales_contact_id=2,
-    )
+def client_service(db_session):
+    """Create a ClientService instance with real repository and SQLite DB."""
+    repository = SqlAlchemyClientRepository(session=db_session)
+    return ClientService(repository=repository)
 
 
 class TestCreateClient:
     """Test create_client method."""
 
-    def test_create_client_success(
-        self, client_service, mock_repository, mock_client
-    ):
+    def test_create_client_success(self, client_service, test_users, db_session):
         """GIVEN valid client data / WHEN create_client() / THEN client created"""
-        # Arrange - le repository retourne ce qui lui est passé
-        mock_repository.add.side_effect = lambda client: client
-
-        # Act
         result = client_service.create_client(
             first_name="Jean",
             last_name="Dupont",
             email="jean.dupont@example.com",
             phone="0612345678",
             company_name="DupontCorp",
-            sales_contact_id=2,
+            sales_contact_id=test_users["commercial1"].id,
         )
 
-        # Assert
-        mock_repository.add.assert_called_once()
+        # Verify client was created
         assert isinstance(result, Client)
-        assert result.first_name == "Jean"  # to do
+        assert result.id is not None
+        assert result.first_name == "Jean"
         assert result.last_name == "Dupont"
         assert result.email == "jean.dupont@example.com"
-        assert result.sales_contact_id == 2
+        assert result.sales_contact_id == test_users["commercial1"].id
+
+        # Verify it's persisted in database
+        db_client = db_session.query(Client).filter_by(email="jean.dupont@example.com").first()
+        assert db_client is not None
+        assert db_client.id == result.id
 
 
 class TestGetClient:
     """Test get_client method."""
 
-    def test_get_client_found(  # todo mock repository
-        self, client_service, mock_repository, mock_client
-    ):
+    def test_get_client_found(self, client_service, test_clients):
         """GIVEN existing client_id / WHEN get_client() / THEN returns client"""
-        mock_repository.get.return_value = mock_client
+        kevin = test_clients["kevin"]
 
-        result = client_service.get_client(client_id=1)
+        result = client_service.get_client(client_id=kevin.id)
 
-        mock_repository.get.assert_called_once_with(1)
-        assert result == mock_client
-        assert result.id == 1
+        assert result is not None
+        assert result.id == kevin.id
+        assert result.first_name == "Kevin"
+        assert result.company_name == "Cool Startup LLC"
 
-    def test_get_client_not_found(self, client_service, mock_repository):
+    def test_get_client_not_found(self, client_service):
         """GIVEN non-existing client_id / WHEN get_client() / THEN returns None"""
-        mock_repository.get.return_value = None
+        result = client_service.get_client(client_id=99999)
 
-        result = client_service.get_client(client_id=999)
-
-        mock_repository.get.assert_called_once_with(999)
         assert result is None
 
 
@@ -97,69 +74,72 @@ class TestUpdateClient:
     """Test update_client method."""
 
     def test_update_client_all_fields(
-        self, client_service, mock_repository, mock_client
+        self, client_service, test_clients, db_session
     ):
         """GIVEN client_id and all fields / WHEN update_client() / THEN client updated"""
-        # Arrange
-        mock_repository.get.return_value = mock_client
-        mock_repository.update.return_value = mock_client
+        kevin = test_clients["kevin"]
 
-        # Act - IMPORTANT: update_client prend client_id, pas un objet Client
         result = client_service.update_client(
-            client_id=1,
-            first_name="Jean-Updated",
-            last_name="Dupont-Updated",
-            email="jean.new@example.com",
+            client_id=kevin.id,
+            first_name="Kevin-Updated",
+            last_name="Casey-Updated",
+            email="kevin.new@example.com",
             phone="0698765432",
             company_name="NewCorp",
         )
 
-        # Assert
-        mock_repository.get.assert_called_once_with(1)
-        mock_repository.update.assert_called_once_with(mock_client)
-        assert result == mock_client
-        assert result.first_name == "Jean-Updated"
-        assert result.last_name == "Dupont-Updated"
+        # Verify updates
+        assert result is not None
+        assert result.first_name == "Kevin-Updated"
+        assert result.last_name == "Casey-Updated"
+        assert result.email == "kevin.new@example.com"
+        assert result.phone == "0698765432"
+        assert result.company_name == "NewCorp"
 
-    def test_update_client_partial_fields(
-        self, client_service, mock_repository, mock_client
-    ):
+        # Verify changes persisted
+        db_session.expire_all()
+        db_client = db_session.query(Client).filter_by(id=kevin.id).first()
+        assert db_client.first_name == "Kevin-Updated"
+        assert db_client.company_name == "NewCorp"
+
+    def test_update_client_partial_fields(self, client_service, test_clients):
         """GIVEN client_id and some fields / WHEN update_client() / THEN only those fields updated"""
-        mock_repository.get.return_value = mock_client
-        mock_repository.update.return_value = mock_client
+        kevin = test_clients["kevin"]
+        original_first_name = kevin.first_name
 
-        # Update seulement email et phone
         result = client_service.update_client(
-            client_id=1, email="new.email@example.com", phone="0611111111"
+            client_id=kevin.id,
+            email="new.email@example.com",
+            phone="0611111111",
         )
 
-        mock_repository.get.assert_called_once_with(1)
-        mock_repository.update.assert_called_once_with(mock_client)
+        # Verify partial update
         assert result.email == "new.email@example.com"
         assert result.phone == "0611111111"
+        # First name should be unchanged
+        assert result.first_name == original_first_name
 
-    def test_update_client_not_found(self, client_service, mock_repository):
+    def test_update_client_not_found(self, client_service):
         """GIVEN non-existing client_id / WHEN update_client() / THEN returns None"""
-        mock_repository.get.return_value = None
-
         result = client_service.update_client(
-            client_id=999, first_name="NewName"
+            client_id=99999, first_name="NewName"
         )
 
-        mock_repository.get.assert_called_once_with(999)
-        mock_repository.update.assert_not_called()
         assert result is None
 
     def test_update_client_only_company_name(
-        self, client_service, mock_repository, mock_client
+        self, client_service, test_clients, db_session
     ):
         """GIVEN client_id and company_name / WHEN update_client() / THEN only company updated"""
-        mock_repository.get.return_value = mock_client
-        mock_repository.update.return_value = mock_client
+        lou = test_clients["lou"]
 
         result = client_service.update_client(
-            client_id=1, company_name="RenamedCompany"
+            client_id=lou.id, company_name="RenamedCompany"
         )
 
         assert result.company_name == "RenamedCompany"
-        mock_repository.update.assert_called_once()
+
+        # Verify persistence
+        db_session.expire_all()
+        db_client = db_session.query(Client).filter_by(id=lou.id).first()
+        assert db_client.company_name == "RenamedCompany"
