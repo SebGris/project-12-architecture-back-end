@@ -10,7 +10,7 @@ import pytest
 # L'importation échouera tant que l'implémentation n'existera pas - c'est ce que l'on attend de la méthode TDD.
 try:
     from sqlalchemy import create_engine
-    from sqlalchemy.orm import Session, sessionmaker
+    from sqlalchemy.orm import Session
 
     from src.database import Base
     from src.models.client import Client
@@ -40,14 +40,18 @@ def db_session():
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
 
-    # Create session
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
+    # Create session with explicit connection
+    connection = engine.connect()
+    transaction = connection.begin()
+    session = Session(bind=connection)
 
     yield session
 
-    session.rollback()
+    # Cleanup: close session, rollback transaction, close connection, dispose engine
     session.close()
+    transaction.rollback()
+    connection.close()
+    engine.dispose()
 
 
 @pytest.fixture
