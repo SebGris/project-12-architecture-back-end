@@ -77,3 +77,20 @@ class SqlAlchemyUserRepository(UserRepository):
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def delete(self, user_id: int) -> bool:
+        """Delete a user by ID.
+
+        Args:
+            user_id: The user's ID
+
+        Returns:
+            True if the user was deleted, False if not found
+        """
+        user = self.session.query(User).filter_by(id=user_id).first()
+        if not user:
+            return False
+
+        self.session.delete(user)
+        self.session.commit()
+        return True

@@ -481,6 +481,226 @@ def create_user(
 
 
 @app.command()
+@require_department(Department.GESTION)
+def update_user(
+    user_id: int = typer.Option(
+        ...,
+        prompt="ID de l'utilisateur",
+        callback=validators.validate_user_id_callback,
+    ),
+    username: str = typer.Option(
+        None, prompt="Nouveau nom d'utilisateur (laisser vide pour ne pas modifier)"
+    ),
+    first_name: str = typer.Option(
+        None, prompt="Nouveau prénom (laisser vide pour ne pas modifier)"
+    ),
+    last_name: str = typer.Option(
+        None, prompt="Nouveau nom (laisser vide pour ne pas modifier)"
+    ),
+    email: str = typer.Option(
+        None, prompt="Nouvel email (laisser vide pour ne pas modifier)"
+    ),
+    phone: str = typer.Option(
+        None, prompt="Nouveau téléphone (laisser vide pour ne pas modifier)"
+    ),
+    department_choice: int = typer.Option(
+        0,
+        prompt=f"Nouveau département (1={Department.COMMERCIAL.value}, 2={Department.GESTION.value}, 3={Department.SUPPORT.value}, 0=pas de changement)",
+    ),
+):
+    """
+    Mettre à jour les informations d'un utilisateur.
+
+    Cette commande permet de modifier les informations d'un utilisateur existant.
+    Les champs laissés vides ne seront pas modifiés.
+
+    Args:
+        user_id: ID de l'utilisateur à modifier
+        username: Nouveau nom d'utilisateur (optionnel)
+        first_name: Nouveau prénom (optionnel)
+        last_name: Nouveau nom (optionnel)
+        email: Nouvel email (optionnel)
+        phone: Nouveau téléphone (optionnel)
+        department_choice: Nouveau département (optionnel)
+
+    Returns:
+        None. Affiche un message de succès avec les détails.
+
+    Raises:
+        typer.Exit: En cas d'erreur (utilisateur inexistant, données invalides, etc.)
+
+    Examples:
+        epicevents update-user
+    """
+    # Manually get services from container
+    container = Container()
+    user_service = container.user_service()
+
+    console.print_separator()
+    console.print_header("Mise à jour d'un utilisateur")
+    console.print_separator()
+
+    # Vérifier que l'utilisateur existe
+    user = user_service.get_user(user_id)
+    if not user:
+        console.print_error(f"Utilisateur avec l'ID {user_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Nettoyer les champs vides
+    username = username.strip() if username else None
+    first_name = first_name.strip() if first_name else None
+    last_name = last_name.strip() if last_name else None
+    email = email.strip() if email else None
+    phone = phone.strip() if phone else None
+
+    # Convert department choice if provided
+    department = None
+    if department_choice > 0:
+        departments = list(Department)
+        department = departments[department_choice - 1]
+
+    # Validation des champs si fournis
+    if username and len(username) < 4:
+        console.print_error("Le nom d'utilisateur doit avoir au moins 4 caractères")
+        raise typer.Exit(code=1)
+
+    if first_name and len(first_name) < 2:
+        console.print_error("Le prénom doit avoir au moins 2 caractères")
+        raise typer.Exit(code=1)
+
+    if last_name and len(last_name) < 2:
+        console.print_error("Le nom doit avoir au moins 2 caractères")
+        raise typer.Exit(code=1)
+
+    try:
+        # Mettre à jour l'utilisateur
+        updated_user = user_service.update_user(
+            user_id=user_id,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone=phone,
+            department=department,
+        )
+
+    except IntegrityError as e:
+        error_msg = (
+            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
+        )
+        if "unique" in error_msg or "duplicate" in error_msg:
+            if "username" in error_msg:
+                console.print_error(
+                    f"Le nom d'utilisateur '{username}' est déjà utilisé"
+                )
+            elif "email" in error_msg:
+                console.print_error(f"L'email '{email}' est déjà utilisé")
+            else:
+                console.print_error(
+                    "Un utilisateur avec ces informations existe déjà"
+                )
+        else:
+            console.print_error(f"Erreur d'intégrité: {error_msg}")
+        raise typer.Exit(code=1)
+
+    except Exception as e:
+        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        raise typer.Exit(code=1)
+
+    # Success message
+    console.print_separator()
+    console.print_success("Utilisateur mis à jour avec succès!")
+    console.print_field(LABEL_ID, str(updated_user.id))
+    console.print_field(LABEL_USERNAME, updated_user.username)
+    console.print_field(
+        "Nom complet", f"{updated_user.first_name} {updated_user.last_name}"
+    )
+    console.print_field(LABEL_EMAIL, updated_user.email)
+    console.print_field(LABEL_PHONE, updated_user.phone)
+    console.print_field(LABEL_DEPARTMENT, updated_user.department.value)
+    console.print_separator()
+
+
+@app.command()
+@require_department(Department.GESTION)
+def delete_user(
+    user_id: int = typer.Option(
+        ...,
+        prompt="ID de l'utilisateur à supprimer",
+        callback=validators.validate_user_id_callback,
+    ),
+    confirm: bool = typer.Option(
+        False, prompt="Êtes-vous sûr de vouloir supprimer cet utilisateur ? (oui/non)"
+    ),
+):
+    """
+    Supprimer un utilisateur du système CRM.
+
+    Cette commande supprime définitivement un utilisateur de la base de données.
+    ATTENTION: Cette action est irréversible.
+
+    Args:
+        user_id: ID de l'utilisateur à supprimer
+        confirm: Confirmation de suppression
+
+    Returns:
+        None. Affiche un message de confirmation.
+
+    Raises:
+        typer.Exit: En cas d'erreur (utilisateur inexistant, confirmation manquante, etc.)
+
+    Examples:
+        epicevents delete-user --user-id 5 --confirm
+    """
+    # Manually get services from container
+    container = Container()
+    user_service = container.user_service()
+
+    console.print_separator()
+    console.print_header("Suppression d'un utilisateur")
+    console.print_separator()
+
+    # Vérifier que l'utilisateur existe
+    user = user_service.get_user(user_id)
+    if not user:
+        console.print_error(f"Utilisateur avec l'ID {user_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Afficher les informations de l'utilisateur avant suppression
+    console.print_field(LABEL_ID, str(user.id))
+    console.print_field(LABEL_USERNAME, user.username)
+    console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
+    console.print_field(LABEL_EMAIL, user.email)
+    console.print_field(LABEL_DEPARTMENT, user.department.value)
+    console.print_separator()
+
+    # Demander confirmation
+    if not confirm:
+        console.print_error(
+            "Suppression annulée. Utilisez --confirm True pour confirmer la suppression."
+        )
+        raise typer.Exit(code=1)
+
+    # Delete user
+    try:
+        success = user_service.delete_user(user_id)
+        if not success:
+            console.print_error("Erreur lors de la suppression de l'utilisateur")
+            raise typer.Exit(code=1)
+
+    except Exception as e:
+        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        raise typer.Exit(code=1)
+
+    # Success message
+    console.print_separator()
+    console.print_success(
+        f"Utilisateur {user.username} (ID: {user_id}) supprimé avec succès!"
+    )
+    console.print_separator()
+
+
+@app.command()
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def create_contract(
     client_id: int = typer.Option(

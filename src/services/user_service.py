@@ -77,3 +77,57 @@ class UserService:
             True if password matches, False otherwise
         """
         return user.verify_password(password)
+
+    def update_user(
+        self,
+        user_id: int,
+        username: str = None,
+        email: str = None,
+        first_name: str = None,
+        last_name: str = None,
+        phone: str = None,
+        department: Department = None,
+    ) -> Optional[User]:
+        """Update user information.
+
+        Args:
+            user_id: ID of the user to update
+            username: New username (optional)
+            email: New email (optional)
+            first_name: New first name (optional)
+            last_name: New last name (optional)
+            phone: New phone number (optional)
+            department: New department (optional)
+
+        Returns:
+            Updated User instance or None if user not found
+        """
+        user = self.repository.get(user_id)
+        if not user:
+            return None
+
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        if phone:
+            user.phone = phone
+        if department:
+            user.department = department
+
+        return self.repository.update(user)
+
+    def delete_user(self, user_id: int) -> bool:
+        """Delete a user from the system.
+
+        Args:
+            user_id: ID of the user to delete
+
+        Returns:
+            True if the user was deleted, False if not found
+        """
+        return self.repository.delete(user_id)
