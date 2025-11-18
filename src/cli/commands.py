@@ -426,7 +426,6 @@ def create_user(
         epicevents create-user
         # Suit les prompts interactifs pour saisir les informations
     """
-    from src.cli.business_logic import create_user_logic
 
     # Get container
     container = Container()
@@ -450,7 +449,7 @@ def create_user(
             phone=phone,
             password=password,
             department=department,
-            container=container
+            container=container,
         )
 
     except ValueError as e:
@@ -572,7 +571,7 @@ def create_contract(
             remaining_amount=remaining_decimal,
             is_signed=is_signed,
             current_user=current_user,
-            container=container
+            container=container,
         )
 
         # Get client for success message
@@ -672,7 +671,7 @@ def sign_contract(
         contract = sign_contract_logic(
             contract_id=contract_id,
             current_user=current_user,
-            container=container
+            container=container,
         )
 
         # Get client for success message
@@ -771,7 +770,7 @@ def update_contract_payment(
             contract_id=contract_id,
             amount_paid=amount_decimal,
             current_user=current_user,
-            container=container
+            container=container,
         )
 
         # Get client for success message
@@ -804,9 +803,12 @@ def update_contract_payment(
         LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
     )
     console.print_field(
-        "Montant payé", f"{contract.total_amount - contract.remaining_amount} €"
+        "Montant payé",
+        f"{contract.total_amount - contract.remaining_amount} €",
     )
-    console.print_field(LABEL_STATUT, STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED)
+    console.print_field(
+        LABEL_STATUT, STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED
+    )
     console.print_separator()
 
 
@@ -902,7 +904,7 @@ def create_event(
             attendees=attendees,
             notes=notes if notes else None,
             support_contact_id=support_id,
-            container=container
+            container=container,
         )
     except ValueError as e:
         console.print_error(str(e))
@@ -1369,7 +1371,7 @@ def update_client(
             phone=phone,
             company_name=company_name,
             current_user=current_user,
-            container=container
+            container=container,
         )
 
     except ValueError as e:
@@ -1499,7 +1501,7 @@ def update_contract(
             remaining_amount=remaining_decimal,
             is_signed=is_signed,
             current_user=current_user,
-            container=container
+            container=container,
         )
 
     except ValueError as e:
