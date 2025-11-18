@@ -192,10 +192,13 @@ class TestUpdateClientLogic:
 
         # Client belongs to another commercial
         mock_client.sales_contact_id = 999
+        mock_client.sales_contact = mocker.Mock()
+        mock_client.sales_contact.first_name = "Other"
+        mock_client.sales_contact.last_name = "Commercial"
         mock_client_service.get_client.return_value = mock_client
 
         # Act & Assert
-        with pytest.raises(ValueError, match="autorisé"):
+        with pytest.raises(ValueError, match="propres clients"):
             update_client_logic(
                 client_id=10,
                 first_name=None,
@@ -227,17 +230,23 @@ class TestCreateContractLogic:
             client_id=10,
             total_amount=Decimal("10000.00"),
             remaining_amount=Decimal("10000.00"),
+            is_signed=False,
             current_user=mock_commercial_user,
             container=mock_container
         )
 
         # Assert
         mock_client_service.get_client.assert_called_once_with(10)
-        mock_contract_service.create_contract.assert_called_once()
+        mock_contract_service.create_contract.assert_called_once_with(
+            client_id=10,
+            total_amount=Decimal("10000.00"),
+            remaining_amount=Decimal("10000.00"),
+            is_signed=False
+        )
         assert result == mock_contract
 
-    def test_create_contract_defaults_remaining_amount(self, mocker, mock_container, mock_commercial_user, mock_client, mock_contract):
-        """GIVEN no remaining_amount / WHEN create_contract_logic() / THEN defaults to total_amount"""
+    def test_create_contract_validates_amounts(self, mocker, mock_container, mock_commercial_user, mock_client):
+        """GIVEN invalid amounts / WHEN create_contract_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_client_service = mocker.Mock()
@@ -245,20 +254,17 @@ class TestCreateContractLogic:
         mock_container.client_service.return_value = mock_client_service
 
         mock_client_service.get_client.return_value = mock_client
-        mock_contract_service.create_contract.return_value = mock_contract
 
-        # Act
-        result = create_contract_logic(
-            client_id=10,
-            total_amount=Decimal("10000.00"),
-            remaining_amount=None,  # Should default
-            current_user=mock_commercial_user,
-            container=mock_container
-        )
-
-        # Assert
-        call_args = mock_contract_service.create_contract.call_args
-        assert call_args[1]['remaining_amount'] == Decimal("10000.00")
+        # Act & Assert - remaining > total
+        with pytest.raises(ValueError, match="dépasser le montant total"):
+            create_contract_logic(
+                client_id=10,
+                total_amount=Decimal("10000.00"),
+                remaining_amount=Decimal("15000.00"),  # More than total
+                is_signed=False,
+                current_user=mock_commercial_user,
+                container=mock_container
+            )
 
 
 class TestUpdateContractPaymentLogic:

@@ -8,7 +8,12 @@ from src.cli import validators
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
-from src.cli.business_logic import create_client_logic
+from src.cli.business_logic import (
+    create_client_logic,
+    create_user_logic,
+    update_client_logic,
+    create_contract_logic,
+)
 
 app = typer.Typer()
 
@@ -537,22 +542,15 @@ def create_contract(
     """
     from decimal import Decimal
 
-    # Manually get services from container
+    # Get container and current user
     container = Container()
-    contract_service = container.contract_service()
-    client_service = container.client_service()
+    auth_service = container.auth_service()
+    current_user = auth_service.get_current_user()
 
-    # Show header at the beginning
+    # Show header
     console.print_separator()
     console.print_header("Création d'un nouveau contrat")
     console.print_separator()
-
-    # Business validation: check if client exists
-    client = client_service.get_client(client_id)
-
-    if not client:
-        console.print_error(f"Client avec l'ID {client_id} n'existe pas")
-        raise typer.Exit(code=1)
 
     # Convert amounts to Decimal
     try:
@@ -562,21 +560,27 @@ def create_contract(
         console.print_error("Erreur de conversion des montants")
         raise typer.Exit(code=1)
 
-    # Business validation: validate contract amounts
     try:
-        validators.validate_contract_amounts(total_decimal, remaining_decimal)
-    except ValueError as e:
-        console.print_error(str(e))
-        raise typer.Exit(code=1)
-
-    try:
-        # Create contract via service
-        contract = contract_service.create_contract(
+        # Call business logic
+        contract = create_contract_logic(
             client_id=client_id,
             total_amount=total_decimal,
             remaining_amount=remaining_decimal,
             is_signed=is_signed,
+            current_user=current_user,
+            container=container
         )
+
+        # Get client for success message
+        client_service = container.client_service()
+        client = client_service.get_client(client_id)
+
+    except ValueError as e:
+        # Business logic errors (validation, authorization, etc.)
+        console.print_separator()
+        console.print_error(str(e))
+        console.print_separator()
+        raise typer.Exit(code=1)
 
     except IntegrityError as e:
         error_msg = (
@@ -1180,61 +1184,42 @@ def update_client(
     Examples:
         epicevents update-client
     """
-    # Manually get services from container
+    # Get container and current user
     container = Container()
-    client_service = container.client_service()
     auth_service = container.auth_service()
+    current_user = auth_service.get_current_user()
 
+    # Show header
     console.print_separator()
     console.print_header("Mise à jour d'un client")
     console.print_separator()
 
-    # Get current user for permission check
-    current_user = auth_service.get_current_user()
-
-    # Vérifier que le client existe
-    client = client_service.get_client(client_id)
-    if not client:
-        console.print_error(f"Client avec l'ID {client_id} n'existe pas")
-        raise typer.Exit(code=1)
-
-    # Permission check: COMMERCIAL can only update their own clients
-    if current_user.department == Department.COMMERCIAL:
-        if client.sales_contact_id != current_user.id:
-            console.print_error(
-                "Vous ne pouvez modifier que vos propres clients"
-            )
-            console.print_error(
-                f"Ce client est assigné à {client.sales_contact.first_name} {client.sales_contact.last_name}"
-            )
-            raise typer.Exit(code=1)
-
-    # Nettoyer les champs vides
+    # Clean empty fields
     first_name = first_name.strip() if first_name else None
     last_name = last_name.strip() if last_name else None
     email = email.strip() if email else None
     phone = phone.strip() if phone else None
     company_name = company_name.strip() if company_name else None
 
-    # Validation des champs si fournis
-    if first_name and len(first_name) < 2:
-        console.print_error("Le prénom doit avoir au moins 2 caractères")
-        raise typer.Exit(code=1)
-
-    if last_name and len(last_name) < 2:
-        console.print_error("Le nom doit avoir au moins 2 caractères")
-        raise typer.Exit(code=1)
-
     try:
-        # Mettre à jour le client
-        updated_client = client_service.update_client(
+        # Call business logic
+        updated_client = update_client_logic(
             client_id=client_id,
             first_name=first_name,
             last_name=last_name,
             email=email,
             phone=phone,
             company_name=company_name,
+            current_user=current_user,
+            container=container
         )
+
+    except ValueError as e:
+        # Business logic errors (validation, authorization, etc.)
+        console.print_separator()
+        console.print_error(str(e))
+        console.print_separator()
+        raise typer.Exit(code=1)
 
     except IntegrityError as e:
         error_msg = (

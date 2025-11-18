@@ -140,9 +140,21 @@ def update_client_logic(
     if not client:
         raise ValueError(f"Client avec l'ID {client_id} introuvable")
 
-    # Check permissions (only assigned sales contact can update)
-    if client.sales_contact_id != current_user.id:
-        raise ValueError("Vous n'êtes pas autorisé à modifier ce client")
+    # Check permissions: COMMERCIAL can only update their own clients
+    # GESTION can update any client
+    if current_user.department == Department.COMMERCIAL:
+        if client.sales_contact_id != current_user.id:
+            raise ValueError(
+                f"Vous ne pouvez modifier que vos propres clients. "
+                f"Ce client est assigné à {client.sales_contact.first_name} {client.sales_contact.last_name}"
+            )
+
+    # Validate fields if provided
+    if first_name is not None and len(first_name) < 2:
+        raise ValueError("Le prénom doit avoir au moins 2 caractères")
+
+    if last_name is not None and len(last_name) < 2:
+        raise ValueError("Le nom doit avoir au moins 2 caractères")
 
     # Update client
     updated_client = client_service.update_client(
@@ -160,7 +172,8 @@ def update_client_logic(
 def create_contract_logic(
     client_id: int,
     total_amount: Decimal,
-    remaining_amount: Optional[Decimal],
+    remaining_amount: Decimal,
+    is_signed: bool,
     current_user: User,
     container: Container
 ) -> Contract:
@@ -169,7 +182,8 @@ def create_contract_logic(
     Args:
         client_id: ID of the client
         total_amount: Total contract amount
-        remaining_amount: Remaining amount to pay (defaults to total_amount)
+        remaining_amount: Remaining amount to pay
+        is_signed: Contract signature status
         current_user: Currently authenticated user
         container: Dependency injection container
 
@@ -187,20 +201,28 @@ def create_contract_logic(
     if not client:
         raise ValueError(f"Client avec l'ID {client_id} introuvable")
 
-    # Check permissions (only assigned sales contact can create contracts)
-    if client.sales_contact_id != current_user.id:
-        raise ValueError("Vous n'êtes pas autorisé à créer un contrat pour ce client")
+    # Check permissions: COMMERCIAL can only create contracts for their own clients
+    # GESTION can create contracts for any client
+    if current_user.department == Department.COMMERCIAL:
+        if client.sales_contact_id != current_user.id:
+            raise ValueError("Vous n'êtes pas autorisé à créer un contrat pour ce client")
 
-    # Default remaining_amount to total_amount
-    if remaining_amount is None:
-        remaining_amount = total_amount
+    # Validate contract amounts
+    if total_amount < 0:
+        raise ValueError("Le montant total doit être positif")
+
+    if remaining_amount < 0:
+        raise ValueError("Le montant restant doit être positif")
+
+    if remaining_amount > total_amount:
+        raise ValueError("Le montant restant ne peut pas dépasser le montant total")
 
     # Create contract
     contract = contract_service.create_contract(
         client_id=client_id,
         total_amount=total_amount,
         remaining_amount=remaining_amount,
-        is_signed=False
+        is_signed=is_signed
     )
 
     return contract
