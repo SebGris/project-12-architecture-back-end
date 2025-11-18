@@ -10,39 +10,22 @@ Tests couverts:
 import pytest
 
 from src.models.user import Department, User
+from src.repositories.sqlalchemy_user_repository import SqlAlchemyUserRepository
 from src.services.user_service import UserService
 
 
 @pytest.fixture
-def mock_repository(mocker):
-    """Create a mock UserRepository."""
-    return mocker.Mock()
-
-
-@pytest.fixture
-def user_service(mock_repository):
-    """Create a UserService instance with mock repository."""
-    return UserService(repository=mock_repository)
+def user_service(db_session):
+    """Create a UserService instance with real repository and SQLite DB."""
+    repository = SqlAlchemyUserRepository(session=db_session)
+    return UserService(repository=repository)
 
 
 class TestCreateUser:
     """Test create_user method."""
 
-    def test_create_user_success(self, user_service, mock_repository):
+    def test_create_user_success(self, user_service, db_session):
         """GIVEN valid user data / WHEN create_user() / THEN user created with hashed password"""
-        # Arrange
-        mock_user = User(
-            username="testuser",
-            email="test@epicevents.com",
-            password_hash="$2b$12$hashedpassword",
-            first_name="Jean",
-            last_name="Dupont",
-            phone="0612345678",
-            department=Department.COMMERCIAL,
-        )
-        mock_repository.add.return_value = mock_user
-
-        # Act
         result = user_service.create_user(
             username="testuser",
             email="test@epicevents.com",
@@ -53,29 +36,29 @@ class TestCreateUser:
             department=Department.COMMERCIAL,
         )
 
-        # Assert
-        mock_repository.add.assert_called_once()
-        assert result == mock_user
-        # Vérifier que add() a été appelé avec un User qui a un password_hash
-        call_args = mock_repository.add.call_args[0][0]
-        assert isinstance(call_args, User)
-        assert call_args.username == "testuser"
-        assert call_args.password_hash != ""  # Vérifie que le password est hashé
-        assert call_args.password_hash.startswith("$2b$")  # Format bcrypt
+        # Verify user was created
+        assert isinstance(result, User)
+        assert result.id is not None
+        assert result.username == "testuser"
+        assert result.email == "test@epicevents.com"
+        assert result.first_name == "Jean"
+        assert result.last_name == "Dupont"
+        assert result.phone == "0612345678"
+        assert result.department == Department.COMMERCIAL
+        # Verify password was hashed with bcrypt
+        assert result.password_hash != ""
+        assert result.password_hash.startswith("$2b$")
 
-    def test_create_user_gestion_department(self, user_service, mock_repository):
+        # Verify it's persisted in database
+        db_user = db_session.query(User).filter_by(username="testuser").first()
+        assert db_user is not None
+        assert db_user.id == result.id
+        assert db_user.email == "test@epicevents.com"
+        # Verify password hash is persisted
+        assert db_user.password_hash.startswith("$2b$")
+
+    def test_create_user_gestion_department(self, user_service, db_session):
         """GIVEN GESTION department / WHEN create_user() / THEN user created with GESTION"""
-        mock_user = User(
-            username="gestion1",
-            email="gestion@epicevents.com",
-            password_hash="$2b$12$hash",
-            first_name="Marie",
-            last_name="Martin",
-            phone="0123456789",
-            department=Department.GESTION,
-        )
-        mock_repository.add.return_value = mock_user
-
         result = user_service.create_user(
             username="gestion1",
             email="gestion@epicevents.com",
@@ -88,19 +71,12 @@ class TestCreateUser:
 
         assert result.department == Department.GESTION
 
-    def test_create_user_support_department(self, user_service, mock_repository):
-        """GIVEN SUPPORT department / WHEN create_user() / THEN user created with SUPPORT"""
-        mock_user = User(
-            username="support1",
-            email="support@epicevents.com",
-            password_hash="$2b$12$hash",
-            first_name="Pierre",
-            last_name="Durand",
-            phone="0987654321",
-            department=Department.SUPPORT,
-        )
-        mock_repository.add.return_value = mock_user
+        # Verify persistence
+        db_user = db_session.query(User).filter_by(username="gestion1").first()
+        assert db_user.department == Department.GESTION
 
+    def test_create_user_support_department(self, user_service, db_session):
+        """GIVEN SUPPORT department / WHEN create_user() / THEN user created with SUPPORT"""
         result = user_service.create_user(
             username="support1",
             email="support@epicevents.com",
@@ -113,37 +89,30 @@ class TestCreateUser:
 
         assert result.department == Department.SUPPORT
 
+        # Verify persistence
+        db_user = db_session.query(User).filter_by(username="support1").first()
+        assert db_user.department == Department.SUPPORT
+
 
 class TestGetUser:
     """Test get_user method."""
 
-    def test_get_user_found(self, user_service, mock_repository):
+    def test_get_user_found(self, user_service, test_users):
         """GIVEN existing user_id / WHEN get_user() / THEN returns user"""
-        mock_user = User(
-            id=1,
-            username="testuser",
-            email="test@epicevents.com",
-            password_hash="$2b$12$hash",
-            first_name="Jean",
-            last_name="Dupont",
-            phone="0612345678",
-            department=Department.COMMERCIAL,
-        )
-        mock_repository.get.return_value = mock_user
+        commercial1 = test_users["commercial1"]
 
-        result = user_service.get_user(user_id=1)
+        result = user_service.get_user(user_id=commercial1.id)
 
-        mock_repository.get.assert_called_once_with(1)
-        assert result == mock_user
-        assert result.id == 1
+        assert result is not None
+        assert result.id == commercial1.id
+        assert result.username == "commercial1"
+        assert result.email == "commercial1@epicevents.com"
+        assert result.department == Department.COMMERCIAL
 
-    def test_get_user_not_found(self, user_service, mock_repository):
+    def test_get_user_not_found(self, user_service):
         """GIVEN non-existing user_id / WHEN get_user() / THEN returns None"""
-        mock_repository.get.return_value = None
+        result = user_service.get_user(user_id=99999)
 
-        result = user_service.get_user(user_id=999)
-
-        mock_repository.get.assert_called_once_with(999)
         assert result is None
 
 
