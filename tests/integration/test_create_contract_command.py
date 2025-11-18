@@ -141,7 +141,7 @@ class TestCreateContractSuccess:
         result = runner.invoke(
             app,
             ["create-contract"],
-            input="1\n10000.00\n5000.00\nFalse\n",  # client_id, total, remaining, is_signed
+            input="1\n10000.00\n5000.00\nn\n",  # client_id, total, remaining, is_signed (n=False)
         )
 
         # Verify contract creation was called
@@ -200,7 +200,7 @@ class TestCreateContractSuccess:
         result = runner.invoke(
             app,
             ["create-contract"],
-            input="1\n20000.00\n0.00\nTrue\n",  # Fully paid and signed
+            input="1\n20000.00\n0.00\ny\n",  # Fully paid and signed (y=True)
         )
 
         # Verify success
@@ -249,7 +249,7 @@ class TestCreateContractValidation:
         result = runner.invoke(
             app,
             ["create-contract"],
-            input="999\n10000.00\n5000.00\nFalse\n",
+            input="999\n10000.00\n5000.00\nn\n",  # n=False
         )
 
         # Verify error
@@ -300,7 +300,7 @@ class TestCreateContractValidation:
         result = runner.invoke(
             app,
             ["create-contract"],
-            input="1\n10000.00\n15000.00\nFalse\n",  # remaining > total
+            input="1\n10000.00\n15000.00\nn\n",  # remaining > total, n=False
         )
 
         # Verify error
@@ -355,7 +355,7 @@ class TestCreateContractValidation:
         result = runner.invoke(
             app,
             ["create-contract"],
-            input="1\n-5000.00\n0.00\nFalse\n",  # negative total
+            input="1\n-5000.00\n0.00\nn\n",  # negative total, n=False
         )
 
         # Verify error (should fail at validation callback or service level)
@@ -410,7 +410,7 @@ class TestCreateContractPermissions:
         result = runner.invoke(
             app,
             ["create-contract"],
-            input="1\n10000.00\n5000.00\nFalse\n",
+            input="1\n10000.00\n5000.00\nn\n",  # n=False
         )
 
         # Verify permission denied
@@ -465,7 +465,7 @@ class TestCreateContractOutput:
         result = runner.invoke(
             app,
             ["create-contract"],
-            input="1\n10000.00\n5000.00\nFalse\n",
+            input="1\n10000.00\n5000.00\nn\n",  # n=False
         )
 
         # Verify success
