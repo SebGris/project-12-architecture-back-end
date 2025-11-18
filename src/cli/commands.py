@@ -1,23 +1,12 @@
 import typer
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
-from datetime import datetime
 
 from src.cli import console
 from src.cli import validators
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
-from src.cli.business_logic import (
-    create_client_logic,
-    create_contract_logic,
-    create_event_logic,
-    create_user_logic,
-    sign_contract_logic,
-    update_client_logic,
-    update_contract_logic,
-    update_contract_payment_logic,
-)
 
 app = typer.Typer()
 
@@ -271,16 +260,19 @@ def create_client(
         epicevents create-client
         # Suit les prompts interactifs pour saisir les informations
     """
-
-    # Get container and current user
+    # Manually get services from container
     container = Container()
+    client_service = container.client_service()
+    user_service = container.user_service()
     auth_service = container.auth_service()
-    current_user = auth_service.get_current_user()
 
-    # Show header
+    # Show header at the beginning
     console.print_separator()
     console.print_header("Création d'un nouveau client")
     console.print_separator()
+
+    # Get current user from auth_service (decorator already verified authentication)
+    current_user = auth_service.get_current_user()
 
     # Auto-assign for COMMERCIAL users if no sales_contact_id provided
     if sales_contact_id == 0:
@@ -296,32 +288,37 @@ def create_client(
             )
             raise typer.Exit(code=1)
 
+    # Business validation: check if sales contact exists and is from COMMERCIAL dept
+    user = user_service.get_user(sales_contact_id)
+
+    if not user:
+        console.print_error(
+            f"Utilisateur avec l'ID {sales_contact_id} n'existe pas"
+        )
+        raise typer.Exit(code=1)
+
     try:
-        # Call business logic
-        client = create_client_logic(
+        validators.validate_user_is_commercial(user)
+    except ValueError as e:
+        console.print_error(str(e))
+        raise typer.Exit(code=1)
+
+    try:
+        # Create client via service
+        client = client_service.create_client(
             first_name=first_name,
             last_name=last_name,
             email=email,
             phone=phone,
             company_name=company_name,
             sales_contact_id=sales_contact_id,
-            container=container,
         )
 
-    except ValueError as e:
-        # Business logic errors (validation, authorization, etc.)
-        console.print_separator()
-        console.print_error(str(e))
-        console.print_separator()
-        raise typer.Exit(code=1)
-
     except IntegrityError as e:
-        # Database constraint errors
         error_msg = (
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
 
-        console.print_separator()
         if "unique" in error_msg or "duplicate" in error_msg:
             if "email" in error_msg:
                 console.print_error(
@@ -337,14 +334,10 @@ def create_client(
             )
         else:
             console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
-        console.print_separator()
         raise typer.Exit(code=1)
 
     except Exception as e:
-        # Unexpected errors
-        console.print_separator()
         console.print_error(ERROR_UNEXPECTED.format(e=e))
-        console.print_separator()
         raise typer.Exit(code=1)
 
     # Success message
@@ -426,11 +419,11 @@ def create_user(
         epicevents create-user
         # Suit les prompts interactifs pour saisir les informations
     """
-
-    # Get container
+    # Manually get services from container
     container = Container()
+    user_service = container.user_service()
 
-    # Show header
+    # Show header at the beginning
     console.print_separator()
     console.print_header("Création d'un nouvel utilisateur")
     console.print_separator()
@@ -440,8 +433,8 @@ def create_user(
     department = departments[department_choice - 1]
 
     try:
-        # Call business logic
-        user = create_user_logic(
+        # Create user via service
+        user = user_service.create_user(
             username=username,
             first_name=first_name,
             last_name=last_name,
@@ -449,23 +442,13 @@ def create_user(
             phone=phone,
             password=password,
             department=department,
-            container=container,
         )
 
-    except ValueError as e:
-        # Business logic errors
-        console.print_separator()
-        console.print_error(str(e))
-        console.print_separator()
-        raise typer.Exit(code=1)
-
     except IntegrityError as e:
-        # Database constraint errors
         error_msg = (
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
 
-        console.print_separator()
         if "unique" in error_msg or "duplicate" in error_msg:
             if "username" in error_msg:
                 console.print_error(
@@ -481,14 +464,10 @@ def create_user(
                 )
         else:
             console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
-        console.print_separator()
         raise typer.Exit(code=1)
 
     except Exception as e:
-        # Unexpected errors
-        console.print_separator()
         console.print_error(ERROR_UNEXPECTED.format(e=e))
-        console.print_separator()
         raise typer.Exit(code=1)
 
     # Success message
@@ -545,15 +524,22 @@ def create_contract(
     """
     from decimal import Decimal
 
-    # Get container and current user
+    # Manually get services from container
     container = Container()
-    auth_service = container.auth_service()
-    current_user = auth_service.get_current_user()
+    contract_service = container.contract_service()
+    client_service = container.client_service()
 
-    # Show header
+    # Show header at the beginning
     console.print_separator()
     console.print_header("Création d'un nouveau contrat")
     console.print_separator()
+
+    # Business validation: check if client exists
+    client = client_service.get_client(client_id)
+
+    if not client:
+        console.print_error(f"Client avec l'ID {client_id} n'existe pas")
+        raise typer.Exit(code=1)
 
     # Convert amounts to Decimal
     try:
@@ -563,27 +549,21 @@ def create_contract(
         console.print_error("Erreur de conversion des montants")
         raise typer.Exit(code=1)
 
+    # Business validation: validate contract amounts
     try:
-        # Call business logic
-        contract = create_contract_logic(
+        validators.validate_contract_amounts(total_decimal, remaining_decimal)
+    except ValueError as e:
+        console.print_error(str(e))
+        raise typer.Exit(code=1)
+
+    try:
+        # Create contract via service
+        contract = contract_service.create_contract(
             client_id=client_id,
             total_amount=total_decimal,
             remaining_amount=remaining_decimal,
             is_signed=is_signed,
-            current_user=current_user,
-            container=container,
         )
-
-        # Get client for success message
-        client_service = container.client_service()
-        client = client_service.get_client(client_id)
-
-    except ValueError as e:
-        # Business logic errors (validation, authorization, etc.)
-        console.print_separator()
-        console.print_error(str(e))
-        console.print_separator()
-        raise typer.Exit(code=1)
 
     except IntegrityError as e:
         error_msg = (
@@ -656,35 +636,48 @@ def sign_contract(
         # ou de manière interactive
         epicevents sign-contract
     """
-    # Get container and current user
+    # Get container and services
     container = Container()
+    contract_service = container.contract_service()
+    client_service = container.client_service()
     auth_service = container.auth_service()
-    current_user = auth_service.get_current_user()
 
     # Show header
     console.print_separator()
     console.print_header("Signature d'un contrat")
     console.print_separator()
 
-    try:
-        # Call business logic
-        contract = sign_contract_logic(
-            contract_id=contract_id,
-            current_user=current_user,
-            container=container,
-        )
+    # Get current user
+    current_user = auth_service.get_current_user()
 
-        # Get client for success message
-        client_service = container.client_service()
-        client = client_service.get_client(contract.client_id)
-
-    except ValueError as e:
-        # Business logic errors (validation, authorization, etc.)
-        console.print_separator()
-        console.print_error(str(e))
-        console.print_separator()
+    # Get contract
+    contract = contract_service.get_contract(contract_id)
+    if not contract:
+        console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
         raise typer.Exit(code=1)
 
+    # Check if already signed
+    if contract.is_signed:
+        console.print_error("Ce contrat est déjà signé")
+        raise typer.Exit(code=1)
+
+    # Get client
+    client = client_service.get_client(contract.client_id)
+    if not client:
+        console.print_error(f"Client avec l'ID {contract.client_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Check authorization: only the sales contact can sign
+    if client.sales_contact_id != current_user.id:
+        console.print_error(
+            f"Seul le commercial assigné au client peut signer ce contrat. "
+            f"Ce client est assigné à {client.sales_contact.first_name} {client.sales_contact.last_name}"
+        )
+        raise typer.Exit(code=1)
+
+    # Sign the contract
+    try:
+        contract = contract_service.sign_contract(contract_id)
     except Exception as e:
         console.print_error(ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
@@ -747,15 +740,19 @@ def update_contract_payment(
     """
     from decimal import Decimal
 
-    # Get container and current user
+    # Get container and services
     container = Container()
+    contract_service = container.contract_service()
+    client_service = container.client_service()
     auth_service = container.auth_service()
-    current_user = auth_service.get_current_user()
 
     # Show header
     console.print_separator()
     console.print_header("Enregistrement d'un paiement")
     console.print_separator()
+
+    # Get current user
+    current_user = auth_service.get_current_user()
 
     # Convert amount to Decimal
     try:
@@ -764,26 +761,36 @@ def update_contract_payment(
         console.print_error("Erreur de conversion du montant")
         raise typer.Exit(code=1)
 
-    try:
-        # Call business logic
-        contract = update_contract_payment_logic(
-            contract_id=contract_id,
-            amount_paid=amount_decimal,
-            current_user=current_user,
-            container=container,
-        )
-
-        # Get client for success message
-        client_service = container.client_service()
-        client = client_service.get_client(contract.client_id)
-
-    except ValueError as e:
-        # Business logic errors (validation, authorization, etc.)
-        console.print_separator()
-        console.print_error(str(e))
-        console.print_separator()
+    # Get contract
+    contract = contract_service.get_contract(contract_id)
+    if not contract:
+        console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
         raise typer.Exit(code=1)
 
+    # Get client
+    client = client_service.get_client(contract.client_id)
+    if not client:
+        console.print_error(f"Client avec l'ID {contract.client_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Check authorization: only the sales contact can update payment
+    if client.sales_contact_id != current_user.id:
+        console.print_error(
+            f"Seul le commercial assigné au client peut enregistrer un paiement. "
+            f"Ce client est assigné à {client.sales_contact.first_name} {client.sales_contact.last_name}"
+        )
+        raise typer.Exit(code=1)
+
+    # Validate payment amount
+    try:
+        validators.validate_payment_amount(amount_decimal, contract.remaining_amount)
+    except ValueError as e:
+        console.print_error(str(e))
+        raise typer.Exit(code=1)
+
+    # Update payment
+    try:
+        contract = contract_service.update_contract_payment(contract_id, amount_decimal)
     except Exception as e:
         console.print_error(ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
@@ -870,17 +877,27 @@ def create_event(
         epicevents create-event
         # Suit les prompts interactifs pour saisir les informations
     """
+    from datetime import datetime
 
-    # Get container
+    # Manually get services from container
     container = Container()
+    event_service = container.event_service()
     contract_service = container.contract_service()
+    user_service = container.user_service()
 
     # Show header at the beginning
     console.print_separator()
     console.print_header("Création d'un nouvel événement")
     console.print_separator()
 
-    # Parse datetime strings (UI concern)
+    # Business validation: check if contract exists
+    contract = contract_service.get_contract(contract_id)
+
+    if not contract:
+        console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Parse datetime strings
     try:
         start_dt = datetime.strptime(event_start, "%Y-%m-%d %H:%M")
         end_dt = datetime.strptime(event_end, "%Y-%m-%d %H:%M")
@@ -890,12 +907,31 @@ def create_event(
         )
         raise typer.Exit(code=1)
 
-    # Clean support contact ID (UI concern)
-    support_id = support_contact_id if support_contact_id > 0 else None
-
-    # Call business logic
+    # Business validation: validate event dates and attendees
     try:
-        event = create_event_logic(
+        validators.validate_event_dates(start_dt, end_dt, attendees)
+    except ValueError as e:
+        console.print_error(str(e))
+        raise typer.Exit(code=1)
+
+    # Business validation: check if support contact exists and is from SUPPORT dept
+    support_id = support_contact_id if support_contact_id > 0 else None
+    if support_id:
+        user = user_service.get_user(support_id)
+        if not user:
+            console.print_error(
+                f"Utilisateur avec l'ID {support_id} n'existe pas"
+            )
+            raise typer.Exit(code=1)
+        try:
+            validators.validate_user_is_support(user)
+        except ValueError as e:
+            console.print_error(str(e))
+            raise typer.Exit(code=1)
+
+    try:
+        # Create event via service
+        event = event_service.create_event(
             name=name,
             contract_id=contract_id,
             event_start=start_dt,
@@ -904,15 +940,17 @@ def create_event(
             attendees=attendees,
             notes=notes if notes else None,
             support_contact_id=support_id,
-            container=container,
         )
+
     except ValueError as e:
         console.print_error(str(e))
         raise typer.Exit(code=1)
+
     except IntegrityError as e:
         error_msg = (
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
+
         if ERROR_FOREIGN_KEY in error_msg:
             if "contract" in error_msg:
                 console.print_error(
@@ -925,12 +963,10 @@ def create_event(
         else:
             console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
         raise typer.Exit(code=1)
+
     except Exception as e:
         console.print_error(ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
-
-    # Get contract for display
-    contract = contract_service.get_contract(contract_id)
 
     # Success message
     console.print_separator()
@@ -1344,42 +1380,61 @@ def update_client(
     Examples:
         epicevents update-client
     """
-    # Get container and current user
+    # Manually get services from container
     container = Container()
+    client_service = container.client_service()
     auth_service = container.auth_service()
-    current_user = auth_service.get_current_user()
 
-    # Show header
     console.print_separator()
     console.print_header("Mise à jour d'un client")
     console.print_separator()
 
-    # Clean empty fields
+    # Get current user for permission check
+    current_user = auth_service.get_current_user()
+
+    # Vérifier que le client existe
+    client = client_service.get_client(client_id)
+    if not client:
+        console.print_error(f"Client avec l'ID {client_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Permission check: COMMERCIAL can only update their own clients
+    if current_user.department == Department.COMMERCIAL:
+        if client.sales_contact_id != current_user.id:
+            console.print_error(
+                "Vous ne pouvez modifier que vos propres clients"
+            )
+            console.print_error(
+                f"Ce client est assigné à {client.sales_contact.first_name} {client.sales_contact.last_name}"
+            )
+            raise typer.Exit(code=1)
+
+    # Nettoyer les champs vides
     first_name = first_name.strip() if first_name else None
     last_name = last_name.strip() if last_name else None
     email = email.strip() if email else None
     phone = phone.strip() if phone else None
     company_name = company_name.strip() if company_name else None
 
+    # Validation des champs si fournis
+    if first_name and len(first_name) < 2:
+        console.print_error("Le prénom doit avoir au moins 2 caractères")
+        raise typer.Exit(code=1)
+
+    if last_name and len(last_name) < 2:
+        console.print_error("Le nom doit avoir au moins 2 caractères")
+        raise typer.Exit(code=1)
+
     try:
-        # Call business logic
-        updated_client = update_client_logic(
+        # Mettre à jour le client
+        updated_client = client_service.update_client(
             client_id=client_id,
             first_name=first_name,
             last_name=last_name,
             email=email,
             phone=phone,
             company_name=company_name,
-            current_user=current_user,
-            container=container,
         )
-
-    except ValueError as e:
-        # Business logic errors (validation, authorization, etc.)
-        console.print_separator()
-        console.print_error(str(e))
-        console.print_separator()
-        raise typer.Exit(code=1)
 
     except IntegrityError as e:
         error_msg = (
@@ -1463,17 +1518,37 @@ def update_contract(
     """
     from decimal import Decimal
 
-    # Get container and current user
+    # Manually get services from container
     container = Container()
+    contract_service = container.contract_service()
     auth_service = container.auth_service()
-    current_user = auth_service.get_current_user()
 
-    # Show header
     console.print_separator()
     console.print_header("Mise à jour d'un contrat")
     console.print_separator()
 
-    # Clean and convert amounts
+    # Get current user for permission check
+    current_user = auth_service.get_current_user()
+
+    # Vérifier que le contrat existe
+    contract = contract_service.get_contract(contract_id)
+    if not contract:
+        console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
+        raise typer.Exit(code=1)
+
+    # Permission check: COMMERCIAL can only update contracts of their own clients
+    if current_user.department == Department.COMMERCIAL:
+        if contract.client.sales_contact_id != current_user.id:
+            console.print_error(
+                "Vous ne pouvez modifier que les contrats de vos propres clients"
+            )
+            console.print_error(
+                f"Ce contrat appartient au client {contract.client.first_name} {contract.client.last_name}, "
+                f"assigné à {contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name}"
+            )
+            raise typer.Exit(code=1)
+
+    # Nettoyer et convertir les montants
     total_decimal = None
     remaining_decimal = None
 
@@ -1493,24 +1568,32 @@ def update_contract(
             console.print_error("Montant restant invalide")
             raise typer.Exit(code=1)
 
-    try:
-        # Call business logic
-        updated_contract = update_contract_logic(
-            contract_id=contract_id,
-            total_amount=total_decimal,
-            remaining_amount=remaining_decimal,
-            is_signed=is_signed,
-            current_user=current_user,
-            container=container,
-        )
-
-    except ValueError as e:
-        # Business logic errors (validation, authorization, etc.)
-        console.print_separator()
-        console.print_error(str(e))
-        console.print_separator()
+    # Validation des montants
+    if total_decimal is not None and total_decimal < 0:
+        console.print_error("Le montant total doit être positif")
         raise typer.Exit(code=1)
 
+    if remaining_decimal is not None and remaining_decimal < 0:
+        console.print_error("Le montant restant doit être positif")
+        raise typer.Exit(code=1)
+
+    # Mettre à jour les valeurs
+    if total_decimal is not None:
+        contract.total_amount = total_decimal
+    if remaining_decimal is not None:
+        contract.remaining_amount = remaining_decimal
+    if is_signed is not None:
+        contract.is_signed = is_signed
+
+    # Validation finale
+    if contract.remaining_amount > contract.total_amount:
+        console.print_error(
+            "Le montant restant ne peut pas dépasser le montant total"
+        )
+        raise typer.Exit(code=1)
+
+    try:
+        updated_contract = contract_service.update_contract(contract)
     except Exception as e:
         console.print_error(f"Erreur lors de la mise à jour: {e}")
         raise typer.Exit(code=1)
