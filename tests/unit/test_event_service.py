@@ -190,77 +190,97 @@ class TestAssignSupportContact:
         assert result is None
 
 
-class TestUpdateEventNotes:
-    """Test update_event_notes method."""
+class TestUpdateEvent:
+    """Test update_event method."""
 
-    def test_update_event_notes_success(
+    def test_update_event_all_fields(
         self, event_service, mock_repository, mock_event
     ):
-        """GIVEN event_id and notes / WHEN update_event_notes() / THEN notes updated"""
+        """GIVEN all fields to update / WHEN update_event() / THEN all fields updated"""
+        from datetime import datetime
+
         # Arrange
         mock_repository.get.return_value = mock_event
         mock_repository.update.return_value = mock_event
 
-        # Act - IMPORTANT: prend event_id (int), pas objet Event
-        result = event_service.update_event_notes(
-            event_id=1, notes="Notes mises à jour"
+        new_start = datetime(2025, 7, 1, 10, 0)
+        new_end = datetime(2025, 7, 1, 18, 0)
+
+        # Act
+        result = event_service.update_event(
+            event_id=1,
+            name="Updated Event",
+            event_start=new_start,
+            event_end=new_end,
+            location="New Location",
+            attendees=200,
+            notes="Updated notes",
         )
 
         # Assert
         mock_repository.get.assert_called_once_with(1)
         mock_repository.update.assert_called_once_with(mock_event)
         assert result == mock_event
-        assert result.notes == "Notes mises à jour"
+        assert result.name == "Updated Event"
+        assert result.event_start == new_start
+        assert result.event_end == new_end
+        assert result.location == "New Location"
+        assert result.attendees == 200
+        assert result.notes == "Updated notes"
 
-    def test_update_event_notes_not_found(self, event_service, mock_repository):
-        """GIVEN non-existing event_id / WHEN update_event_notes() / THEN returns None"""
-        mock_repository.get.return_value = None
-
-        result = event_service.update_event_notes(event_id=999, notes="New notes")
-
-        mock_repository.get.assert_called_once_with(999)
-        mock_repository.update.assert_not_called()
-        assert result is None
-
-
-class TestUpdateAttendees:
-    """Test update_attendees method."""
-
-    def test_update_attendees_success(
+    def test_update_event_partial_fields(
         self, event_service, mock_repository, mock_event
     ):
-        """GIVEN event_id and attendees / WHEN update_attendees() / THEN attendees updated"""
+        """GIVEN only some fields to update / WHEN update_event() / THEN only those fields updated"""
         # Arrange
         mock_repository.get.return_value = mock_event
         mock_repository.update.return_value = mock_event
 
-        # Act - IMPORTANT: prend event_id (int), pas objet Event
-        result = event_service.update_attendees(event_id=1, attendees=150)
+        original_start = mock_event.event_start
+        original_end = mock_event.event_end
+
+        # Act - Update only name and location
+        result = event_service.update_event(
+            event_id=1,
+            name="New Name",
+            location="New Location",
+        )
 
         # Assert
-        mock_repository.get.assert_called_once_with(1)
-        mock_repository.update.assert_called_once_with(mock_event)
-        assert result == mock_event
-        assert result.attendees == 150
+        assert result.name == "New Name"
+        assert result.location == "New Location"
+        assert result.event_start == original_start  # Unchanged
+        assert result.event_end == original_end  # Unchanged
 
-    def test_update_attendees_to_zero(self, event_service, mock_repository, mock_event):
-        """GIVEN attendees=0 / WHEN update_attendees() / THEN attendees set to 0"""
-        mock_repository.get.return_value = mock_event
-        mock_repository.update.return_value = mock_event
-
-        result = event_service.update_attendees(event_id=1, attendees=0)
-
-        assert result.attendees == 0
-
-    def test_update_attendees_not_found(self, event_service, mock_repository):
-        """GIVEN non-existing event_id / WHEN update_attendees() / THEN returns None"""
+    def test_update_event_not_found(self, event_service, mock_repository):
+        """GIVEN non-existing event_id / WHEN update_event() / THEN returns None"""
+        # Arrange
         mock_repository.get.return_value = None
 
-        result = event_service.update_attendees(event_id=999, attendees=200)
+        # Act
+        result = event_service.update_event(event_id=999, name="New Name")
 
+        # Assert
         mock_repository.get.assert_called_once_with(999)
         mock_repository.update.assert_not_called()
         assert result is None
+
+    def test_update_event_notes_only(
+        self, event_service, mock_repository, mock_event
+    ):
+        """GIVEN only notes to update / WHEN update_event() / THEN only notes updated"""
+        # Arrange
+        mock_repository.get.return_value = mock_event
+        mock_repository.update.return_value = mock_event
+
+        # Act
+        result = event_service.update_event(
+            event_id=1,
+            notes="Updated notes only",
+        )
+
+        # Assert
+        assert result.notes == "Updated notes only"
 
 
 class TestGetEventsBySupportContact:

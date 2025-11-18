@@ -1877,45 +1877,67 @@ def update_contract(
 
 @app.command()
 @require_department(Department.GESTION, Department.SUPPORT)
-def update_event_attendees(
+def update_event(
     event_id: int = typer.Option(
         ...,
         prompt="ID de l'événement",
         callback=validators.validate_event_id_callback,
     ),
+    name: str = typer.Option(
+        None, prompt="Nouveau nom (laisser vide pour ne pas modifier)"
+    ),
+    event_start: str = typer.Option(
+        None,
+        prompt="Nouvelle date de début YYYY-MM-DD HH:MM (laisser vide pour ne pas modifier)",
+    ),
+    event_end: str = typer.Option(
+        None,
+        prompt="Nouvelle date de fin YYYY-MM-DD HH:MM (laisser vide pour ne pas modifier)",
+    ),
+    location: str = typer.Option(
+        None, prompt="Nouveau lieu (laisser vide pour ne pas modifier)"
+    ),
     attendees: int = typer.Option(
-        ...,
-        prompt="Nouveau nombre de participants",
-        callback=validators.validate_attendees_callback,
+        None,
+        prompt="Nouveau nombre de participants (0 pour ne pas modifier)",
+    ),
+    notes: str = typer.Option(
+        None, prompt="Nouvelles notes (laisser vide pour ne pas modifier)"
     ),
 ):
     """
-    Mettre à jour le nombre de participants d'un événement.
+    Mettre à jour les informations d'un événement.
 
-    Cette commande permet de modifier le nombre de participants attendus
-    pour un événement existant.
+    Cette commande permet de modifier plusieurs champs d'un événement existant.
+    Les champs laissés vides ne seront pas modifiés.
 
     Args:
         event_id: ID de l'événement à modifier
-        attendees: Nouveau nombre de participants (>= 0)
+        name: Nouveau nom de l'événement (optionnel)
+        event_start: Nouvelle date/heure de début (optionnel)
+        event_end: Nouvelle date/heure de fin (optionnel)
+        location: Nouveau lieu (optionnel)
+        attendees: Nouveau nombre de participants (optionnel)
+        notes: Nouvelles notes (optionnel)
 
     Returns:
-        None. Affiche un message de succès avec les détails de l'événement.
+        None. Affiche un message de succès avec les détails mis à jour.
 
     Raises:
-        typer.Exit: En cas d'erreur (événement inexistant, nombre invalide, etc.)
+        typer.Exit: En cas d'erreur (événement inexistant, dates invalides, etc.)
 
     Examples:
-        epicevents update-event-attendees
-        # Suit les prompts pour saisir l'ID et le nouveau nombre
+        epicevents update-event
     """
+    from datetime import datetime
+
     # Manually get services from container
     container = Container()
     event_service = container.event_service()
     auth_service = container.auth_service()
 
     console.print_separator()
-    console.print_header("Mise à jour du nombre de participants")
+    console.print_header("Mise à jour d'un événement")
     console.print_separator()
 
     # Get current user for permission check
@@ -1946,31 +1968,101 @@ def update_event_attendees(
                 )
             raise typer.Exit(code=1)
 
-    # Business validation: validate attendees is positive
-    try:
-        validators.validate_attendees_positive(attendees)
-    except ValueError as e:
-        console.print_error(str(e))
+    # Nettoyer les champs vides
+    name = name.strip() if name else None
+    event_start_str = event_start.strip() if event_start else None
+    event_end_str = event_end.strip() if event_end else None
+    location = location.strip() if location else None
+    attendees_value = attendees if attendees and attendees > 0 else None
+    notes = notes.strip() if notes else None
+
+    # Parse datetime strings
+    start_dt = None
+    end_dt = None
+
+    if event_start_str:
+        try:
+            start_dt = datetime.strptime(event_start_str, "%Y-%m-%d %H:%M")
+        except ValueError:
+            console.print_error(
+                "Format de date de début invalide. Utilisez: YYYY-MM-DD HH:MM"
+            )
+            raise typer.Exit(code=1)
+
+    if event_end_str:
+        try:
+            end_dt = datetime.strptime(event_end_str, "%Y-%m-%d %H:%M")
+        except ValueError:
+            console.print_error(
+                "Format de date de fin invalide. Utilisez: YYYY-MM-DD HH:MM"
+            )
+            raise typer.Exit(code=1)
+
+    # Validation des champs si fournis
+    if name and len(name) < 3:
+        console.print_error("Le nom doit avoir au moins 3 caractères")
         raise typer.Exit(code=1)
 
-    # Mettre à jour le nombre de participants
+    if location and len(location) < 3:
+        console.print_error("Le lieu doit avoir au moins 3 caractères")
+        raise typer.Exit(code=1)
+
+    if attendees_value and attendees_value < 0:
+        console.print_error("Le nombre de participants doit être positif")
+        raise typer.Exit(code=1)
+
+    # Validate event dates if both are provided
+    if start_dt and end_dt:
+        try:
+            validators.validate_event_dates(start_dt, end_dt, attendees_value or 0)
+        except ValueError as e:
+            console.print_error(str(e))
+            raise typer.Exit(code=1)
+    elif start_dt and not end_dt:
+        # Check that new start is before existing end
+        if start_dt >= event.event_end:
+            console.print_error(
+                "La date de début doit être antérieure à la date de fin"
+            )
+            raise typer.Exit(code=1)
+    elif end_dt and not start_dt:
+        # Check that new end is after existing start
+        if end_dt <= event.event_start:
+            console.print_error(
+                "La date de fin doit être postérieure à la date de début"
+            )
+            raise typer.Exit(code=1)
+
     try:
-        updated_event = event_service.update_attendees(event_id, attendees)
+        # Mettre à jour l'événement
+        updated_event = event_service.update_event(
+            event_id=event_id,
+            name=name,
+            event_start=start_dt,
+            event_end=end_dt,
+            location=location,
+            attendees=attendees_value,
+            notes=notes,
+        )
+
         if not updated_event:
             console.print_error(f"Événement avec l'ID {event_id} n'existe pas")
             raise typer.Exit(code=1)
+
     except Exception as e:
         console.print_error(f"Erreur lors de la mise à jour: {e}")
         raise typer.Exit(code=1)
 
     # Success message
     console.print_separator()
-    console.print_success(
-        f"Nombre de participants mis à jour avec succès pour l'événement #{event_id}!"
-    )
+    console.print_success("Événement mis à jour avec succès!")
     console.print_field(LABEL_ID, str(updated_event.id))
     console.print_field("Nom de l'événement", updated_event.name)
     console.print_field("Contrat ID", str(updated_event.contract_id))
+    console.print_field(
+        LABEL_CLIENT_NAME,
+        f"{updated_event.contract.client.first_name} {updated_event.contract.client.last_name}",
+    )
     console.print_field(
         "Début", format_event_datetime(updated_event.event_start)
     )
@@ -1986,4 +2078,8 @@ def update_event_attendees(
         console.print_field(LABEL_SUPPORT_CONTACT, LABEL_NON_ASSIGNE)
     if updated_event.notes:
         console.print_field(LABEL_NOTES, updated_event.notes)
+    console.print_field(
+        "Dernière mise à jour",
+        updated_event.updated_at.strftime(FORMAT_DATETIME),
+    )
     console.print_separator()

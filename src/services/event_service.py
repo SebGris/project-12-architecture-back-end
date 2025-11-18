@@ -136,31 +136,26 @@ class EventService:
         event.support_contact_id = support_contact_id
         return self.repository.update(event)
 
-    def update_event_notes(self, event_id: int, notes: str) -> Optional[Event]:
-        """Update the notes for an event.
-
-        Args:
-            event_id: The event's ID
-            notes: New notes for the event
-
-        Returns:
-            Updated Event instance or None if not found
-        """
-        event = self.repository.get(event_id)
-        if not event:
-            return None
-
-        event.notes = notes
-        return self.repository.update(event)
-
-    def update_attendees(
-        self, event_id: int, attendees: int
+    def update_event(
+        self,
+        event_id: int,
+        name: Optional[str] = None,
+        event_start: Optional[datetime] = None,
+        event_end: Optional[datetime] = None,
+        location: Optional[str] = None,
+        attendees: Optional[int] = None,
+        notes: Optional[str] = None,
     ) -> Optional[Event]:
-        """Update the number of attendees for an event.
+        """Update multiple fields of an event.
 
         Args:
             event_id: The event's ID
-            attendees: New number of attendees (must be >= 0)
+            name: New name (optional)
+            event_start: New start date/time (optional)
+            event_end: New end date/time (optional)
+            location: New location (optional)
+            attendees: New number of attendees (optional)
+            notes: New notes (optional)
 
         Returns:
             Updated Event instance or None if not found
@@ -169,7 +164,17 @@ class EventService:
         if not event:
             return None
 
-        event.attendees = attendees
-        return self.repository.update(event)
+        if name is not None:
+            event.name = name
+        if event_start is not None:
+            event.event_start = event_start
+        if event_end is not None:
+            event.event_end = event_end
+        if location is not None:
+            event.location = location
+        if attendees is not None:
+            event.attendees = attendees
+        if notes is not None:
+            event.notes = notes
 
-    # todo trop de methode update
+        return self.repository.update(event)
