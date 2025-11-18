@@ -116,6 +116,101 @@ class TestGetUser:
         assert result is None
 
 
+class TestUpdateUser:
+    """Test update_user method."""
+
+    def test_update_user_all_fields(self, user_service, test_users, db_session):
+        """GIVEN user_id and all fields / WHEN update_user() / THEN user updated"""
+        commercial1 = test_users["commercial1"]
+
+        result = user_service.update_user(
+            user_id=commercial1.id,
+            username="commercial_updated",
+            email="updated@epicevents.com",
+            first_name="Updated",
+            last_name="Name",
+            phone="+33 9 99 99 99 99",
+            department=Department.GESTION,
+        )
+
+        # Verify updates
+        assert result is not None
+        assert result.username == "commercial_updated"
+        assert result.email == "updated@epicevents.com"
+        assert result.first_name == "Updated"
+        assert result.last_name == "Name"
+        assert result.phone == "+33 9 99 99 99 99"
+        assert result.department == Department.GESTION
+
+        # Verify persistence
+        db_session.expire_all()
+        db_user = db_session.query(User).filter_by(id=commercial1.id).first()
+        assert db_user.username == "commercial_updated"
+        assert db_user.department == Department.GESTION
+
+    def test_update_user_partial_fields(self, user_service, test_users):
+        """GIVEN user_id and some fields / WHEN update_user() / THEN only those fields updated"""
+        support1 = test_users["support1"]
+        original_username = support1.username
+
+        result = user_service.update_user(
+            user_id=support1.id,
+            email="newemail@epicevents.com",
+            phone="+33 2 22 22 22 22",
+        )
+
+        # Verify partial update
+        assert result.email == "newemail@epicevents.com"
+        assert result.phone == "+33 2 22 22 22 22"
+        # Username should be unchanged
+        assert result.username == original_username
+
+    def test_update_user_not_found(self, user_service):
+        """GIVEN non-existing user_id / WHEN update_user() / THEN returns None"""
+        result = user_service.update_user(user_id=99999, username="newname")
+
+        assert result is None
+
+    def test_update_user_only_department(self, user_service, test_users, db_session):
+        """GIVEN user_id and department / WHEN update_user() / THEN only department updated"""
+        commercial2 = test_users["commercial2"]
+
+        result = user_service.update_user(
+            user_id=commercial2.id, department=Department.SUPPORT
+        )
+
+        assert result.department == Department.SUPPORT
+
+        # Verify persistence
+        db_session.expire_all()
+        db_user = db_session.query(User).filter_by(id=commercial2.id).first()
+        assert db_user.department == Department.SUPPORT
+
+
+class TestDeleteUser:
+    """Test delete_user method."""
+
+    def test_delete_user_success(self, user_service, test_users, db_session):
+        """GIVEN existing user_id / WHEN delete_user() / THEN returns True and user deleted"""
+        support2 = test_users["support2"]
+        user_id = support2.id
+
+        result = user_service.delete_user(user_id=user_id)
+
+        # Verify deletion returned True
+        assert result is True
+
+        # Verify user is deleted from database
+        db_user = db_session.query(User).filter_by(id=user_id).first()
+        assert db_user is None
+
+    def test_delete_user_not_found(self, user_service):
+        """GIVEN non-existing user_id / WHEN delete_user() / THEN returns False"""
+        result = user_service.delete_user(user_id=99999)
+
+        assert result is False
+
+
 class TestVerifyPassword:
     """Test verify_password method."""
 
