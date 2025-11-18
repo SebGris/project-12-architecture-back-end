@@ -8,16 +8,7 @@ import pytest
 from decimal import Decimal
 from datetime import datetime
 
-from src.cli.business_logic import (
-    create_user_logic,
-    create_client_logic,
-    update_client_logic,
-    create_contract_logic,
-    update_contract_logic,
-    update_contract_payment_logic,
-    sign_contract_logic,
-    create_event_logic
-)
+from src.cli import business_logic as bl
 from src.models.client import Client
 from src.models.contract import Contract
 from src.models.event import Event
@@ -82,7 +73,7 @@ class TestCreateUserLogic:
         mock_user_service.create_user.return_value = mock_user
 
         # Act
-        result = create_user_logic(
+        result = bl.create_user_logic(
             username="newuser",
             first_name="New",
             last_name="User",
@@ -111,7 +102,7 @@ class TestCreateClientLogic:
     """Test create_client_logic function."""
 
     def test_create_client_success(self, mocker, mock_container, mock_commercial_user, mock_client):
-        """GIVEN valid data / WHEN create_client_logic() / THEN creates client"""
+        """GIVEN valid data / WHEN bl.create_client_logic() / THEN creates client"""
         # Arrange
         mock_client_service = mocker.Mock()
         mock_user_service = mocker.Mock()
@@ -122,7 +113,7 @@ class TestCreateClientLogic:
         mock_client_service.create_client.return_value = mock_client
 
         # Act
-        result = create_client_logic(
+        result = bl.create_client_logic(
             first_name="John",
             last_name="Doe",
             email="john@example.com",
@@ -138,7 +129,7 @@ class TestCreateClientLogic:
         assert result == mock_client
 
     def test_create_client_sales_contact_not_found(self, mocker, mock_container):
-        """GIVEN invalid sales_contact_id / WHEN create_client_logic() / THEN raises ValueError"""
+        """GIVEN invalid sales_contact_id / WHEN bl.create_client_logic() / THEN raises ValueError"""
         # Arrange
         mock_user_service = mocker.Mock()
         mock_container.user_service.return_value = mock_user_service
@@ -146,7 +137,7 @@ class TestCreateClientLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="introuvable"):
-            create_client_logic(
+            bl.create_client_logic(
                 first_name="John",
                 last_name="Doe",
                 email="john@example.com",
@@ -161,7 +152,7 @@ class TestUpdateClientLogic:
     """Test update_client_logic function."""
 
     def test_update_client_success(self, mocker, mock_container, mock_commercial_user, mock_client):
-        """GIVEN authorized user / WHEN update_client_logic() / THEN updates client"""
+        """GIVEN authorized user / WHEN bl.update_client_logic() / THEN updates client"""
         # Arrange
         mock_client_service = mocker.Mock()
         mock_container.client_service.return_value = mock_client_service
@@ -172,7 +163,7 @@ class TestUpdateClientLogic:
         mock_client_service.update_client.return_value = updated_client
 
         # Act
-        result = update_client_logic(
+        result = bl.update_client_logic(
             client_id=10,
             first_name=None,
             last_name=None,
@@ -189,7 +180,7 @@ class TestUpdateClientLogic:
         assert result.phone == "0999999999"
 
     def test_update_client_not_authorized(self, mocker, mock_container, mock_commercial_user, mock_client):
-        """GIVEN unauthorized user / WHEN update_client_logic() / THEN raises ValueError"""
+        """GIVEN unauthorized user / WHEN bl.update_client_logic() / THEN raises ValueError"""
         # Arrange
         mock_client_service = mocker.Mock()
         mock_container.client_service.return_value = mock_client_service
@@ -203,7 +194,7 @@ class TestUpdateClientLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="propres clients"):
-            update_client_logic(
+            bl.update_client_logic(
                 client_id=10,
                 first_name=None,
                 last_name=None,
@@ -219,7 +210,7 @@ class TestCreateContractLogic:
     """Test create_contract_logic function."""
 
     def test_create_contract_success(self, mocker, mock_container, mock_commercial_user, mock_client, mock_contract):
-        """GIVEN authorized user and client / WHEN create_contract_logic() / THEN creates contract"""
+        """GIVEN authorized user and client / WHEN bl.create_contract_logic() / THEN creates contract"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_client_service = mocker.Mock()
@@ -230,7 +221,7 @@ class TestCreateContractLogic:
         mock_contract_service.create_contract.return_value = mock_contract
 
         # Act
-        result = create_contract_logic(
+        result = bl.create_contract_logic(
             client_id=10,
             total_amount=Decimal("10000.00"),
             remaining_amount=Decimal("10000.00"),
@@ -250,7 +241,7 @@ class TestCreateContractLogic:
         assert result == mock_contract
 
     def test_create_contract_validates_amounts(self, mocker, mock_container, mock_commercial_user, mock_client):
-        """GIVEN invalid amounts / WHEN create_contract_logic() / THEN raises ValueError"""
+        """GIVEN invalid amounts / WHEN bl.create_contract_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_client_service = mocker.Mock()
@@ -261,7 +252,7 @@ class TestCreateContractLogic:
 
         # Act & Assert - remaining > total
         with pytest.raises(ValueError, match="dépasser le montant total"):
-            create_contract_logic(
+            bl.create_contract_logic(
                 client_id=10,
                 total_amount=Decimal("10000.00"),
                 remaining_amount=Decimal("15000.00"),  # More than total
@@ -275,7 +266,7 @@ class TestUpdateContractLogic:
     """Test update_contract_logic function."""
 
     def test_update_contract_success(self, mocker, mock_container, mock_commercial_user, mock_contract):
-        """GIVEN authorized user / WHEN update_contract_logic() / THEN updates contract"""
+        """GIVEN authorized user / WHEN bl.update_contract_logic() / THEN updates contract"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_container.contract_service.return_value = mock_contract_service
@@ -292,7 +283,7 @@ class TestUpdateContractLogic:
         mock_contract_service.update_contract.return_value = updated_contract
 
         # Act
-        result = update_contract_logic(
+        result = bl.update_contract_logic(
             contract_id=100,
             total_amount=Decimal("15000.00"),
             remaining_amount=None,
@@ -307,7 +298,7 @@ class TestUpdateContractLogic:
         assert result == updated_contract
 
     def test_update_contract_validates_negative_amounts(self, mocker, mock_container, mock_commercial_user, mock_contract):
-        """GIVEN negative amounts / WHEN update_contract_logic() / THEN raises ValueError"""
+        """GIVEN negative amounts / WHEN bl.update_contract_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_container.contract_service.return_value = mock_contract_service
@@ -318,7 +309,7 @@ class TestUpdateContractLogic:
 
         # Act & Assert - negative total
         with pytest.raises(ValueError, match="montant total doit être positif"):
-            update_contract_logic(
+            bl.update_contract_logic(
                 contract_id=100,
                 total_amount=Decimal("-1000.00"),
                 remaining_amount=None,
@@ -328,7 +319,7 @@ class TestUpdateContractLogic:
             )
 
     def test_update_contract_validates_remaining_exceeds_total(self, mocker, mock_container, mock_commercial_user, mock_contract):
-        """GIVEN remaining > total / WHEN update_contract_logic() / THEN raises ValueError"""
+        """GIVEN remaining > total / WHEN bl.update_contract_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_container.contract_service.return_value = mock_contract_service
@@ -342,7 +333,7 @@ class TestUpdateContractLogic:
 
         # Act & Assert - update remaining to exceed total
         with pytest.raises(ValueError, match="dépasser le montant total"):
-            update_contract_logic(
+            bl.update_contract_logic(
                 contract_id=100,
                 total_amount=None,
                 remaining_amount=Decimal("15000.00"),  # Exceeds current total
@@ -352,7 +343,7 @@ class TestUpdateContractLogic:
             )
 
     def test_update_contract_unauthorized(self, mocker, mock_container, mock_commercial_user, mock_contract):
-        """GIVEN unauthorized user / WHEN update_contract_logic() / THEN raises ValueError"""
+        """GIVEN unauthorized user / WHEN bl.update_contract_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_container.contract_service.return_value = mock_contract_service
@@ -368,7 +359,7 @@ class TestUpdateContractLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="propres clients"):
-            update_contract_logic(
+            bl.update_contract_logic(
                 contract_id=100,
                 total_amount=Decimal("20000.00"),
                 remaining_amount=None,
@@ -382,7 +373,7 @@ class TestUpdateContractPaymentLogic:
     """Test update_contract_payment_logic function."""
 
     def test_update_payment_success(self, mocker, mock_container, mock_commercial_user, mock_client, mock_contract):
-        """GIVEN authorized user / WHEN update_contract_payment_logic() / THEN updates payment"""
+        """GIVEN authorized user / WHEN bl.update_contract_payment_logic() / THEN updates payment"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_client_service = mocker.Mock()
@@ -397,7 +388,7 @@ class TestUpdateContractPaymentLogic:
         mock_contract_service.update_contract_payment.return_value = updated_contract
 
         # Act
-        result = update_contract_payment_logic(
+        result = bl.update_contract_payment_logic(
             contract_id=100,
             amount_paid=Decimal("3000.00"),
             current_user=mock_commercial_user,
@@ -413,7 +404,7 @@ class TestSignContractLogic:
     """Test sign_contract_logic function."""
 
     def test_sign_contract_success(self, mocker, mock_container, mock_commercial_user, mock_client, mock_contract):
-        """GIVEN authorized user / WHEN sign_contract_logic() / THEN signs contract"""
+        """GIVEN authorized user / WHEN bl.sign_contract_logic() / THEN signs contract"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_client_service = mocker.Mock()
@@ -428,7 +419,7 @@ class TestSignContractLogic:
         mock_contract_service.sign_contract.return_value = signed_contract
 
         # Act
-        result = sign_contract_logic(
+        result = bl.sign_contract_logic(
             contract_id=100,
             current_user=mock_commercial_user,
             container=mock_container
@@ -439,7 +430,7 @@ class TestSignContractLogic:
         assert result.is_signed is True
 
     def test_sign_contract_already_signed(self, mocker, mock_container, mock_commercial_user, mock_client, mock_contract):
-        """GIVEN already signed contract / WHEN sign_contract_logic() / THEN raises ValueError"""
+        """GIVEN already signed contract / WHEN bl.sign_contract_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_client_service = mocker.Mock()
@@ -452,7 +443,7 @@ class TestSignContractLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="déjà signé"):
-            sign_contract_logic(
+            bl.sign_contract_logic(
                 contract_id=100,
                 current_user=mock_commercial_user,
                 container=mock_container
@@ -463,7 +454,7 @@ class TestCreateEventLogic:
     """Test create_event_logic function."""
 
     def test_create_event_success(self, mocker, mock_container, mock_contract):
-        """GIVEN valid event data / WHEN create_event_logic() / THEN creates event"""
+        """GIVEN valid event data / WHEN bl.create_event_logic() / THEN creates event"""
         # Arrange
         mock_event_service = mocker.Mock()
         mock_contract_service = mocker.Mock()
@@ -488,7 +479,7 @@ class TestCreateEventLogic:
         end_dt = datetime(2025, 11, 15, 23, 0)
 
         # Act
-        result = create_event_logic(
+        result = bl.create_event_logic(
             name="Event Test",
             contract_id=100,
             event_start=start_dt,
@@ -516,7 +507,7 @@ class TestCreateEventLogic:
         assert result == mock_event
 
     def test_create_event_contract_not_found(self, mocker, mock_container):
-        """GIVEN invalid contract_id / WHEN create_event_logic() / THEN raises ValueError"""
+        """GIVEN invalid contract_id / WHEN bl.create_event_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_container.contract_service.return_value = mock_contract_service
@@ -527,7 +518,7 @@ class TestCreateEventLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="n'existe pas"):
-            create_event_logic(
+            bl.create_event_logic(
                 name="Event Test",
                 contract_id=999,
                 event_start=start_dt,
@@ -540,7 +531,7 @@ class TestCreateEventLogic:
             )
 
     def test_create_event_invalid_name(self, mocker, mock_container, mock_contract):
-        """GIVEN short event name / WHEN create_event_logic() / THEN raises ValueError"""
+        """GIVEN short event name / WHEN bl.create_event_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_container.contract_service.return_value = mock_contract_service
@@ -551,7 +542,7 @@ class TestCreateEventLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="au moins 3 caractères"):
-            create_event_logic(
+            bl.create_event_logic(
                 name="AB",  # Too short
                 contract_id=100,
                 event_start=start_dt,
@@ -564,7 +555,7 @@ class TestCreateEventLogic:
             )
 
     def test_create_event_invalid_dates(self, mocker, mock_container, mock_contract):
-        """GIVEN end date before start / WHEN create_event_logic() / THEN raises ValueError"""
+        """GIVEN end date before start / WHEN bl.create_event_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_container.contract_service.return_value = mock_contract_service
@@ -575,7 +566,7 @@ class TestCreateEventLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="après la date de début"):
-            create_event_logic(
+            bl.create_event_logic(
                 name="Event Test",
                 contract_id=100,
                 event_start=start_dt,
@@ -588,7 +579,7 @@ class TestCreateEventLogic:
             )
 
     def test_create_event_negative_attendees(self, mocker, mock_container, mock_contract):
-        """GIVEN negative attendees / WHEN create_event_logic() / THEN raises ValueError"""
+        """GIVEN negative attendees / WHEN bl.create_event_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_container.contract_service.return_value = mock_contract_service
@@ -599,7 +590,7 @@ class TestCreateEventLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="ne peut pas être négatif"):
-            create_event_logic(
+            bl.create_event_logic(
                 name="Event Test",
                 contract_id=100,
                 event_start=start_dt,
@@ -612,7 +603,7 @@ class TestCreateEventLogic:
             )
 
     def test_create_event_support_contact_not_found(self, mocker, mock_container, mock_contract):
-        """GIVEN invalid support_contact_id / WHEN create_event_logic() / THEN raises ValueError"""
+        """GIVEN invalid support_contact_id / WHEN bl.create_event_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_user_service = mocker.Mock()
@@ -627,7 +618,7 @@ class TestCreateEventLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="n'existe pas"):
-            create_event_logic(
+            bl.create_event_logic(
                 name="Event Test",
                 contract_id=100,
                 event_start=start_dt,
@@ -640,7 +631,7 @@ class TestCreateEventLogic:
             )
 
     def test_create_event_support_contact_wrong_department(self, mocker, mock_container, mock_contract):
-        """GIVEN support contact not in SUPPORT dept / WHEN create_event_logic() / THEN raises ValueError"""
+        """GIVEN support contact not in SUPPORT dept / WHEN bl.create_event_logic() / THEN raises ValueError"""
         # Arrange
         mock_contract_service = mocker.Mock()
         mock_user_service = mocker.Mock()
@@ -661,7 +652,7 @@ class TestCreateEventLogic:
 
         # Act & Assert
         with pytest.raises(ValueError, match="n'est pas du département SUPPORT"):
-            create_event_logic(
+            bl.create_event_logic(
                 name="Event Test",
                 contract_id=100,
                 event_start=start_dt,
