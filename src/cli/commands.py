@@ -13,8 +13,10 @@ from src.cli.business_logic import (
     create_contract_logic,
     create_event_logic,
     create_user_logic,
+    sign_contract_logic,
     update_client_logic,
     update_contract_logic,
+    update_contract_payment_logic,
 )
 
 app = typer.Typer()
@@ -623,6 +625,188 @@ def create_contract(
     console.print_field(
         LABEL_DATE_CREATION, contract.created_at.strftime(FORMAT_DATETIME)
     )
+    console.print_separator()
+
+
+@app.command()
+@require_department(Department.COMMERCIAL)
+def sign_contract(
+    contract_id: int = typer.Option(
+        ...,
+        prompt="ID du contrat à signer",
+        callback=validators.validate_contract_id_callback,
+    ),
+):
+    """
+    Signer un contrat existant.
+
+    Cette commande permet à un commercial de signer un contrat pour l'un de ses clients.
+    Seul le commercial assigné au client peut signer le contrat.
+
+    Args:
+        contract_id: ID du contrat à signer
+
+    Returns:
+        None. Affiche un message de succès avec les détails du contrat signé.
+
+    Raises:
+        typer.Exit: En cas d'erreur (contrat inexistant, déjà signé, non autorisé, etc.)
+
+    Examples:
+        epicevents sign-contract --contract-id 1
+        # ou de manière interactive
+        epicevents sign-contract
+    """
+    # Get container and current user
+    container = Container()
+    auth_service = container.auth_service()
+    current_user = auth_service.get_current_user()
+
+    # Show header
+    console.print_separator()
+    console.print_header("Signature d'un contrat")
+    console.print_separator()
+
+    try:
+        # Call business logic
+        contract = sign_contract_logic(
+            contract_id=contract_id,
+            current_user=current_user,
+            container=container
+        )
+
+        # Get client for success message
+        client_service = container.client_service()
+        client = client_service.get_client(contract.client_id)
+
+    except ValueError as e:
+        # Business logic errors (validation, authorization, etc.)
+        console.print_separator()
+        console.print_error(str(e))
+        console.print_separator()
+        raise typer.Exit(code=1)
+
+    except Exception as e:
+        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        raise typer.Exit(code=1)
+
+    # Success message
+    console.print_separator()
+    console.print_success(
+        f"Contrat #{contract.id} signé avec succès pour {client.first_name} {client.last_name}!"
+    )
+    console.print_field(LABEL_ID_CONTRAT, str(contract.id))
+    console.print_field(
+        LABEL_CLIENT,
+        f"{client.first_name} {client.last_name} ({client.company_name})",
+    )
+    console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
+    console.print_field(
+        LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
+    )
+    console.print_field(LABEL_STATUT, STATUS_SIGNED)
+    console.print_field(
+        LABEL_DATE_CREATION, contract.created_at.strftime(FORMAT_DATETIME)
+    )
+    console.print_separator()
+
+
+@app.command()
+@require_department(Department.COMMERCIAL)
+def update_contract_payment(
+    contract_id: int = typer.Option(
+        ...,
+        prompt="ID du contrat",
+        callback=validators.validate_contract_id_callback,
+    ),
+    amount_paid: str = typer.Option(
+        ...,
+        prompt="Montant payé",
+        callback=validators.validate_amount_callback,
+    ),
+):
+    """
+    Enregistrer un paiement pour un contrat.
+
+    Cette commande permet à un commercial d'enregistrer un paiement effectué par un client.
+    Le montant restant du contrat sera automatiquement mis à jour.
+
+    Args:
+        contract_id: ID du contrat
+        amount_paid: Montant du paiement effectué
+
+    Returns:
+        None. Affiche un message de succès avec les nouveaux montants.
+
+    Raises:
+        typer.Exit: En cas d'erreur (contrat inexistant, montant invalide, non autorisé, etc.)
+
+    Examples:
+        epicevents update-contract-payment --contract-id 1 --amount-paid 5000
+        # ou de manière interactive
+        epicevents update-contract-payment
+    """
+    from decimal import Decimal
+
+    # Get container and current user
+    container = Container()
+    auth_service = container.auth_service()
+    current_user = auth_service.get_current_user()
+
+    # Show header
+    console.print_separator()
+    console.print_header("Enregistrement d'un paiement")
+    console.print_separator()
+
+    # Convert amount to Decimal
+    try:
+        amount_decimal = Decimal(amount_paid)
+    except Exception:
+        console.print_error("Erreur de conversion du montant")
+        raise typer.Exit(code=1)
+
+    try:
+        # Call business logic
+        contract = update_contract_payment_logic(
+            contract_id=contract_id,
+            amount_paid=amount_decimal,
+            current_user=current_user,
+            container=container
+        )
+
+        # Get client for success message
+        client_service = container.client_service()
+        client = client_service.get_client(contract.client_id)
+
+    except ValueError as e:
+        # Business logic errors (validation, authorization, etc.)
+        console.print_separator()
+        console.print_error(str(e))
+        console.print_separator()
+        raise typer.Exit(code=1)
+
+    except Exception as e:
+        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        raise typer.Exit(code=1)
+
+    # Success message
+    console.print_separator()
+    console.print_success(
+        f"Paiement de {amount_decimal} € enregistré avec succès!"
+    )
+    console.print_field(LABEL_ID_CONTRAT, str(contract.id))
+    console.print_field(
+        LABEL_CLIENT,
+        f"{client.first_name} {client.last_name} ({client.company_name})",
+    )
+    console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
+    console.print_field(
+        LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
+    )
+    console.print_field(
+        "Montant payé", f"{contract.total_amount - contract.remaining_amount} €"
+    )
+    console.print_field(LABEL_STATUT, STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED)
     console.print_separator()
 
 
