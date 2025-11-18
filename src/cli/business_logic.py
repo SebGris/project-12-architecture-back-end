@@ -7,10 +7,12 @@ making it testable without Typer/CLI dependencies.
 
 from typing import Optional
 from decimal import Decimal
+from datetime import datetime
 
 from src.containers import Container
 from src.models.client import Client
 from src.models.contract import Contract
+from src.models.event import Event
 from src.models.user import Department, User
 
 
@@ -383,3 +385,81 @@ def sign_contract_logic(
     signed_contract = contract_service.sign_contract(contract_id)
 
     return signed_contract
+
+
+def create_event_logic(
+    name: str,
+    contract_id: int,
+    event_start: datetime,
+    event_end: datetime,
+    location: str,
+    attendees: int,
+    notes: Optional[str],
+    support_contact_id: Optional[int],
+    container: Container
+) -> Event:
+    """Create a new event for a contract.
+
+    Args:
+        name: Event name (minimum 3 characters)
+        contract_id: ID of the associated contract
+        event_start: Event start datetime
+        event_end: Event end datetime
+        location: Event location
+        attendees: Number of attendees (>= 0)
+        notes: Optional notes
+        support_contact_id: Optional support contact ID (must be SUPPORT dept)
+        container: Dependency injection container
+
+    Returns:
+        Created Event instance
+
+    Raises:
+        ValueError: If validation fails or unauthorized
+    """
+    event_service = container.event_service()
+    contract_service = container.contract_service()
+    user_service = container.user_service()
+
+    # Validate contract exists
+    contract = contract_service.get_contract(contract_id)
+    if not contract:
+        raise ValueError(f"Contrat avec l'ID {contract_id} n'existe pas")
+
+    # Validate event name
+    if len(name) < 3:
+        raise ValueError("Le nom de l'événement doit avoir au moins 3 caractères")
+
+    # Validate event dates
+    if event_end <= event_start:
+        raise ValueError("La date de fin doit être après la date de début")
+
+    # Validate attendees
+    if attendees < 0:
+        raise ValueError("Le nombre de participants ne peut pas être négatif")
+
+    # Validate support contact if provided
+    if support_contact_id is not None:
+        support_user = user_service.get_user(support_contact_id)
+        if not support_user:
+            raise ValueError(f"Utilisateur avec l'ID {support_contact_id} n'existe pas")
+
+        if support_user.department != Department.SUPPORT:
+            raise ValueError(
+                f"L'utilisateur {support_user.first_name} {support_user.last_name} "
+                f"n'est pas du département SUPPORT (département actuel: {support_user.department.value})"
+            )
+
+    # Create event
+    event = event_service.create_event(
+        name=name,
+        contract_id=contract_id,
+        event_start=event_start,
+        event_end=event_end,
+        location=location,
+        attendees=attendees,
+        notes=notes,
+        support_contact_id=support_contact_id
+    )
+
+    return event

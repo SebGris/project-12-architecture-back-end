@@ -10,9 +10,10 @@ from src.containers import Container
 from src.cli.permissions import require_department
 from src.cli.business_logic import (
     create_client_logic,
+    create_contract_logic,
+    create_event_logic,
     create_user_logic,
     update_client_logic,
-    create_contract_logic,
     update_contract_logic,
 )
 
@@ -684,25 +685,16 @@ def create_event(
         # Suit les prompts interactifs pour saisir les informations
     """
 
-    # Manually get services from container
+    # Get container
     container = Container()
-    event_service = container.event_service()
     contract_service = container.contract_service()
-    user_service = container.user_service()
 
     # Show header at the beginning
     console.print_separator()
     console.print_header("Création d'un nouvel événement")
     console.print_separator()
 
-    # Business validation: check if contract exists
-    contract = contract_service.get_contract(contract_id)
-
-    if not contract:
-        console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
-        raise typer.Exit(code=1)
-
-    # Parse datetime strings
+    # Parse datetime strings (UI concern)
     try:
         start_dt = datetime.strptime(event_start, "%Y-%m-%d %H:%M")
         end_dt = datetime.strptime(event_end, "%Y-%m-%d %H:%M")
@@ -712,31 +704,12 @@ def create_event(
         )
         raise typer.Exit(code=1)
 
-    # Business validation: validate event dates and attendees
-    try:
-        validators.validate_event_dates(start_dt, end_dt, attendees)
-    except ValueError as e:
-        console.print_error(str(e))
-        raise typer.Exit(code=1)
-
-    # Business validation: check if support contact exists and is from SUPPORT dept
+    # Clean support contact ID (UI concern)
     support_id = support_contact_id if support_contact_id > 0 else None
-    if support_id:
-        user = user_service.get_user(support_id)
-        if not user:
-            console.print_error(
-                f"Utilisateur avec l'ID {support_id} n'existe pas"
-            )
-            raise typer.Exit(code=1)
-        try:
-            validators.validate_user_is_support(user)
-        except ValueError as e:
-            console.print_error(str(e))
-            raise typer.Exit(code=1)
 
+    # Call business logic
     try:
-        # Create event via service
-        event = event_service.create_event(
+        event = create_event_logic(
             name=name,
             contract_id=contract_id,
             event_start=start_dt,
@@ -745,17 +718,15 @@ def create_event(
             attendees=attendees,
             notes=notes if notes else None,
             support_contact_id=support_id,
+            container=container
         )
-
     except ValueError as e:
         console.print_error(str(e))
         raise typer.Exit(code=1)
-
     except IntegrityError as e:
         error_msg = (
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
-
         if ERROR_FOREIGN_KEY in error_msg:
             if "contract" in error_msg:
                 console.print_error(
@@ -768,10 +739,12 @@ def create_event(
         else:
             console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
         raise typer.Exit(code=1)
-
     except Exception as e:
         console.print_error(ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
+
+    # Get contract for display
+    contract = contract_service.get_contract(contract_id)
 
     # Success message
     console.print_separator()

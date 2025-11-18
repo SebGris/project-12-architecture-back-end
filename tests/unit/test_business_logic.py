@@ -6,6 +6,7 @@ Ces tests vérifient la logique pure sans dépendances Typer/CLI.
 
 import pytest
 from decimal import Decimal
+from datetime import datetime
 
 from src.cli.business_logic import (
     create_user_logic,
@@ -14,10 +15,12 @@ from src.cli.business_logic import (
     create_contract_logic,
     update_contract_logic,
     update_contract_payment_logic,
-    sign_contract_logic
+    sign_contract_logic,
+    create_event_logic
 )
 from src.models.client import Client
 from src.models.contract import Contract
+from src.models.event import Event
 from src.models.user import Department, User
 
 
@@ -452,5 +455,220 @@ class TestSignContractLogic:
             sign_contract_logic(
                 contract_id=100,
                 current_user=mock_commercial_user,
+                container=mock_container
+            )
+
+
+class TestCreateEventLogic:
+    """Test create_event_logic function."""
+
+    def test_create_event_success(self, mocker, mock_container, mock_contract):
+        """GIVEN valid event data / WHEN create_event_logic() / THEN creates event"""
+        # Arrange
+        mock_event_service = mocker.Mock()
+        mock_contract_service = mocker.Mock()
+        mock_user_service = mocker.Mock()
+        mock_container.event_service.return_value = mock_event_service
+        mock_container.contract_service.return_value = mock_contract_service
+        mock_container.user_service.return_value = mock_user_service
+
+        mock_contract_service.get_contract.return_value = mock_contract
+
+        mock_support_user = mocker.Mock(spec=User)
+        mock_support_user.id = 5
+        mock_support_user.department = Department.SUPPORT
+        mock_user_service.get_user.return_value = mock_support_user
+
+        mock_event = mocker.Mock(spec=Event)
+        mock_event.id = 1
+        mock_event.name = "Event Test"
+        mock_event_service.create_event.return_value = mock_event
+
+        start_dt = datetime(2025, 11, 15, 18, 0)
+        end_dt = datetime(2025, 11, 15, 23, 0)
+
+        # Act
+        result = create_event_logic(
+            name="Event Test",
+            contract_id=100,
+            event_start=start_dt,
+            event_end=end_dt,
+            location="Test Location",
+            attendees=100,
+            notes="Test notes",
+            support_contact_id=5,
+            container=mock_container
+        )
+
+        # Assert
+        mock_contract_service.get_contract.assert_called_once_with(100)
+        mock_user_service.get_user.assert_called_once_with(5)
+        mock_event_service.create_event.assert_called_once_with(
+            name="Event Test",
+            contract_id=100,
+            event_start=start_dt,
+            event_end=end_dt,
+            location="Test Location",
+            attendees=100,
+            notes="Test notes",
+            support_contact_id=5
+        )
+        assert result == mock_event
+
+    def test_create_event_contract_not_found(self, mocker, mock_container):
+        """GIVEN invalid contract_id / WHEN create_event_logic() / THEN raises ValueError"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+        mock_contract_service.get_contract.return_value = None
+
+        start_dt = datetime(2025, 11, 15, 18, 0)
+        end_dt = datetime(2025, 11, 15, 23, 0)
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="n'existe pas"):
+            create_event_logic(
+                name="Event Test",
+                contract_id=999,
+                event_start=start_dt,
+                event_end=end_dt,
+                location="Test Location",
+                attendees=100,
+                notes=None,
+                support_contact_id=None,
+                container=mock_container
+            )
+
+    def test_create_event_invalid_name(self, mocker, mock_container, mock_contract):
+        """GIVEN short event name / WHEN create_event_logic() / THEN raises ValueError"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+        mock_contract_service.get_contract.return_value = mock_contract
+
+        start_dt = datetime(2025, 11, 15, 18, 0)
+        end_dt = datetime(2025, 11, 15, 23, 0)
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="au moins 3 caractères"):
+            create_event_logic(
+                name="AB",  # Too short
+                contract_id=100,
+                event_start=start_dt,
+                event_end=end_dt,
+                location="Test Location",
+                attendees=100,
+                notes=None,
+                support_contact_id=None,
+                container=mock_container
+            )
+
+    def test_create_event_invalid_dates(self, mocker, mock_container, mock_contract):
+        """GIVEN end date before start / WHEN create_event_logic() / THEN raises ValueError"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+        mock_contract_service.get_contract.return_value = mock_contract
+
+        start_dt = datetime(2025, 11, 15, 23, 0)
+        end_dt = datetime(2025, 11, 15, 18, 0)  # Before start
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="après la date de début"):
+            create_event_logic(
+                name="Event Test",
+                contract_id=100,
+                event_start=start_dt,
+                event_end=end_dt,
+                location="Test Location",
+                attendees=100,
+                notes=None,
+                support_contact_id=None,
+                container=mock_container
+            )
+
+    def test_create_event_negative_attendees(self, mocker, mock_container, mock_contract):
+        """GIVEN negative attendees / WHEN create_event_logic() / THEN raises ValueError"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+        mock_contract_service.get_contract.return_value = mock_contract
+
+        start_dt = datetime(2025, 11, 15, 18, 0)
+        end_dt = datetime(2025, 11, 15, 23, 0)
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="ne peut pas être négatif"):
+            create_event_logic(
+                name="Event Test",
+                contract_id=100,
+                event_start=start_dt,
+                event_end=end_dt,
+                location="Test Location",
+                attendees=-10,  # Negative
+                notes=None,
+                support_contact_id=None,
+                container=mock_container
+            )
+
+    def test_create_event_support_contact_not_found(self, mocker, mock_container, mock_contract):
+        """GIVEN invalid support_contact_id / WHEN create_event_logic() / THEN raises ValueError"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_user_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+        mock_container.user_service.return_value = mock_user_service
+
+        mock_contract_service.get_contract.return_value = mock_contract
+        mock_user_service.get_user.return_value = None
+
+        start_dt = datetime(2025, 11, 15, 18, 0)
+        end_dt = datetime(2025, 11, 15, 23, 0)
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="n'existe pas"):
+            create_event_logic(
+                name="Event Test",
+                contract_id=100,
+                event_start=start_dt,
+                event_end=end_dt,
+                location="Test Location",
+                attendees=100,
+                notes=None,
+                support_contact_id=999,
+                container=mock_container
+            )
+
+    def test_create_event_support_contact_wrong_department(self, mocker, mock_container, mock_contract):
+        """GIVEN support contact not in SUPPORT dept / WHEN create_event_logic() / THEN raises ValueError"""
+        # Arrange
+        mock_contract_service = mocker.Mock()
+        mock_user_service = mocker.Mock()
+        mock_container.contract_service.return_value = mock_contract_service
+        mock_container.user_service.return_value = mock_user_service
+
+        mock_contract_service.get_contract.return_value = mock_contract
+
+        mock_commercial_user = mocker.Mock(spec=User)
+        mock_commercial_user.id = 5
+        mock_commercial_user.first_name = "Commercial"
+        mock_commercial_user.last_name = "User"
+        mock_commercial_user.department = Department.COMMERCIAL  # Not SUPPORT
+        mock_user_service.get_user.return_value = mock_commercial_user
+
+        start_dt = datetime(2025, 11, 15, 18, 0)
+        end_dt = datetime(2025, 11, 15, 23, 0)
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="n'est pas du département SUPPORT"):
+            create_event_logic(
+                name="Event Test",
+                contract_id=100,
+                event_start=start_dt,
+                event_end=end_dt,
+                location="Test Location",
+                attendees=100,
+                notes=None,
+                support_contact_id=5,
                 container=mock_container
             )
