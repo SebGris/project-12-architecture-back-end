@@ -11,7 +11,51 @@ from decimal import Decimal
 from src.containers import Container
 from src.models.client import Client
 from src.models.contract import Contract
-from src.models.user import User
+from src.models.user import Department, User
+
+
+def create_user_logic(
+    username: str,
+    first_name: str,
+    last_name: str,
+    email: str,
+    phone: str,
+    password: str,
+    department: Department,
+    container: Container
+) -> User:
+    """Create a new user.
+
+    Args:
+        username: User's username (unique)
+        first_name: User's first name
+        last_name: User's last name
+        email: User's email address (unique)
+        phone: User's phone number
+        password: User's password (will be hashed)
+        department: User's department
+        container: Dependency injection container
+
+    Returns:
+        Created User instance
+
+    Raises:
+        ValueError: If validation fails
+    """
+    user_service = container.user_service()
+
+    # Create user (password will be hashed by the service)
+    user = user_service.create_user(
+        username=username,
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        phone=phone,
+        password=password,
+        department=department
+    )
+
+    return user
 
 
 def create_client_logic(

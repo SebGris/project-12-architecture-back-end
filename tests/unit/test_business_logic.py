@@ -8,6 +8,7 @@ import pytest
 from decimal import Decimal
 
 from src.cli.business_logic import (
+    create_user_logic,
     create_client_logic,
     update_client_logic,
     create_contract_logic,
@@ -59,6 +60,47 @@ def mock_contract(mocker):
     contract.remaining_amount = Decimal("5000.00")
     contract.is_signed = False
     return contract
+
+
+class TestCreateUserLogic:
+    """Test create_user_logic function."""
+
+    def test_create_user_success(self, mocker, mock_container):
+        """GIVEN valid user data / WHEN create_user_logic() / THEN creates user"""
+        # Arrange
+        mock_user_service = mocker.Mock()
+        mock_container.user_service.return_value = mock_user_service
+
+        mock_user = mocker.Mock(spec=User)
+        mock_user.id = 1
+        mock_user.username = "newuser"
+        mock_user.department = Department.COMMERCIAL
+        mock_user_service.create_user.return_value = mock_user
+
+        # Act
+        result = create_user_logic(
+            username="newuser",
+            first_name="New",
+            last_name="User",
+            email="newuser@example.com",
+            phone="0123456789",
+            password="SecurePass123!",
+            department=Department.COMMERCIAL,
+            container=mock_container
+        )
+
+        # Assert
+        mock_user_service.create_user.assert_called_once_with(
+            username="newuser",
+            first_name="New",
+            last_name="User",
+            email="newuser@example.com",
+            phone="0123456789",
+            password="SecurePass123!",
+            department=Department.COMMERCIAL
+        )
+        assert result == mock_user
+        assert result.username == "newuser"
 
 
 class TestCreateClientLogic:

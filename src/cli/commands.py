@@ -1,12 +1,14 @@
 import typer
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
+from datetime import datetime
 
 from src.cli import console
 from src.cli import validators
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
+from src.cli.business_logic import create_client_logic
 
 app = typer.Typer()
 
@@ -260,19 +262,16 @@ def create_client(
         epicevents create-client
         # Suit les prompts interactifs pour saisir les informations
     """
-    # Manually get services from container
-    container = Container()
-    client_service = container.client_service()
-    user_service = container.user_service()
-    auth_service = container.auth_service()
 
-    # Show header at the beginning
+    # Get container and current user
+    container = Container()
+    auth_service = container.auth_service()
+    current_user = auth_service.get_current_user()
+
+    # Show header
     console.print_separator()
     console.print_header("Création d'un nouveau client")
     console.print_separator()
-
-    # Get current user from auth_service (decorator already verified authentication)
-    current_user = auth_service.get_current_user()
 
     # Auto-assign for COMMERCIAL users if no sales_contact_id provided
     if sales_contact_id == 0:
@@ -288,37 +287,32 @@ def create_client(
             )
             raise typer.Exit(code=1)
 
-    # Business validation: check if sales contact exists and is from COMMERCIAL dept
-    user = user_service.get_user(sales_contact_id)
-
-    if not user:
-        console.print_error(
-            f"Utilisateur avec l'ID {sales_contact_id} n'existe pas"
-        )
-        raise typer.Exit(code=1)
-
     try:
-        validators.validate_user_is_commercial(user)
-    except ValueError as e:
-        console.print_error(str(e))
-        raise typer.Exit(code=1)
-
-    try:
-        # Create client via service
-        client = client_service.create_client(
+        # Call business logic
+        client = create_client_logic(
             first_name=first_name,
             last_name=last_name,
             email=email,
             phone=phone,
             company_name=company_name,
             sales_contact_id=sales_contact_id,
+            container=container,
         )
 
+    except ValueError as e:
+        # Business logic errors (validation, authorization, etc.)
+        console.print_separator()
+        console.print_error(str(e))
+        console.print_separator()
+        raise typer.Exit(code=1)
+
     except IntegrityError as e:
+        # Database constraint errors
         error_msg = (
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
 
+        console.print_separator()
         if "unique" in error_msg or "duplicate" in error_msg:
             if "email" in error_msg:
                 console.print_error(
@@ -334,10 +328,14 @@ def create_client(
             )
         else:
             console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
+        console.print_separator()
         raise typer.Exit(code=1)
 
     except Exception as e:
+        # Unexpected errors
+        console.print_separator()
         console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_separator()
         raise typer.Exit(code=1)
 
     # Success message
@@ -419,11 +417,12 @@ def create_user(
         epicevents create-user
         # Suit les prompts interactifs pour saisir les informations
     """
-    # Manually get services from container
-    container = Container()
-    user_service = container.user_service()
+    from src.cli.business_logic import create_user_logic
 
-    # Show header at the beginning
+    # Get container
+    container = Container()
+
+    # Show header
     console.print_separator()
     console.print_header("Création d'un nouvel utilisateur")
     console.print_separator()
@@ -433,8 +432,8 @@ def create_user(
     department = departments[department_choice - 1]
 
     try:
-        # Create user via service
-        user = user_service.create_user(
+        # Call business logic
+        user = create_user_logic(
             username=username,
             first_name=first_name,
             last_name=last_name,
@@ -442,13 +441,23 @@ def create_user(
             phone=phone,
             password=password,
             department=department,
+            container=container
         )
 
+    except ValueError as e:
+        # Business logic errors
+        console.print_separator()
+        console.print_error(str(e))
+        console.print_separator()
+        raise typer.Exit(code=1)
+
     except IntegrityError as e:
+        # Database constraint errors
         error_msg = (
             str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
         )
 
+        console.print_separator()
         if "unique" in error_msg or "duplicate" in error_msg:
             if "username" in error_msg:
                 console.print_error(
@@ -464,10 +473,14 @@ def create_user(
                 )
         else:
             console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
+        console.print_separator()
         raise typer.Exit(code=1)
 
     except Exception as e:
+        # Unexpected errors
+        console.print_separator()
         console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_separator()
         raise typer.Exit(code=1)
 
     # Success message
@@ -665,7 +678,6 @@ def create_event(
         epicevents create-event
         # Suit les prompts interactifs pour saisir les informations
     """
-    from datetime import datetime
 
     # Manually get services from container
     container = Container()
