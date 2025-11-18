@@ -884,11 +884,15 @@ def create_event(
     event_service = container.event_service()
     contract_service = container.contract_service()
     user_service = container.user_service()
+    auth_service = container.auth_service()
 
     # Show header at the beginning
     console.print_separator()
     console.print_header("Création d'un nouvel événement")
     console.print_separator()
+
+    # Get current user for permission checks
+    current_user = auth_service.get_current_user()
 
     # Business validation: check if contract exists
     contract = contract_service.get_contract(contract_id)
@@ -896,6 +900,26 @@ def create_event(
     if not contract:
         console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
         raise typer.Exit(code=1)
+
+    # Business validation: check if contract is signed
+    if not contract.is_signed:
+        console.print_error(
+            f"Le contrat #{contract_id} n'est pas encore signé. "
+            "Seuls les contrats signés peuvent avoir des événements."
+        )
+        raise typer.Exit(code=1)
+
+    # Permission check: COMMERCIAL can only create events for their own clients
+    if current_user.department == Department.COMMERCIAL:
+        if contract.client.sales_contact_id != current_user.id:
+            console.print_error(
+                "Vous ne pouvez créer des événements que pour vos propres clients"
+            )
+            console.print_error(
+                f"Ce contrat appartient au client {contract.client.first_name} {contract.client.last_name}, "
+                f"assigné à {contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name}"
+            )
+            raise typer.Exit(code=1)
 
     # Parse datetime strings
     try:
