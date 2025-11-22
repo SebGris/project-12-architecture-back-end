@@ -1,0 +1,27 @@
+# Configuration for Production Environment
+# This file is used when APP_ENV=production
+
+# Repository implementations (use real SQLAlchemy repositories)
+repositories:
+  user: "src.repositories.sqlalchemy_user_repository.SqlAlchemyUserRepository"
+  client: "src.repositories.sqlalchemy_client_repository.SqlAlchemyClientRepository"
+  contract: "src.repositories.sqlalchemy_contract_repository.SqlAlchemyContractRepository"
+  event: "src.repositories.sqlalchemy_event_repository.SqlAlchemyEventRepository"
+
+# Database configuration
+# IMPORTANT: Override this with DATABASE_URL environment variable in production
+database:
+  url: "${DATABASE_URL:sqlite:///data/epicevents.db}"
+  echo: false
+
+# Application settings
+app:
+  name: "Epic Events CRM"
+  debug: false
+  log_level: "INFO"
+
+# Security settings
+# IMPORTANT: Set EPICEVENTS_SECRET_KEY environment variable in production
+security:
+  secret_key: "${EPICEVENTS_SECRET_KEY}"
+  token_expiration_hours: 24
