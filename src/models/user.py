@@ -2,11 +2,11 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, List
 
-import bcrypt
 from sqlalchemy import DateTime, Enum as SQLEnum, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
+from src.services.password_hashing_service import PasswordHashingService
 
 if TYPE_CHECKING:
     from .client import Client
@@ -54,17 +54,25 @@ class User(Base):
     )
 
     def set_password(self, password: str) -> None:
-        """Hash and set password using bcrypt."""
-        password_bytes = password.encode("utf-8")
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(password_bytes, salt)
-        self.password_hash = hashed.decode("utf-8")
+        """Hash and set password using the PasswordHashingService.
+
+        Args:
+            password: The plain text password to hash and set
+        """
+        password_service = PasswordHashingService()
+        self.password_hash = password_service.hash_password(password)
 
     def verify_password(self, password: str) -> bool:
-        """Verify password against hash using bcrypt."""
-        password_bytes = password.encode("utf-8")
-        hash_bytes = self.password_hash.encode("utf-8")
-        return bcrypt.checkpw(password_bytes, hash_bytes)
+        """Verify password against hash using the PasswordHashingService.
+
+        Args:
+            password: The plain text password to verify
+
+        Returns:
+            True if the password matches the stored hash, False otherwise
+        """
+        password_service = PasswordHashingService()
+        return password_service.verify_password(password, self.password_hash)
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, username='{self.username}', department={self.department})>"
