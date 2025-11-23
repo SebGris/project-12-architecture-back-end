@@ -196,7 +196,7 @@ poetry run epicevents create-contract
 poetry run epicevents create-event
 # Nom: Mariage Marie Martin
 # ID du contrat: 1
-# Date début: 2025-06-15 14:00
+# Date début: 2026-01-15 14:00
 # ...
 ```
 

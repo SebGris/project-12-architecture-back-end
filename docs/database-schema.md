@@ -233,7 +233,7 @@ CHECK (attendees >= 0 OR attendees IS NULL)  -- Nombre de participants positif
 4. COMMERCIAL crée un ÉVÉNEMENT (seulement si contrat signé)
    ↓
    INSERT INTO events (name, contract_id, event_start, event_end, ...)
-   VALUES ('Product Launch', <contract_id>, '2025-11-15 18:00', '2025-11-15 23:00', ...)
+   VALUES ('Product Launch', <contract_id>, '2026-01-15 18:00', '2026-01-15 23:00', ...)
 
 5. GESTION assigne un SUPPORT à l'événement
    ↓

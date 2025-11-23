@@ -497,10 +497,10 @@ poetry run epicevents create-event
 
 **Prompts interactifs** :
 ```
-Nom de l'événement : Lancement Produit 2025
+Nom de l'événement : Lancement Produit 2026
 ID du contrat : 1
-Date et heure de début (YYYY-MM-DD HH:MM) : 2025-06-15 14:00
-Date et heure de fin (YYYY-MM-DD HH:MM) : 2025-06-15 18:00
+Date et heure de début (YYYY-MM-DD HH:MM) : 2026-01-15 14:00
+Date et heure de fin (YYYY-MM-DD HH:MM) : 2026-01-15 18:00
 Lieu : Palais des Congrès, Paris
 Nombre de participants : 150
 Notes (optionnel) : Événement de lancement du nouveau produit
