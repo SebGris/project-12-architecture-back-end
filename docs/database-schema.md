@@ -116,7 +116,7 @@ Table des clients de l'entreprise, chacun assigné à un commercial.
 | **id** | INTEGER | PK, AUTOINCREMENT | Identifiant unique |
 | **first_name** | VARCHAR(50) | NOT NULL | Prénom du client |
 | **last_name** | VARCHAR(50) | NOT NULL | Nom de famille du client |
-| **email** | VARCHAR(100) | UNIQUE, NOT NULL, INDEX | Email unique |
+| **email** | VARCHAR(255) | UNIQUE, NOT NULL, INDEX | Email unique |
 | **phone** | VARCHAR(20) | NULL | Téléphone (format E.164) |
 | **company_name** | VARCHAR(100) | NOT NULL | Nom de l'entreprise |
 | **sales_contact_id** | INTEGER | FK → users.id, NOT NULL, INDEX | Commercial responsable |
@@ -178,7 +178,7 @@ Table des événements organisés pour les clients.
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
 | **id** | INTEGER | PK, AUTOINCREMENT | Identifiant unique |
-| **name** | VARCHAR(200) | NOT NULL | Nom de l'événement |
+| **name** | VARCHAR(100) | NOT NULL | Nom de l'événement |
 | **contract_id** | INTEGER | FK → contracts.id, NOT NULL, INDEX | Contrat associé |
 | **support_contact_id** | INTEGER | FK → users.id, NULL, INDEX | Support assigné (optionnel) |
 | **event_start** | DATETIME | NOT NULL | Date/heure de début |
@@ -367,57 +367,58 @@ def upgrade():
 
 ```mermaid
 erDiagram
-    USERS ||--o{ CLIENTS : "sales_contact"
-    USERS ||--o{ EVENTS : "support_contact"
-    CLIENTS ||--o{ CONTRACTS : "has"
-    CONTRACTS ||--o{ EVENTS : "has"
+    User ||--o{ Client : "sales_contact (commercial)"
+    User ||--o{ Event : "support_contact (support)"
+    Client ||--o{ Contract : "possède"
+    Contract ||--o{ Event : "lié à"
 
-    USERS {
+    User {
         int id PK
-        varchar username UK
-        varchar email UK
-        varchar password_hash
-        varchar first_name
-        varchar last_name
-        varchar phone
-        enum department
-        datetime created_at
-        datetime updated_at
+        string username UK "NOT NULL, max 50"
+        string email UK "NOT NULL, max 255"
+        string password_hash "NOT NULL, max 255"
+        string first_name "NOT NULL, max 50"
+        string last_name "NOT NULL, max 50"
+        string phone "NOT NULL, max 20"
+        enum department "COMMERCIAL|GESTION|SUPPORT"
+        datetime created_at "DEFAULT NOW()"
+        datetime updated_at "DEFAULT NOW()"
     }
 
-    CLIENTS {
+    Client {
         int id PK
-        varchar first_name
-        varchar last_name
-        varchar email UK
-        varchar phone
-        varchar company_name
-        int sales_contact_id FK
-        datetime created_at
-        datetime updated_at
+        string first_name "NOT NULL, max 50"
+        string last_name "NOT NULL, max 50"
+        string email UK "NOT NULL, max 255"
+        string phone "NOT NULL, max 20"
+        string company_name "NOT NULL, max 100"
+        int sales_contact_id FK "NOT NULL -> users.id"
+        datetime created_at "DEFAULT NOW()"
+        datetime updated_at "DEFAULT NOW()"
     }
 
-    CONTRACTS {
+    Contract {
         int id PK
-        int client_id FK
-        numeric total_amount
-        numeric remaining_amount
-        boolean is_signed
-        datetime created_at
+        decimal total_amount "NOT NULL, NUMERIC(10,2), >= 0"
+        decimal remaining_amount "NOT NULL, NUMERIC(10,2), >= 0, <= total_amount"
+        boolean is_signed "NOT NULL, DEFAULT FALSE"
+        int client_id FK "NOT NULL -> clients.id"
+        datetime created_at "DEFAULT NOW()"
+        datetime updated_at "DEFAULT NOW()"
     }
 
-    EVENTS {
+    Event {
         int id PK
-        varchar name
-        int contract_id FK
-        int support_contact_id FK
-        datetime event_start
-        datetime event_end
-        varchar location
-        int attendees
-        text notes
-        datetime created_at
-        datetime updated_at
+        string name "NOT NULL, max 100"
+        datetime event_start "NOT NULL"
+        datetime event_end "NOT NULL, > event_start"
+        string location "NOT NULL, max 255"
+        int attendees "NOT NULL, >= 0"
+        text notes "NULLABLE"
+        int contract_id FK "NOT NULL -> contracts.id"
+        int support_contact_id FK "NULLABLE -> users.id"
+        datetime created_at "DEFAULT NOW()"
+        datetime updated_at "DEFAULT NOW()"
     }
 ```
 
