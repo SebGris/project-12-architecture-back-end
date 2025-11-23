@@ -10,6 +10,7 @@ from src.cli.constants import (
     LABEL_EMAIL,
     LABEL_PHONE,
     ERROR_UNEXPECTED,
+    PROMPT_TELEPHONE,
 )
 from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
@@ -21,12 +22,52 @@ app = typer.Typer()
 
 @app.command()
 @require_department(Department.GESTION)
-def create_user():
+def create_user(
+    username: str = typer.Option(
+        ...,
+        prompt=LABEL_USERNAME,
+        callback=validators.validate_username_callback,
+    ),
+    first_name: str = typer.Option(
+        ..., prompt="Prénom", callback=validators.validate_first_name_callback
+    ),
+    last_name: str = typer.Option(
+        ..., prompt="Nom", callback=validators.validate_last_name_callback
+    ),
+    email: str = typer.Option(
+        ..., prompt="Email", callback=validators.validate_email_callback
+    ),
+    phone: str = typer.Option(
+        ...,
+        prompt=PROMPT_TELEPHONE,
+        callback=validators.validate_phone_callback,
+    ),
+    password: str = typer.Option(
+        ...,
+        prompt="Mot de passe",
+        hide_input=True,
+        callback=validators.validate_password_callback,
+    ),
+    department_choice: int = typer.Option(
+        ...,
+        prompt=f"\nDépartements disponibles:\n1. {Department.COMMERCIAL.value}\n2. {Department.GESTION.value}\n3. {Department.SUPPORT.value}\n\nChoisir un département (numéro)",
+        callback=validators.validate_department_callback,
+    ),
+):
     """Create a new user in the CRM system.
 
     This command registers a new user with their personal and professional
     information. The password is automatically hashed before being stored
     in the database.
+
+    Args:
+        username: Unique username (4-50 characters, letters/digits/_/-)
+        first_name: User's first name (minimum 2 characters)
+        last_name: User's last name (minimum 2 characters)
+        email: Valid and unique email address
+        phone: Phone number (minimum 10 digits)
+        password: Password (minimum 8 characters, will be hashed)
+        department_choice: Department choice (1=COMMERCIAL, 2=GESTION, 3=SUPPORT)
 
     Returns:
         None. Displays success message with created user details.
@@ -46,78 +87,6 @@ def create_user():
     console.print_separator()
     console.print_header("Création d'un nouvel utilisateur")
     console.print_separator()
-
-    # Prompt and validate each field
-    while True:
-        try:
-            username = validators.validate_username_callback(
-                typer.prompt(LABEL_USERNAME)
-            )
-            break
-        except typer.BadParameter as e:
-            console.print_error(str(e))
-
-    while True:
-        try:
-            first_name = validators.validate_first_name_callback(
-                typer.prompt("Prénom")
-            )
-            break
-        except typer.BadParameter as e:
-            console.print_error(str(e))
-
-    while True:
-        try:
-            last_name = validators.validate_last_name_callback(
-                typer.prompt("Nom")
-            )
-            break
-        except typer.BadParameter as e:
-            console.print_error(str(e))
-
-    while True:
-        try:
-            email = validators.validate_email_callback(
-                typer.prompt("Email")
-            )
-            break
-        except typer.BadParameter as e:
-            console.print_error(str(e))
-
-    while True:
-        try:
-            phone = validators.validate_phone_callback(
-                typer.prompt("Téléphone")
-            )
-            break
-        except typer.BadParameter as e:
-            console.print_error(str(e))
-
-    while True:
-        try:
-            password = validators.validate_password_callback(
-                typer.prompt("Mot de passe", hide_input=True)
-            )
-            break
-        except typer.BadParameter as e:
-            console.print_error(str(e))
-
-    # Department selection
-    console.print_separator()
-    console.print_field("Départements disponibles", "")
-    console.print_field("1", Department.COMMERCIAL.value)
-    console.print_field("2", Department.GESTION.value)
-    console.print_field("3", Department.SUPPORT.value)
-    console.print_separator()
-
-    while True:
-        try:
-            department_choice = validators.validate_department_callback(
-                typer.prompt("Choisir un département (numéro)", type=int)
-            )
-            break
-        except typer.BadParameter as e:
-            console.print_error(str(e))
 
     # Convert department choice (int) to Department enum
     departments = list(Department)
@@ -161,11 +130,45 @@ def create_user():
 
 @app.command()
 @require_department(Department.GESTION)
-def update_user():
+def update_user(
+    user_id: int = typer.Option(
+        ...,
+        prompt="ID de l'utilisateur",
+        callback=validators.validate_user_id_callback,
+    ),
+    username: str = typer.Option(
+        None, prompt="Nouveau nom d'utilisateur (laisser vide pour ne pas modifier)"
+    ),
+    first_name: str = typer.Option(
+        None, prompt="Nouveau prénom (laisser vide pour ne pas modifier)"
+    ),
+    last_name: str = typer.Option(
+        None, prompt="Nouveau nom (laisser vide pour ne pas modifier)"
+    ),
+    email: str = typer.Option(
+        None, prompt="Nouvel email (laisser vide pour ne pas modifier)"
+    ),
+    phone: str = typer.Option(
+        None, prompt="Nouveau téléphone (laisser vide pour ne pas modifier)"
+    ),
+    department_choice: int = typer.Option(
+        0,
+        prompt=f"Nouveau département (1={Department.COMMERCIAL.value}, 2={Department.GESTION.value}, 3={Department.SUPPORT.value}, 0=pas de changement)",
+    ),
+):
     """Update user information.
 
     This command modifies information for an existing user.
     Fields left empty will not be modified.
+
+    Args:
+        user_id: ID of the user to modify
+        username: New username (optional)
+        first_name: New first name (optional)
+        last_name: New last name (optional)
+        email: New email (optional)
+        phone: New phone number (optional)
+        department_choice: New department (optional)
 
     Returns:
         None. Displays success message with details.
@@ -184,62 +187,22 @@ def update_user():
     console.print_header("Mise à jour d'un utilisateur")
     console.print_separator()
 
-    # Prompt for user ID with validation
-    user_id = typer.prompt("ID de l'utilisateur", type=int)
-    if user_id <= 0:
-        console.print_error("L'ID doit être un nombre positif")
-        raise typer.Exit(code=1)
-
     # Vérifier que l'utilisateur existe
     user = user_service.get_user(user_id)
     if not user:
         console.print_error(f"Utilisateur avec l'ID {user_id} n'existe pas")
         raise typer.Exit(code=1)
 
-    # Prompt for optional fields - accept empty string as "no change"
-    username = typer.prompt(
-        "Nouveau nom d'utilisateur (laisser vide pour ne pas modifier)",
-        default="",
-        show_default=False
-    ).strip() or None
-
-    first_name = typer.prompt(
-        "Nouveau prénom (laisser vide pour ne pas modifier)",
-        default="",
-        show_default=False
-    ).strip() or None
-
-    last_name = typer.prompt(
-        "Nouveau nom (laisser vide pour ne pas modifier)",
-        default="",
-        show_default=False
-    ).strip() or None
-
-    email = typer.prompt(
-        "Nouvel email (laisser vide pour ne pas modifier)",
-        default="",
-        show_default=False
-    ).strip() or None
-
-    phone = typer.prompt(
-        "Nouveau téléphone (laisser vide pour ne pas modifier)",
-        default="",
-        show_default=False
-    ).strip() or None
-
-    # Prompt for department choice
-    department_choice = typer.prompt(
-        f"Nouveau département (1={Department.COMMERCIAL.value}, 2={Department.GESTION.value}, 3={Department.SUPPORT.value}, 0=pas de changement)",
-        type=int,
-        default=0
-    )
+    # Nettoyer les champs vides
+    username = username.strip() if username else None
+    first_name = first_name.strip() if first_name else None
+    last_name = last_name.strip() if last_name else None
+    email = email.strip() if email else None
+    phone = phone.strip() if phone else None
 
     # Convert department choice if provided
     department = None
     if department_choice > 0:
-        if department_choice > 3:
-            console.print_error("Choix invalide. Doit être entre 0 et 3")
-            raise typer.Exit(code=1)
         departments = list(Department)
         department = departments[department_choice - 1]
 
