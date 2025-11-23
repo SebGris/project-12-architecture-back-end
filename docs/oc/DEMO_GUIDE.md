@@ -595,13 +595,18 @@ poetry run epicevents filter-my-events
 ### 5.2 ✅ Mettre à jour leurs événements
 
 ```bash
-poetry run epicevents update-event-attendees
+poetry run epicevents update-event
 ```
 
 **Prompts interactifs** :
 ```
 ID de l'événement : 2
-Nouveau nombre de participants : 175
+Nouveau nom (laisser vide pour ne pas modifier) : [Enter]
+Nouvelle date de début YYYY-MM-DD HH:MM (laisser vide pour ne pas modifier) : [Enter]
+Nouvelle date de fin YYYY-MM-DD HH:MM (laisser vide pour ne pas modifier) : [Enter]
+Nouveau lieu (laisser vide pour ne pas modifier) : [Enter]
+Nouveau nombre de participants (-1 pour ne pas modifier) : 175
+Nouvelles notes (laisser vide pour ne pas modifier) : [Enter]
 ```
 
 **Explication** :
@@ -697,7 +702,7 @@ Montant du paiement : 2000.00
 | `update-contract-payment` | ✅ (ses clients) | ✅ (tous) | ❌ |
 | `create-event` | ✅ (ses clients + signé) | ✅ (tous + signé) | ❌ |
 | `assign-support` | ❌ | ✅ | ❌ |
-| `update-event-attendees` | ❌ | ✅ (tous) | ✅ (ses événements) |
+| `update-event` | ❌ | ✅ (tous) | ✅ (ses événements) |
 | `filter-my-events` | ❌ | ❌ | ✅ |
 | `filter-unsigned-contracts` | ✅ | ✅ | ✅ |
 | `filter-unpaid-contracts` | ✅ | ✅ | ✅ |
@@ -799,10 +804,11 @@ poetry run epicevents login
 # Voir mes événements assignés
 poetry run epicevents filter-my-events
 
-# Mettre à jour le nombre de participants
-poetry run epicevents update-event-attendees
+# Mettre à jour un événement assigné
+poetry run epicevents update-event
 # ID événement: 15
-# Nouveau nombre: 30
+# Laisser vide tous les champs sauf:
+# Nouveau nombre de participants: 30
 
 # Se déconnecter
 poetry run epicevents logout
