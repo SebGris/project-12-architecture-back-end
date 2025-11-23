@@ -369,8 +369,8 @@ ID du contact support : 4
 ```bash
 poetry run epicevents logout
 poetry run epicevents login
-# Username: bob_commercial
-# Password: Password123!
+# Username: commercial1
+# Password: Commercial123!
 ```
 
 ### 4.1 ✅ Créer des clients (auto-assignation)
@@ -550,8 +550,8 @@ Ce contrat appartient au client Marie Dupont, assigné à Alice Dubois
 ```bash
 poetry run epicevents logout
 poetry run epicevents login
-# Username: sophie_support
-# Password: Password123!
+# Username: support1
+# Password: Support123!
 ```
 
 ### 5.1 ✅ Filtrer leurs événements assignés
@@ -707,26 +707,12 @@ Montant du paiement : 2000.00
 
 ## 8. Scénario complet de démonstration
 
-### Étape 1 : Gestion crée un commercial
+### Étape 1 : Utiliser un commercial existant
 
 ```bash
-# Se connecter en GESTION
-poetry run epicevents login
-# Username: admin
-# Password: Admin123!
-
-# Créer un nouveau commercial
-poetry run epicevents create-user
-# Username: paul_commercial
-# Prénom: Paul
-# Nom: Lemoine
-# Email: paul.lemoine@epicevents.com
-# Téléphone: 0623456789
-# Password: Password123!
-# Département: 1 (COMMERCIAL)
-
-# Se déconnecter
-poetry run epicevents logout
+# Note: commercial2 (Marie Martin) existe déjà dans seed_database.py
+# Username: commercial2
+# Password: Commercial123!
 ```
 
 ### Étape 2 : Commercial crée un client et un contrat
@@ -734,8 +720,8 @@ poetry run epicevents logout
 ```bash
 # Se connecter en COMMERCIAL
 poetry run epicevents login
-# Username: paul_commercial
-# Password: Password123!
+# Username: commercial2
+# Password: Commercial123!
 
 # Créer un client (auto-assignation)
 poetry run epicevents create-client
@@ -807,8 +793,8 @@ poetry run epicevents logout
 ```bash
 # Se connecter en SUPPORT
 poetry run epicevents login
-# Username: sophie_support
-# Password: Password123!
+# Username: support1
+# Password: Support123!
 
 # Voir mes événements assignés
 poetry run epicevents filter-my-events
