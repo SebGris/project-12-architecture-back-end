@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from src.cli import console
 from src.cli import validators
+from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
@@ -120,14 +121,7 @@ def create_contract(
         )
 
     except IntegrityError as e:
-        error_msg = (
-            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
-        )
-
-        if ERROR_FOREIGN_KEY in error_msg:
-            console.print_error(f"Le client (ID: {client_id}) n'existe pas")
-        else:
-            console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
+        handle_integrity_error(e, {})
         raise typer.Exit(code=1)
 
     except Exception as e:

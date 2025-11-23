@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.cli import console
 from src.cli import validators
+from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
@@ -134,25 +135,12 @@ def create_client(
         )
 
     except IntegrityError as e:
-        error_msg = (
-            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
+        handle_integrity_error(
+            e,
+            {
+                "email": f"Un client avec l'email '{email}' existe déjà dans le système",
+            },
         )
-
-        if "unique" in error_msg or "duplicate" in error_msg:
-            if "email" in error_msg:
-                console.print_error(
-                    f"Un client avec l'email '{email}' existe déjà dans le système"
-                )
-            else:
-                console.print_error(
-                    "Erreur: Un client avec ces informations existe déjà"
-                )
-        elif ERROR_FOREIGN_KEY in error_msg:
-            console.print_error(
-                f"Le contact commercial (ID: {sales_contact_id}) n'existe pas"
-            )
-        else:
-            console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
         raise typer.Exit(code=1)
 
     except Exception as e:
@@ -282,15 +270,12 @@ def update_client(
         )
 
     except IntegrityError as e:
-        error_msg = (
-            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
+        handle_integrity_error(
+            e,
+            {
+                "email": f"Un client avec l'email '{email}' existe déjà",
+            },
         )
-        if "unique" in error_msg or "duplicate" in error_msg:
-            console.print_error(
-                f"Un client avec l'email '{email}' existe déjà"
-            )
-        else:
-            console.print_error(f"Erreur d'intégrité: {error_msg}")
         raise typer.Exit(code=1)
 
     except Exception as e:
