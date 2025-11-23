@@ -276,9 +276,6 @@ def delete_user(
         prompt="ID de l'utilisateur à supprimer",
         callback=validators.validate_user_id_callback,
     ),
-    confirm: bool = typer.Option(
-        False, prompt="Êtes-vous sûr de vouloir supprimer cet utilisateur ? (oui/non)"
-    ),
 ):
     """Delete a user from the CRM system.
 
@@ -287,16 +284,15 @@ def delete_user(
 
     Args:
         user_id: ID of the user to delete
-        confirm: Deletion confirmation
 
     Returns:
         None. Displays confirmation message.
 
     Raises:
-        typer.Exit: On error (non-existent user, missing confirmation, etc.)
+        typer.Exit: On error (non-existent user, cancellation, etc.)
 
     Examples:
-        epicevents delete-user --user-id 5 --confirm
+        epicevents delete-user
     """
     # Manually get services from container
     container = Container()
@@ -321,10 +317,13 @@ def delete_user(
     console.print_separator()
 
     # Demander confirmation
+    confirm = typer.confirm(
+        "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+        default=False
+    )
+
     if not confirm:
-        console.print_error(
-            "Suppression annulée. Utilisez --confirm True pour confirmer la suppression."
-        )
+        console.print_error("Suppression annulée.")
         raise typer.Exit(code=1)
 
     # Delete user
