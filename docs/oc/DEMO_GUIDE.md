@@ -161,8 +161,8 @@ poetry run epicevents filter-unassigned-events
 
 ```bash
 poetry run epicevents login
-# Username: alice_gestion
-# Password: Password123!
+# Username: admin
+# Password: Admin123!
 ```
 
 ### 3.1 ✅ Créer des collaborateurs

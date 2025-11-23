@@ -205,8 +205,8 @@ poetry run epicevents create-event
 ```bash
 # 1. Se connecter en tant que gestionnaire
 poetry run epicevents login
-# Username: alice_gestion
-# Password: ********
+# Username: admin
+# Password: Admin123!
 
 # 2. Voir les événements sans support
 poetry run epicevents filter-unassigned-events
