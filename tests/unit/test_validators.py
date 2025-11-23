@@ -217,101 +217,111 @@ class TestValidateCompanyName:
             validators.validate_company_name_callback("   ")
 
 
-class TestValidateSalesContactId:
-    """Test validate_sales_contact_id_callback function."""
+class TestValidateIdCallbacks:
+    """Test ID validation callbacks using parametrize for DRY principle."""
 
-    def test_validate_sales_contact_id_valid(self):
-        """GIVEN valid ID (0 or positive) / WHEN validated / THEN returns ID"""
-        assert (
-            validators.validate_sales_contact_id_callback(0) == 0
-        )  # Auto-assign
-        assert validators.validate_sales_contact_id_callback(1) == 1
-        assert validators.validate_sales_contact_id_callback(999) == 999
+    @pytest.mark.parametrize(
+        "validator_func,valid_ids,invalid_ids",
+        [
+            # Sales contact ID: accepts 0 (auto-assign) and positive integers
+            (
+                validators.validate_sales_contact_id_callback,
+                [0, 1, 999],
+                [-1],
+            ),
+            # Support contact ID: accepts 0 (optional) and positive integers
+            (
+                validators.validate_support_contact_id_callback,
+                [0, 1, 999],
+                [-1],
+            ),
+            # Client ID: only positive integers (0 not allowed)
+            (
+                validators.validate_client_id_callback,
+                [1, 999],
+                [0, -1],
+            ),
+            # Contract ID: only positive integers
+            (
+                validators.validate_contract_id_callback,
+                [1, 999],
+                [0, -1],
+            ),
+            # Event ID: only positive integers
+            (
+                validators.validate_event_id_callback,
+                [1, 999],
+                [0],
+            ),
+            # User ID: only positive integers
+            (
+                validators.validate_user_id_callback,
+                [1, 999],
+                [0],
+            ),
+        ],
+        ids=[
+            "sales_contact_id",
+            "support_contact_id",
+            "client_id",
+            "contract_id",
+            "event_id",
+            "user_id",
+        ],
+    )
+    def test_id_validators_valid(self, validator_func, valid_ids, invalid_ids):
+        """GIVEN valid ID values / WHEN validated / THEN returns ID unchanged"""
+        for valid_id in valid_ids:
+            assert validator_func(valid_id) == valid_id
 
-    def test_validate_sales_contact_id_negative(self):
-        """GIVEN negative ID / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_sales_contact_id_callback(-1)
-
-
-class TestValidateClientId:
-    """Test validate_client_id_callback function."""
-
-    def test_validate_client_id_valid(self):
-        """GIVEN positive ID / WHEN validated / THEN returns ID"""
-        assert validators.validate_client_id_callback(1) == 1
-        assert validators.validate_client_id_callback(999) == 999
-
-    def test_validate_client_id_zero(self):
-        """GIVEN ID = 0 / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_client_id_callback(0)
-
-    def test_validate_client_id_negative(self):
-        """GIVEN negative ID / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_client_id_callback(-1)
-
-
-class TestValidateContractId:
-    """Test validate_contract_id_callback function."""
-
-    def test_validate_contract_id_valid(self):
-        """GIVEN positive ID / WHEN validated / THEN returns ID"""
-        assert validators.validate_contract_id_callback(1) == 1
-        assert validators.validate_contract_id_callback(999) == 999
-
-    def test_validate_contract_id_invalid(self):
-        """GIVEN ID <= 0 / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_contract_id_callback(0)
-        with pytest.raises(typer.BadParameter):
-            validators.validate_contract_id_callback(-1)
-
-
-class TestValidateEventId:
-    """Test validate_event_id_callback function."""
-
-    def test_validate_event_id_valid(self):
-        """GIVEN positive ID / WHEN validated / THEN returns ID"""
-        assert validators.validate_event_id_callback(1) == 1
-        assert validators.validate_event_id_callback(999) == 999
-
-    def test_validate_event_id_invalid(self):
-        """GIVEN ID <= 0 / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_event_id_callback(0)
-
-
-class TestValidateUserId:
-    """Test validate_user_id_callback function."""
-
-    def test_validate_user_id_valid(self):
-        """GIVEN positive ID / WHEN validated / THEN returns ID"""
-        assert validators.validate_user_id_callback(1) == 1
-        assert validators.validate_user_id_callback(999) == 999
-
-    def test_validate_user_id_invalid(self):
-        """GIVEN ID <= 0 / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_user_id_callback(0)
-
-
-class TestValidateSupportContactId:
-    """Test validate_support_contact_id_callback function."""
-
-    def test_validate_support_contact_id_valid(self):
-        """GIVEN valid ID (0 or positive) / WHEN validated / THEN returns ID"""
-        assert (
-            validators.validate_support_contact_id_callback(0) == 0
-        )  # Optional
-        assert validators.validate_support_contact_id_callback(1) == 1
-        assert validators.validate_support_contact_id_callback(999) == 999
-
-    def test_validate_support_contact_id_negative(self):
-        """GIVEN negative ID / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_support_contact_id_callback(-1)
+    @pytest.mark.parametrize(
+        "validator_func,valid_ids,invalid_ids",
+        [
+            (
+                validators.validate_sales_contact_id_callback,
+                [0, 1, 999],
+                [-1],
+            ),
+            (
+                validators.validate_support_contact_id_callback,
+                [0, 1, 999],
+                [-1],
+            ),
+            (
+                validators.validate_client_id_callback,
+                [1, 999],
+                [0, -1],
+            ),
+            (
+                validators.validate_contract_id_callback,
+                [1, 999],
+                [0, -1],
+            ),
+            (
+                validators.validate_event_id_callback,
+                [1, 999],
+                [0],
+            ),
+            (
+                validators.validate_user_id_callback,
+                [1, 999],
+                [0],
+            ),
+        ],
+        ids=[
+            "sales_contact_id",
+            "support_contact_id",
+            "client_id",
+            "contract_id",
+            "event_id",
+            "user_id",
+        ],
+    )
+    def test_id_validators_invalid(self, validator_func, valid_ids, invalid_ids):
+        """GIVEN invalid ID values / WHEN validated / THEN raises BadParameter"""
+        for invalid_id in invalid_ids:
+            with pytest.raises(typer.BadParameter):
+                validator_func(invalid_id)
 
 
 class TestValidateEventName:

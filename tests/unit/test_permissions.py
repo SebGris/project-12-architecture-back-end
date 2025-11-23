@@ -267,37 +267,29 @@ class TestRequireDepartmentCurrentUserInjection:
 
 
 class TestRequireDepartmentAllDepartments:
-    """Test with all three departments."""
+    """Test with all three departments using parametrize."""
 
-    def test_commercial_allowed(self, mocker, mock_container, mock_auth_service, mock_commercial_user):
-        """GIVEN COMMERCIAL user / WHEN COMMERCIAL allowed / THEN succeeds"""
+    @pytest.mark.parametrize(
+        "user_fixture_name,expected_department",
+        [
+            ("mock_commercial_user", "COMMERCIAL"),
+            ("mock_gestion_user", "GESTION"),
+            ("mock_support_user", "SUPPORT"),
+        ],
+        ids=["commercial", "gestion", "support"],
+    )
+    def test_all_departments_allowed(
+        self, mocker, mock_container, mock_auth_service, user_fixture_name, expected_department, request
+    ):
+        """GIVEN user from any department / WHEN all departments allowed / THEN succeeds"""
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_commercial_user
+
+        # Get the user fixture dynamically using request.getfixturevalue()
+        user = request.getfixturevalue(user_fixture_name)
+        mock_auth_service.get_current_user.return_value = user
 
         @require_department(Department.COMMERCIAL, Department.GESTION, Department.SUPPORT)
         def test_command(current_user: User):
             return current_user.department.value
 
-        assert test_command() == "COMMERCIAL"
-
-    def test_gestion_allowed(self, mocker, mock_container, mock_auth_service, mock_gestion_user):
-        """GIVEN GESTION user / WHEN GESTION allowed / THEN succeeds"""
-        mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_gestion_user
-
-        @require_department(Department.COMMERCIAL, Department.GESTION, Department.SUPPORT)
-        def test_command(current_user: User):
-            return current_user.department.value
-
-        assert test_command() == "GESTION"
-
-    def test_support_allowed(self, mocker, mock_container, mock_auth_service, mock_support_user):
-        """GIVEN SUPPORT user / WHEN SUPPORT allowed / THEN succeeds"""
-        mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_support_user
-
-        @require_department(Department.COMMERCIAL, Department.GESTION, Department.SUPPORT)
-        def test_command(current_user: User):
-            return current_user.department.value
-
-        assert test_command() == "SUPPORT"
+        assert test_command() == expected_department
