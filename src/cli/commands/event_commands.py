@@ -243,25 +243,25 @@ def update_event(
         callback=validators.validate_event_id_callback,
     ),
     name: str = typer.Option(
-        None, prompt="Nouveau nom (laisser vide pour ne pas modifier)"
+        "", prompt="Nouveau nom (laisser vide pour ne pas modifier)"
     ),
     event_start: str = typer.Option(
-        None,
+        "",
         prompt="Nouvelle date de début YYYY-MM-DD HH:MM (laisser vide pour ne pas modifier)",
     ),
     event_end: str = typer.Option(
-        None,
+        "",
         prompt="Nouvelle date de fin YYYY-MM-DD HH:MM (laisser vide pour ne pas modifier)",
     ),
     location: str = typer.Option(
-        None, prompt="Nouveau lieu (laisser vide pour ne pas modifier)"
+        "", prompt="Nouveau lieu (laisser vide pour ne pas modifier)"
     ),
     attendees: int = typer.Option(
-        None,
-        prompt="Nouveau nombre de participants (0 pour ne pas modifier)",
+        -1,
+        prompt="Nouveau nombre de participants (-1 pour ne pas modifier)",
     ),
     notes: str = typer.Option(
-        None, prompt="Nouvelles notes (laisser vide pour ne pas modifier)"
+        "", prompt="Nouvelles notes (laisser vide pour ne pas modifier)"
     ),
 ):
     """Update event information.
@@ -329,7 +329,7 @@ def update_event(
     event_start_str = event_start.strip() if event_start else None
     event_end_str = event_end.strip() if event_end else None
     location = location.strip() if location else None
-    attendees_value = attendees if attendees and attendees > 0 else None
+    attendees_value = attendees if attendees >= 0 else None
     notes = notes.strip() if notes else None
 
     # Parse datetime strings

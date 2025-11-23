@@ -366,11 +366,11 @@ def update_contract(
         callback=validators.validate_contract_id_callback,
     ),
     total_amount: str = typer.Option(
-        None,
+        "",
         prompt="Nouveau montant total (laisser vide pour ne pas modifier)",
     ),
     remaining_amount: str = typer.Option(
-        None,
+        "",
         prompt="Nouveau montant restant (laisser vide pour ne pas modifier)",
     ),
     is_signed: bool = typer.Option(None, prompt="Marquer comme signé ?"),

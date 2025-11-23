@@ -167,19 +167,19 @@ def update_client(
         callback=validators.validate_client_id_callback,
     ),
     first_name: str = typer.Option(
-        None, prompt="Nouveau prénom (laisser vide pour ne pas modifier)"
+        "", prompt="Nouveau prénom (laisser vide pour ne pas modifier)"
     ),
     last_name: str = typer.Option(
-        None, prompt="Nouveau nom (laisser vide pour ne pas modifier)"
+        "", prompt="Nouveau nom (laisser vide pour ne pas modifier)"
     ),
     email: str = typer.Option(
-        None, prompt="Nouvel email (laisser vide pour ne pas modifier)"
+        "", prompt="Nouvel email (laisser vide pour ne pas modifier)"
     ),
     phone: str = typer.Option(
-        None, prompt="Nouveau téléphone (laisser vide pour ne pas modifier)"
+        "", prompt="Nouveau téléphone (laisser vide pour ne pas modifier)"
     ),
     company_name: str = typer.Option(
-        None,
+        "",
         prompt="Nouveau nom d'entreprise (laisser vide pour ne pas modifier)",
     ),
 ):
