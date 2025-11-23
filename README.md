@@ -140,7 +140,10 @@ project-12-architecture-back-end/
 │   ├── __init__.py
 │   ├── database.py           # Configuration DB et sessions
 │   ├── containers.py         # Dependency Injection (dependency-injector)
+│   ├── config.py             # Configuration externalisée (SOLID DIP)
 │   ├── finders.py            # Finders pour requêtes SQLite
+│   ├── sentry_config.py      # Configuration Sentry
+│   ├── validators.py         # Validateurs de saisie
 │   ├── models/               # Modèles SQLAlchemy ORM
 │   │   ├── __init__.py
 │   │   ├── user.py
@@ -150,18 +153,32 @@ project-12-architecture-back-end/
 │   ├── repositories/         # Repository pattern pour accès données
 │   │   ├── client_repository.py
 │   │   ├── sqlalchemy_client_repository.py
-│   │   ├── in_memory_client_repository.py
 │   │   ├── user_repository.py
-│   │   └── sqlalchemy_user_repository.py
+│   │   ├── sqlalchemy_user_repository.py
+│   │   ├── contract_repository.py
+│   │   ├── sqlalchemy_contract_repository.py
+│   │   ├── event_repository.py
+│   │   └── sqlalchemy_event_repository.py
 │   ├── services/             # Logique métier
 │   │   ├── __init__.py
 │   │   ├── user_service.py
 │   │   ├── client_service.py
-│   │   └── auth_service.py
+│   │   ├── contract_service.py
+│   │   ├── event_service.py
+│   │   ├── auth_service.py
+│   │   └── password_hashing_service.py
 │   └── cli/                  # Interface en ligne de commande
 │       ├── __init__.py
 │       ├── main.py           # Point d'entrée CLI (epicevents)
-│       └── commands.py       # Commandes Typer avec validation inline
+│       ├── permissions.py    # Décorateurs de permissions
+│       ├── console.py        # Utilities d'affichage
+│       └── commands/         # Commandes Typer modulaires
+│           ├── __init__.py           # Agrégation des sous-applications
+│           ├── auth_commands.py      # Commandes authentification
+│           ├── user_commands.py      # Commandes utilisateurs
+│           ├── client_commands.py    # Commandes clients
+│           ├── contract_commands.py  # Commandes contrats
+│           └── event_commands.py     # Commandes événements
 ├── tests/
 │   ├── unit/                 # Tests unitaires
 │   │   └── test_client.py

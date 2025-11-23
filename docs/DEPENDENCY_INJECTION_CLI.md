@@ -40,23 +40,33 @@ Notre architecture CLI suit une séparation claire des responsabilités :
 
 ```
 src/cli/
-├── main.py          # Point d'entrée - Configure le wiring pour les permissions
-└── commands.py      # Commandes CLI - Crée le container manuellement
+├── main.py                   # Point d'entrée - Configure le wiring
+├── permissions.py            # Décorateurs de permissions
+├── console.py                # Utilities d'affichage
+└── commands/                 # Répertoire des commandes modulaires
+    ├── __init__.py           # Agrégation des sous-applications
+    ├── auth_commands.py      # Commandes authentification
+    ├── user_commands.py      # Commandes utilisateurs
+    ├── client_commands.py    # Commandes clients
+    ├── contract_commands.py  # Commandes contrats
+    └── event_commands.py     # Commandes événements
 
 src/
-├── containers.py    # Définit le conteneur de dépendances
-├── services/        # Logique métier
-├── repositories/    # Accès aux données
-└── models/          # Entités du domaine
+├── containers.py             # Conteneur de dépendances
+├── config.py                 # Configuration externalisée
+├── services/                 # Logique métier
+├── repositories/             # Accès aux données
+└── models/                   # Entités du domaine
 ```
 
-### Pourquoi séparer `main.py` et `commands.py` ?
+### Pourquoi une architecture modulaire ?
 
 **Raisons architecturales :**
-1. **Séparation des responsabilités** : `main.py` orchestre, `commands.py` contient la logique
-2. **Maintenabilité** : Plus facile de gérer plusieurs commandes dans un module dédié
-3. **Testabilité** : On peut importer et tester `commands.app` indépendamment
-4. **Configuration** : Le wiring pour les permissions est configuré une seule fois dans `main.py`
+1. **Séparation des responsabilités** : Un fichier = Un domaine métier (SRP)
+2. **Maintenabilité** : Fichiers de ~300-700 lignes au lieu de 2000+ lignes
+3. **Testabilité** : Chaque module peut être testé indépendamment
+4. **Clarté** : Plus facile de trouver et modifier une commande spécifique
+5. **Configuration** : Le wiring est configuré une fois dans `main.py` pour les 5 modules
 
 ## ⚙️ Comment ça fonctionne
 
@@ -91,41 +101,60 @@ class Container(containers.DeclarativeContainer):
 
 ### 2. Configuration dans main.py (`src/cli/main.py`)
 
-Le point d'entrée configure le wiring pour les décorateurs de permissions :
+Le point d'entrée configure le wiring pour les 5 modules de commandes et le module permissions :
 
 ```python
 from src.containers import Container
 from src.cli import commands, permissions
+from src.cli.commands import (
+    auth_commands,
+    user_commands,
+    client_commands,
+    contract_commands,
+    event_commands
+)
 
 def main():
     # 1. Créer le conteneur
     container = Container()
 
-    # 2. Activer le wiring pour les permissions
+    # 2. Activer le wiring pour TOUS les modules de commandes + permissions
     # Cela permet aux décorateurs @require_auth et @require_department
     # d'accéder à auth_service si nécessaire
-    container.wire(modules=[commands, permissions])
+    container.wire(modules=[
+        auth_commands,      # Module authentification
+        user_commands,      # Module utilisateurs
+        client_commands,    # Module clients
+        contract_commands,  # Module contrats
+        event_commands,     # Module événements
+        permissions         # Décorateurs de permissions
+    ])
 
     # 3. Lancer l'application
     try:
-        commands.app()
+        commands.app()  # commands.app est défini dans commands/__init__.py
     finally:
         # 4. Nettoyer le wiring à la fin
         container.unwire()
 ```
 
-**Note importante :** Le wiring est utilisé uniquement pour les décorateurs de permissions. Les commandes elles-mêmes n'utilisent pas l'injection automatique.
+**Note importante :** Le wiring est utilisé uniquement pour les décorateurs de permissions (qui peuvent être présents dans n'importe quel module). Les commandes elles-mêmes créent manuellement le container.
 
-### 3. Utilisation dans les commandes (`src/cli/commands.py`)
+### 3. Utilisation dans les commandes (exemple: `src/cli/commands/client_commands.py`)
 
-Les commandes créent manuellement le container et obtiennent les services :
+Chaque module crée manuellement le container et obtient les services :
 
 ```python
+# src/cli/commands/client_commands.py
+import typer
 from src.containers import Container
 from src.cli.permissions import require_department
 from src.models.user import Department
 
-@app.command()
+# Créer l'instance Typer pour ce module
+app = typer.Typer()
+
+@app.command("create-client")
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def create_client(
     # Paramètres CLI normaux
@@ -149,7 +178,8 @@ def create_client(
 ```
 
 **Points importants :**
-- Chaque commande crée son propre `Container()`
+- Chaque **module** crée sa propre instance `app = typer.Typer()`
+- Chaque **commande** crée son propre `Container()`
 - On obtient les services via `container.service_name()`
 - Pas de décorateur `@inject` nécessaire
 - Signatures de fonctions propres (uniquement les paramètres CLI)
@@ -426,11 +456,17 @@ def create_client(
 Voici un exemple complet d'une commande avec permissions et vérifications :
 
 ```python
+# src/cli/commands/client_commands.py
+import typer
 from src.containers import Container
 from src.cli.permissions import require_department, check_client_ownership
 from src.models.user import Department
+from src.cli.console import print_error, print_success
 
-@app.command()
+# Créer l'instance Typer pour ce module
+app = typer.Typer()
+
+@app.command("update-client")
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def update_client(
     client_id: int = typer.Option(..., prompt="ID du client"),

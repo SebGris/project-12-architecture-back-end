@@ -9,9 +9,17 @@ Ce document explique le pattern d'injection de dépendances utilisé dans l'appl
 ### Implémentation
 
 ```python
-# src/cli/commands.py
+# src/cli/commands/user_commands.py
 
-@app.command()
+import typer
+from src.containers import Container
+from src.cli.permissions import require_department
+from src.models.user import Department
+
+# Créer l'instance Typer pour ce module
+app = typer.Typer()
+
+@app.command("create-user")
 @require_department(Department.GESTION)
 def create_user(
     username: str = typer.Option(..., prompt="Nom d'utilisateur"),
@@ -33,22 +41,32 @@ main.py (point d'entrée)
 1. Créer une instance du container (pour le wiring des permissions)
     container = Container()
 
-2. Wire les modules (pour les décorateurs de permissions)
-    container.wire(modules=[commands, permissions])
+2. Wire les 5 modules de commandes + permissions (pour les décorateurs)
+    container.wire(modules=[
+        auth_commands,
+        user_commands,
+        client_commands,
+        contract_commands,
+        event_commands,
+        permissions
+    ])
 
 3. Lancer l'application Typer
-    commands.app()
+    commands.app()  # commands.app défini dans commands/__init__.py
 
-commands.py (commandes CLI)
+Modules de commandes (ex: client_commands.py, user_commands.py)
     ↓
-4. Créer une instance du container dans chaque commande
+4. Chaque module crée sa propre instance Typer
+    app = typer.Typer()
+
+5. Créer une instance du container dans chaque commande
     container = Container()
 
-5. Obtenir les services nécessaires
+6. Obtenir les services nécessaires
     client_service = container.client_service()
     user_service = container.user_service()
 
-6. Utiliser les services
+7. Utiliser les services
     client = client_service.create_client(...)
 ```
 
@@ -110,30 +128,56 @@ class Container(containers.DeclarativeContainer):
 ```python
 # src/cli/main.py
 
+from src.containers import Container
+from src.cli import commands, permissions
+from src.cli.commands import (
+    auth_commands,
+    user_commands,
+    client_commands,
+    contract_commands,
+    event_commands
+)
+
 def main():
     """Main entry point for the application."""
     # 1. Initialize the dependency injection container
     container = Container()
 
-    # 2. Wire for permission decorators (they access auth_service)
-    container.wire(modules=[commands, permissions])
+    # 2. Wire the 5 command modules + permissions
+    # This allows permission decorators to access auth_service
+    container.wire(modules=[
+        auth_commands,      # Module authentification
+        user_commands,      # Module utilisateurs
+        client_commands,    # Module clients
+        contract_commands,  # Module contrats
+        event_commands,     # Module événements
+        permissions         # Décorateurs de permissions
+    ])
 
     # 3. Launch the Typer application
     try:
-        commands.app()
+        commands.app()  # Defined in commands/__init__.py
     finally:
         # 4. Clean up
         container.unwire()
 ```
 
-**Note:** Le wiring est configuré pour permettre aux décorateurs de permissions (`@require_auth`, `@require_department`) d'accéder à `auth_service` depuis kwargs si nécessaire.
+**Note:** Le wiring est configuré pour les **5 modules de commandes** plus le module `permissions` pour permettre aux décorateurs (`@require_auth`, `@require_department`) d'accéder à `auth_service`.
 
 ### 3. Utilisation dans les Commandes
 
 ```python
-# src/cli/commands.py
+# src/cli/commands/client_commands.py
 
-@app.command()
+import typer
+from src.containers import Container
+from src.cli.permissions import require_department
+from src.models.user import Department
+
+# Créer l'instance Typer pour ce module
+app = typer.Typer()
+
+@app.command("create-client")
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def create_client(
     first_name: str = typer.Option(..., prompt="Prénom"),
@@ -159,7 +203,9 @@ def create_client(
 Les décorateurs de permissions injectent `current_user` dans `kwargs`:
 
 ```python
-@app.command()
+# src/cli/commands/client_commands.py
+
+@app.command("update-client")
 @require_department(Department.COMMERCIAL, Department.GESTION)
 def update_client(
     client_id: int = typer.Option(...),

@@ -1,80 +1,155 @@
 # Organisation des Sous-Applications Typer
 
-Ce document explique le code utilisé dans [src/cli/commands.py](../src/cli/commands.py#L19-L26) pour organiser l'application CLI en sous-applications modulaires.
+Ce document explique le code utilisé dans [src/cli/commands/__init__.py](../src/cli/commands/__init__.py) pour organiser l'application CLI en sous-applications modulaires.
+
+## Architecture Modulaire
+
+Depuis le refactoring, les commandes sont organisées en **5 modules séparés** dans le répertoire `src/cli/commands/` :
+
+1. **auth_commands.py** - Authentification (login, logout, whoami)
+2. **user_commands.py** - Gestion des utilisateurs
+3. **client_commands.py** - Gestion des clients
+4. **contract_commands.py** - Gestion des contrats
+5. **event_commands.py** - Gestion des événements
 
 ## Le Code Expliqué
 
-```python
-# Sous-applications pour mieux organiser
-clients = typer.Typer(help="📋 Gestion des clients", rich_markup_mode="rich")
-users = typer.Typer(help="👥 Gestion des utilisateurs", rich_markup_mode="rich")
-events = typer.Typer(help="🎭 Gestion des événements", rich_markup_mode="rich")
+### Création des sous-applications (dans chaque module)
 
-app.add_typer(clients, name="client", help="Gérer les clients")
-app.add_typer(users, name="user", help="Gérer les utilisateurs")
-app.add_typer(events, name="event", help="Gérer les événements")
+Chaque module crée sa propre instance Typer :
+
+```python
+# Dans auth_commands.py
+import typer
+app = typer.Typer()
+
+@app.command()
+def login(...):
+    """Connexion à Epic Events CRM."""
+    pass
+
+# Dans user_commands.py
+import typer
+app = typer.Typer()
+
+@app.command("create-user")
+def create_user(...):
+    """Créer un nouvel utilisateur."""
+    pass
+
+# De même pour client_commands.py, contract_commands.py, event_commands.py
+```
+
+### Agrégation dans __init__.py
+
+Le fichier `src/cli/commands/__init__.py` **agrège toutes les sous-applications** :
+
+```python
+import typer
+
+from .auth_commands import app as auth_app
+from .client_commands import app as client_app
+from .contract_commands import app as contract_app
+from .event_commands import app as event_app
+from .user_commands import app as user_app
+
+# Application principale qui agrège tous les modules
+app = typer.Typer()
+
+# Monter les sous-applications
+app.add_typer(auth_app)
+app.add_typer(client_app)
+app.add_typer(contract_app)
+app.add_typer(event_app)
+app.add_typer(user_app)
 ```
 
 ## Qu'est-ce qu'une Sous-Application Typer ?
 
 ### Création des Sous-Applications
 
-Les trois premières lignes créent des **sous-applications indépendantes** :
+Dans la nouvelle architecture, **chaque module crée sa propre sous-application indépendante** :
 
-- `clients = typer.Typer(...)` : Crée une application CLI pour gérer les clients
-- `users = typer.Typer(...)` : Crée une application CLI pour gérer les utilisateurs
-- `events = typer.Typer(...)` : Crée une application CLI pour gérer les événements
+- **auth_commands.py** : `app = typer.Typer()` pour les commandes d'authentification
+- **user_commands.py** : `app = typer.Typer()` pour gérer les utilisateurs
+- **client_commands.py** : `app = typer.Typer()` pour gérer les clients
+- **contract_commands.py** : `app = typer.Typer()` pour gérer les contrats
+- **event_commands.py** : `app = typer.Typer()` pour gérer les événements
 
-**Paramètres utilisés :**
-
-- `help` : Le texte d'aide qui s'affichera dans la documentation de la CLI
-- `rich_markup_mode="rich"` : Active le support du markup Rich pour formater le texte (couleurs, gras, etc.)
+**Avantage de cette approche :**
+- **Séparation des responsabilités** : Chaque domaine métier dans son propre fichier
+- **Maintenabilité** : Plus facile de trouver et modifier une commande spécifique
+- **Modularité** : Chaque module peut être testé indépendamment
 
 ### Intégration dans l'Application Principale
 
-Les trois lignes suivantes **ajoutent ces sous-applications** à l'application principale avec `app.add_typer()` :
+Le fichier `__init__.py` **monte ces sous-applications** avec `app.add_typer()` :
 
 ```python
-app.add_typer(clients, name="client", help="Gérer les clients")
+app.add_typer(auth_app)      # Toutes les commandes d'auth
+app.add_typer(client_app)    # Toutes les commandes client
+app.add_typer(contract_app)  # Toutes les commandes contract
+app.add_typer(event_app)     # Toutes les commandes event
+app.add_typer(user_app)      # Toutes les commandes user
 ```
 
-**Paramètres de `add_typer()` :**
+**Fonctionnement de `add_typer()` :**
 
-- **Premier argument** : L'instance de la sous-application (ex: `clients`)
-- `name` : Le nom de la commande qui sera utilisée dans la CLI (ex: `client`)
-- `help` : Le texte d'aide spécifique pour cette commande groupée
+- **Sans `name`** : Les commandes conservent leur nom d'origine (ex: `login`, `create-client`)
+- L'utilisateur exécute directement : `epicevents login`, `epicevents create-client`
+- Pas de préfixe ajouté
 
 ## Avantages de cette Architecture
 
 ### 1. **Modularité**
-Chaque domaine métier (clients, users, events) a sa propre application Typer, ce qui permet de :
-- Séparer les responsabilités
-- Faciliter la maintenance
-- Organiser les fichiers de manière logique
+Chaque domaine métier a son propre module, ce qui permet de :
+- **Séparer les responsabilités** : Un fichier = Un domaine
+- **Faciliter la maintenance** : Les modifications sont isolées dans un fichier
+- **Réduire la complexité** : Fichiers de ~300-700 lignes au lieu de 2000+ lignes
+- **Organiser logiquement** : Structure claire par domaine métier
 
-### 2. **Hiérarchie des Commandes**
-L'utilisateur pourra exécuter des commandes comme :
+### 2. **Commandes CLI**
+L'utilisateur exécute des commandes directement (sans préfixe) :
 ```bash
-epicevents client list
-epicevents client create
-epicevents user list
-epicevents user create
-epicevents event list
+# Authentification
+epicevents login
+epicevents logout
+epicevents whoami
+
+# Utilisateurs
+epicevents create-user
+epicevents update-user
+epicevents delete-user
+
+# Clients
+epicevents create-client
+epicevents update-client
+
+# Contrats
+epicevents create-contract
+epicevents sign-contract
+epicevents filter-unsigned-contracts
+
+# Événements
+epicevents create-event
+epicevents update-event
+epicevents assign-support
+epicevents filter-my-events
 ```
 
-### 3. **Composabilité**
-- Chaque sous-application peut être testée indépendamment
-- On peut imbriquer les applications autant qu'on veut
-- Les sous-applications peuvent même être utilisées seules si nécessaire
+### 3. **Testabilité**
+- Chaque module peut être testé indépendamment
+- Tests plus rapides (on ne charge que le module nécessaire)
+- Mocking simplifié par module
 
 ### 4. **Documentation Automatique**
 Typer génère automatiquement une aide structurée :
 ```bash
 epicevents --help
-# Affichera les trois groupes de commandes avec leurs emojis et descriptions
+# Affiche toutes les commandes disponibles (19 commandes)
 
-epicevents client --help
-# Affichera toutes les commandes du groupe "client"
+epicevents create-client --help
+# Affiche l'aide spécifique pour cette commande
 ```
 
 ## Le Paramètre `rich_markup_mode="rich"`
@@ -113,40 +188,75 @@ def example():
 
 ## Exemple Complet d'Utilisation
 
+### Structure des fichiers
+
+```
+src/cli/commands/
+├── __init__.py              # Agrégation
+├── auth_commands.py         # Module auth
+└── client_commands.py       # Module client
+```
+
+### client_commands.py
+
 ```python
 import typer
+from src.containers import Container
+
+# Créer l'application pour ce module
+app = typer.Typer()
+
+@app.command("create-client")
+def create_client(
+    first_name: str = typer.Option(..., prompt="Prénom"),
+    last_name: str = typer.Option(..., prompt="Nom"),
+):
+    """
+    Créer un nouveau client dans le système CRM.
+    """
+    container = Container()
+    client_service = container.client_service()
+
+    client = client_service.create_client(
+        first_name=first_name,
+        last_name=last_name
+    )
+    print(f"Client {client.id} créé avec succès")
+
+@app.command("update-client")
+def update_client(
+    client_id: int = typer.Option(..., prompt="ID du client"),
+):
+    """
+    Mettre à jour un client existant.
+    """
+    # Implementation...
+    pass
+```
+
+### __init__.py (Agrégation)
+
+```python
+import typer
+
+from .auth_commands import app as auth_app
+from .client_commands import app as client_app
 
 # Application principale
 app = typer.Typer()
 
-# Sous-application pour les clients
-clients = typer.Typer(help="📋 Gestion des clients", rich_markup_mode="rich")
-
-@clients.command()
-def list():
-    """
-    Liste tous les [bold green]clients[/bold green].
-    """
-    print("Liste des clients...")
-
-@clients.command()
-def create(name: str):
-    """
-    Crée un [bold]nouveau client[/bold].
-    """
-    print(f"Création du client {name}...")
-
-# Ajouter la sous-application à l'app principale
-app.add_typer(clients, name="client", help="Gérer les clients")
-
-if __name__ == "__main__":
-    app()
+# Monter les sous-applications
+app.add_typer(auth_app)
+app.add_typer(client_app)
 ```
 
-**Commandes générées :**
+### Commandes générées
+
 ```bash
-python main.py client list
-python main.py client create "Entreprise X"
+epicevents create-client
+epicevents update-client
+epicevents login
+epicevents logout
 ```
 
 ## Liens vers la Documentation Officielle
@@ -168,11 +278,12 @@ python main.py client create "Entreprise X"
 
 ## Résumé
 
-Le code analysé crée une **architecture modulaire** pour une application CLI en :
+L'architecture Epic Events CRM utilise une **structure modulaire** pour organiser l'application CLI :
 
-1. **Créant trois sous-applications** indépendantes (clients, users, events)
-2. **Activant le formatage Rich** pour une aide visuelle améliorée avec des couleurs et des emojis
-3. **Les ajoutant à l'application principale** avec des noms de commandes spécifiques
-4. **Permettant une organisation hiérarchique** des commandes pour une meilleure expérience utilisateur
+1. **5 modules de commandes indépendants** (auth, user, client, contract, event)
+2. **Chaque module crée sa propre instance Typer** avec ses commandes
+3. **Le fichier `__init__.py` agrège tous les modules** via `app.add_typer()`
+4. **Séparation des responsabilités** : Un fichier = Un domaine métier
+5. **Maintenabilité optimale** : Fichiers de ~300-700 lignes au lieu de 2000+ lignes
 
-Cette approche est une **bonne pratique** recommandée par la documentation Typer pour les applications CLI complexes.
+Cette approche est une **bonne pratique** recommandée par la documentation Typer pour les applications CLI complexes et respecte les principes SOLID (Single Responsibility Principle).
