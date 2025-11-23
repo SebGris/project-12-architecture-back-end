@@ -19,7 +19,9 @@ import pytest
 from decimal import Decimal
 
 from src.models.contract import Contract
-from src.repositories.sqlalchemy_contract_repository import SqlAlchemyContractRepository
+from src.repositories.sqlalchemy_contract_repository import (
+    SqlAlchemyContractRepository,
+)
 from src.services.contract_service import ContractService
 
 
@@ -58,11 +60,15 @@ class TestCreateContract:
         assert result.is_signed is False
 
         # Verify it's persisted in database
-        db_contract = db_session.query(Contract).filter_by(id=result.id).first()
+        db_contract = (
+            db_session.query(Contract).filter_by(id=result.id).first()
+        )
         assert db_contract is not None
         assert db_contract.client_id == client.id
 
-    def test_create_contract_signed(self, contract_service, test_clients, db_session):
+    def test_create_contract_signed(
+        self, contract_service, test_clients, db_session
+    ):
         """GIVEN is_signed=True / WHEN create_contract() / THEN contract created signed"""
         client = test_clients["lou"]
 
@@ -76,7 +82,9 @@ class TestCreateContract:
         assert result.is_signed is True
 
         # Verify persistence
-        db_contract = db_session.query(Contract).filter_by(id=result.id).first()
+        db_contract = (
+            db_session.query(Contract).filter_by(id=result.id).first()
+        )
         assert db_contract.is_signed is True
 
     def test_create_contract_default_unsigned(
@@ -95,20 +103,22 @@ class TestCreateContract:
         assert result.is_signed is False
 
         # Verify persistence
-        db_contract = db_session.query(Contract).filter_by(id=result.id).first()
+        db_contract = (
+            db_session.query(Contract).filter_by(id=result.id).first()
+        )
         assert db_contract.is_signed is False
 
 
 class TestGetContract:
     """Test get_contract method."""
 
-    def test_get_contract_found(
-        self, contract_service, test_contracts
-    ):
+    def test_get_contract_found(self, contract_service, test_contracts):
         """GIVEN existing contract_id / WHEN get_contract() / THEN returns contract"""
         existing_contract = test_contracts["signed_partial"]
 
-        result = contract_service.get_contract(contract_id=existing_contract.id)
+        result = contract_service.get_contract(
+            contract_id=existing_contract.id
+        )
 
         assert result is not None
         assert result.id == existing_contract.id
@@ -141,7 +151,9 @@ class TestUpdateContract:
 
         # Verify persistence
         db_session.expire_all()
-        db_contract = db_session.query(Contract).filter_by(id=contract.id).first()
+        db_contract = (
+            db_session.query(Contract).filter_by(id=contract.id).first()
+        )
         assert db_contract.total_amount == Decimal("35000.00")
 
 
@@ -169,7 +181,9 @@ class TestUpdateContractPayment:
 
         # Verify persistence
         db_session.expire_all()
-        db_contract = db_session.query(Contract).filter_by(id=contract.id).first()
+        db_contract = (
+            db_session.query(Contract).filter_by(id=contract.id).first()
+        )
         assert db_contract.remaining_amount == Decimal("7000.00")
 
     def test_update_contract_payment_full_payment(
@@ -187,12 +201,12 @@ class TestUpdateContractPayment:
 
         # Verify persistence
         db_session.expire_all()
-        db_contract = db_session.query(Contract).filter_by(id=contract.id).first()
+        db_contract = (
+            db_session.query(Contract).filter_by(id=contract.id).first()
+        )
         assert db_contract.remaining_amount == Decimal("0.00")
 
-    def test_update_contract_payment_not_found(
-        self, contract_service
-    ):
+    def test_update_contract_payment_not_found(self, contract_service):
         """GIVEN non-existing contract_id / WHEN update_contract_payment() / THEN returns None"""
         result = contract_service.update_contract_payment(
             contract_id=99999, amount_paid=Decimal("1000.00")
@@ -221,7 +235,9 @@ class TestSignContract:
 
         # Verify persistence
         db_session.expire_all()
-        db_contract = db_session.query(Contract).filter_by(id=contract.id).first()
+        db_contract = (
+            db_session.query(Contract).filter_by(id=contract.id).first()
+        )
         assert db_contract.is_signed is True
 
     def test_sign_contract_not_found(self, contract_service):
@@ -247,7 +263,9 @@ class TestGetUnsignedContracts:
         contract_ids = [c.id for c in result]
         assert test_contracts["unsigned"].id in contract_ids
 
-    def test_get_unsigned_contracts_excludes_signed(self, contract_service, test_contracts):
+    def test_get_unsigned_contracts_excludes_signed(
+        self, contract_service, test_contracts
+    ):
         """GIVEN signed contracts exist / WHEN get_unsigned_contracts() / THEN excludes signed ones"""
         result = contract_service.get_unsigned_contracts()
 
@@ -275,7 +293,9 @@ class TestGetUnpaidContracts:
         assert test_contracts["unsigned"].id in contract_ids
         assert test_contracts["signed_unpaid"].id in contract_ids
 
-    def test_get_unpaid_contracts_excludes_paid(self, contract_service, test_contracts):
+    def test_get_unpaid_contracts_excludes_paid(
+        self, contract_service, test_contracts
+    ):
         """GIVEN fully paid contract exists / WHEN get_unpaid_contracts() / THEN excludes it"""
         result = contract_service.get_unpaid_contracts()
 
@@ -287,7 +307,9 @@ class TestGetUnpaidContracts:
 class TestGetContractsByClient:
     """Test get_contracts_by_client method."""
 
-    def test_get_contracts_by_client_success(self, contract_service, test_clients, test_contracts):
+    def test_get_contracts_by_client_success(
+        self, contract_service, test_clients, test_contracts
+    ):
         """GIVEN client with contracts / WHEN get_contracts_by_client() / THEN returns list"""
         # Arrange - Kevin has multiple contracts (signed_partial and unsigned)
         kevin = test_clients["kevin"]
@@ -304,7 +326,9 @@ class TestGetContractsByClient:
         assert test_contracts["signed_partial"].id in contract_ids
         assert test_contracts["unsigned"].id in contract_ids
 
-    def test_get_contracts_by_client_empty(self, contract_service, test_clients):
+    def test_get_contracts_by_client_empty(
+        self, contract_service, test_clients
+    ):
         """GIVEN client with no contracts / WHEN get_contracts_by_client() / THEN returns empty list"""
         # Jane has only signed_unpaid contract, so we need a client with no contracts
         # Create a new client with no contracts

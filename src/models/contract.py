@@ -10,7 +10,6 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Numeric,
-    String,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,7 +27,9 @@ class Contract(Base):
     __tablename__ = "contracts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    total_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    total_amount: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2), nullable=False
+    )
     remaining_amount: Mapped[Decimal] = mapped_column(
         Numeric(10, 2), nullable=False
     )

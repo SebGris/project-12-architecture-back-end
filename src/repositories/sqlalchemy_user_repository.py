@@ -4,7 +4,7 @@ This module provides the concrete implementation of the UserRepository
 interface using SQLAlchemy ORM for database persistence.
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy.orm import Session
 

@@ -66,7 +66,9 @@ class SqlAlchemyContractRepository(ContractRepository):
         Returns:
             List of Contract instances for the client
         """
-        return self.session.query(Contract).filter_by(client_id=client_id).all()
+        return (
+            self.session.query(Contract).filter_by(client_id=client_id).all()
+        )
 
     def get_unsigned_contracts(self) -> List[Contract]:
         """Get all unsigned contracts.
@@ -82,4 +84,8 @@ class SqlAlchemyContractRepository(ContractRepository):
         Returns:
             List of Contract instances with unpaid balance
         """
-        return self.session.query(Contract).filter(Contract.remaining_amount > 0).all()
+        return (
+            self.session.query(Contract)
+            .filter(Contract.remaining_amount > 0)
+            .all()
+        )

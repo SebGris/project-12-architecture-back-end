@@ -6,7 +6,9 @@ import pytest
 from decimal import Decimal
 
 from src.models.contract import Contract
-from src.repositories.sqlalchemy_contract_repository import SqlAlchemyContractRepository
+from src.repositories.sqlalchemy_contract_repository import (
+    SqlAlchemyContractRepository,
+)
 
 
 @pytest.fixture
@@ -38,7 +40,9 @@ class TestContractRepositoryGet:
 class TestContractRepositoryAdd:
     """Test add method."""
 
-    def test_add_new_contract(self, contract_repository, test_clients, db_session):
+    def test_add_new_contract(
+        self, contract_repository, test_clients, db_session
+    ):
         """GIVEN new contract / WHEN add() / THEN contract saved with ID"""
         new_contract = Contract(
             client_id=test_clients["kevin"].id,
@@ -53,14 +57,18 @@ class TestContractRepositoryAdd:
         assert result.total_amount == Decimal("60000.00")
 
         # Verify it's in database
-        db_contract = db_session.query(Contract).filter_by(id=result.id).first()
+        db_contract = (
+            db_session.query(Contract).filter_by(id=result.id).first()
+        )
         assert db_contract is not None
 
 
 class TestContractRepositoryUpdate:
     """Test update method."""
 
-    def test_update_contract(self, contract_repository, test_contracts, db_session):
+    def test_update_contract(
+        self, contract_repository, test_contracts, db_session
+    ):
         """GIVEN existing contract with changes / WHEN update() / THEN changes persisted"""
         contract = test_contracts["unsigned"]
         contract.is_signed = True
@@ -73,14 +81,18 @@ class TestContractRepositoryUpdate:
 
         # Verify changes persisted
         db_session.expire_all()
-        db_contract = db_session.query(Contract).filter_by(id=contract.id).first()
+        db_contract = (
+            db_session.query(Contract).filter_by(id=contract.id).first()
+        )
         assert db_contract.is_signed is True
 
 
 class TestContractRepositoryGetByClientId:
     """Test get_by_client_id method."""
 
-    def test_get_by_client_id(self, contract_repository, test_contracts, test_clients):
+    def test_get_by_client_id(
+        self, contract_repository, test_contracts, test_clients
+    ):
         """GIVEN client with contracts / WHEN get_by_client_id() / THEN returns client's contracts"""
         kevin = test_clients["kevin"]
 

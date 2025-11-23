@@ -33,33 +33,29 @@ def init_sentry():
     try:
         sentry_sdk.init(
             dsn=sentry_dsn,
-
             # Performance monitoring configuration
             # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
             # Adjust this value in production to reduce overhead
             traces_sample_rate=1.0,
-
             # Performance profiling configuration
             # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
             # Adjust this value in production
             profiles_sample_rate=1.0,
-
             # Environment (development, staging, production)
             environment=environment,
-
             # Enable SQL query logging
             enable_tracing=True,
-
             # Release version (optional - configure with git or CI/CD)
             # release="epic-events-crm@1.0.0",
-
             # Additional options
             send_default_pii=False,  # Do not send personal information
             attach_stacktrace=True,  # Attach stack trace to all messages
-            max_breadcrumbs=50,      # Maximum number of breadcrumbs
+            max_breadcrumbs=50,  # Maximum number of breadcrumbs
         )
 
-        print(f"[INFO] Sentry initialized successfully (environment: {environment})")
+        print(
+            f"[INFO] Sentry initialized successfully (environment: {environment})"
+        )
         return True
 
     except Exception as e:
@@ -115,11 +111,9 @@ def set_user_context(user_id: int, username: str, department: str = None):
     Example:
         set_user_context(user.id, user.username, user.department.value)
     """
-    sentry_sdk.set_user({
-        "id": user_id,
-        "username": username,
-        "department": department
-    })
+    sentry_sdk.set_user(
+        {"id": user_id, "username": username, "department": department}
+    )
 
 
 def clear_user_context():
@@ -127,7 +121,12 @@ def clear_user_context():
     sentry_sdk.set_user(None)
 
 
-def add_breadcrumb(message: str, category: str = "action", level: str = "info", data: dict = None):
+def add_breadcrumb(
+    message: str,
+    category: str = "action",
+    level: str = "info",
+    data: dict = None,
+):
     """Add a breadcrumb to trace user journey.
 
     Breadcrumbs are events that allow retracing user actions
@@ -144,8 +143,5 @@ def add_breadcrumb(message: str, category: str = "action", level: str = "info", 
                       data={"client_email": email})
     """
     sentry_sdk.add_breadcrumb(
-        message=message,
-        category=category,
-        level=level,
-        data=data or {}
+        message=message, category=category, level=level, data=data or {}
     )

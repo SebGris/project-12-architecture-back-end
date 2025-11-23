@@ -16,13 +16,14 @@ logger = logging.getLogger(__name__)
 
 class Base(DeclarativeBase):
     """Base class for all SQLAlchemy models."""
-    pass
 
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/epic_events_crm.db")
 _engine = create_engine(DATABASE_URL, echo=False)
-_SessionLocal = orm.sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+_SessionLocal = orm.sessionmaker(
+    autocommit=False, autoflush=False, bind=_engine
+)
 
 
 def get_db_session():

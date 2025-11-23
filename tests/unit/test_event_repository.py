@@ -6,7 +6,9 @@ import pytest
 from datetime import datetime
 
 from src.models.event import Event
-from src.repositories.sqlalchemy_event_repository import SqlAlchemyEventRepository
+from src.repositories.sqlalchemy_event_repository import (
+    SqlAlchemyEventRepository,
+)
 
 
 @pytest.fixture
@@ -62,7 +64,9 @@ class TestEventRepositoryAdd:
 class TestEventRepositoryUpdate:
     """Test update method."""
 
-    def test_update_event(self, event_repository, test_events, test_users, db_session):
+    def test_update_event(
+        self, event_repository, test_events, test_users, db_session
+    ):
         """GIVEN existing event with changes / WHEN update() / THEN changes persisted"""
         event = test_events["assembly"]
         event.support_contact_id = test_users["support1"].id
@@ -82,7 +86,9 @@ class TestEventRepositoryUpdate:
 class TestEventRepositoryGetByContractId:
     """Test get_by_contract_id method."""
 
-    def test_get_by_contract_id(self, event_repository, test_events, test_contracts):
+    def test_get_by_contract_id(
+        self, event_repository, test_events, test_contracts
+    ):
         """GIVEN contract with event / WHEN get_by_contract_id() / THEN returns events"""
         contract = test_contracts["signed_partial"]
 
@@ -95,7 +101,9 @@ class TestEventRepositoryGetByContractId:
 class TestEventRepositoryGetBySupportContact:
     """Test get_by_support_contact method."""
 
-    def test_get_by_support_contact(self, event_repository, test_users, test_events):
+    def test_get_by_support_contact(
+        self, event_repository, test_users, test_events
+    ):
         """GIVEN support user with events / WHEN get_by_support_contact() / THEN returns their events"""
         support1 = test_users["support1"]
 

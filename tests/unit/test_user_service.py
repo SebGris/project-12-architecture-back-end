@@ -16,7 +16,9 @@ Implementation notes:
 import pytest
 
 from src.models.user import Department, User
-from src.repositories.sqlalchemy_user_repository import SqlAlchemyUserRepository
+from src.repositories.sqlalchemy_user_repository import (
+    SqlAlchemyUserRepository,
+)
 from src.services.user_service import UserService
 
 
@@ -125,7 +127,9 @@ class TestGetUser:
 class TestUpdateUser:
     """Test update_user method."""
 
-    def test_update_user_all_fields(self, user_service, test_users, db_session):
+    def test_update_user_all_fields(
+        self, user_service, test_users, db_session
+    ):
         """GIVEN user_id and all fields / WHEN update_user() / THEN user updated"""
         commercial1 = test_users["commercial1"]
 
@@ -177,7 +181,9 @@ class TestUpdateUser:
 
         assert result is None
 
-    def test_update_user_only_department(self, user_service, test_users, db_session):
+    def test_update_user_only_department(
+        self, user_service, test_users, db_session
+    ):
         """GIVEN user_id and department / WHEN update_user() / THEN only department updated"""
         commercial2 = test_users["commercial2"]
 

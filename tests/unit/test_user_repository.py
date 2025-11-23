@@ -8,7 +8,9 @@ to verify the repository implementation works correctly with the database.
 import pytest
 
 from src.models.user import Department, User
-from src.repositories.sqlalchemy_user_repository import SqlAlchemyUserRepository
+from src.repositories.sqlalchemy_user_repository import (
+    SqlAlchemyUserRepository,
+)
 
 
 @pytest.fixture
@@ -119,5 +121,3 @@ class TestUserRepositoryUpdate:
         db_user = db_session.query(User).filter_by(id=user.id).first()
         assert db_user.phone == "0999999999"
         assert db_user.email == "newemail@epicevents.com"
-
-

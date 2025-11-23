@@ -10,7 +10,7 @@ import inspect
 import typer
 
 from src.cli.console import print_error, print_separator
-from src.models.user import Department, User
+from src.models.user import Department
 
 
 def require_department(
@@ -52,6 +52,7 @@ def require_department(
         def wrapper(*args, **kwargs):
             # Instantiate auth_service directly from container
             from src.containers import Container
+
             container = Container()
             auth_service = container.auth_service()
 

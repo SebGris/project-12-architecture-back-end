@@ -67,7 +67,9 @@ class SqlAlchemyEventRepository(EventRepository):
         Returns:
             List of Event instances for the contract
         """
-        return self.session.query(Event).filter_by(contract_id=contract_id).all()
+        return (
+            self.session.query(Event).filter_by(contract_id=contract_id).all()
+        )
 
     def get_by_support_contact(self, support_contact_id: int) -> List[Event]:
         """Get all events assigned to a specific support contact.
@@ -78,7 +80,11 @@ class SqlAlchemyEventRepository(EventRepository):
         Returns:
             List of Event instances assigned to the support contact
         """
-        return self.session.query(Event).filter_by(support_contact_id=support_contact_id).all()
+        return (
+            self.session.query(Event)
+            .filter_by(support_contact_id=support_contact_id)
+            .all()
+        )
 
     def get_unassigned_events(self) -> List[Event]:
         """Get all events without a support contact assigned.
@@ -86,9 +92,13 @@ class SqlAlchemyEventRepository(EventRepository):
         Returns:
             List of Event instances without support contact
         """
-        return self.session.query(Event).filter_by(support_contact_id=None).all()
+        return (
+            self.session.query(Event).filter_by(support_contact_id=None).all()
+        )
 
-    def get_upcoming_events(self, from_date: Optional[datetime] = None) -> List[Event]:
+    def get_upcoming_events(
+        self, from_date: Optional[datetime] = None
+    ) -> List[Event]:
         """Get all upcoming events starting from a given date.
 
         Args:

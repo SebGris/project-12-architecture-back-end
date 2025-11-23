@@ -5,7 +5,9 @@ Integration tests for SqlAlchemyClientRepository.
 import pytest
 
 from src.models.client import Client
-from src.repositories.sqlalchemy_client_repository import SqlAlchemyClientRepository
+from src.repositories.sqlalchemy_client_repository import (
+    SqlAlchemyClientRepository,
+)
 
 
 @pytest.fixture
@@ -55,7 +57,11 @@ class TestClientRepositoryAdd:
         assert result.first_name == "Alice"
 
         # Verify it's in database
-        db_client = db_session.query(Client).filter_by(email="alice@wonderland.com").first()
+        db_client = (
+            db_session.query(Client)
+            .filter_by(email="alice@wonderland.com")
+            .first()
+        )
         assert db_client is not None
         assert db_client.id == result.id
 

@@ -23,7 +23,6 @@ class EventRepository(ABC):
         Returns:
             Event instance or None if not found
         """
-        pass
 
     @abstractmethod
     def add(self, event: Event) -> Event:
@@ -35,7 +34,6 @@ class EventRepository(ABC):
         Returns:
             The added Event instance (with ID populated after commit)
         """
-        pass
 
     @abstractmethod
     def update(self, event: Event) -> Event:
@@ -47,7 +45,6 @@ class EventRepository(ABC):
         Returns:
             The updated Event instance
         """
-        pass
 
     @abstractmethod
     def get_by_contract_id(self, contract_id: int) -> List[Event]:
@@ -59,7 +56,6 @@ class EventRepository(ABC):
         Returns:
             List of Event instances for the contract
         """
-        pass
 
     @abstractmethod
     def get_by_support_contact(self, support_contact_id: int) -> List[Event]:
@@ -71,7 +67,6 @@ class EventRepository(ABC):
         Returns:
             List of Event instances assigned to the support contact
         """
-        pass
 
     @abstractmethod
     def get_unassigned_events(self) -> List[Event]:
@@ -80,10 +75,11 @@ class EventRepository(ABC):
         Returns:
             List of Event instances without support contact
         """
-        pass
 
     @abstractmethod
-    def get_upcoming_events(self, from_date: Optional[datetime] = None) -> List[Event]:
+    def get_upcoming_events(
+        self, from_date: Optional[datetime] = None
+    ) -> List[Event]:
         """Get all upcoming events starting from a given date.
 
         Args:
@@ -92,4 +88,3 @@ class EventRepository(ABC):
         Returns:
             List of upcoming Event instances
         """
-        pass

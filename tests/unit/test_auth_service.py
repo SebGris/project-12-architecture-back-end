@@ -24,7 +24,9 @@ from pathlib import Path
 from freezegun import freeze_time
 
 from src.models.user import Department, User
-from src.repositories.sqlalchemy_user_repository import SqlAlchemyUserRepository
+from src.repositories.sqlalchemy_user_repository import (
+    SqlAlchemyUserRepository,
+)
 from src.services.auth_service import AuthService
 
 
@@ -103,9 +105,7 @@ class TestGetOrCreateSecretKey:
 class TestAuthenticate:
     """Test authenticate method."""
 
-    def test_authenticate_success(
-        self, auth_service, test_user_with_password
-    ):
+    def test_authenticate_success(self, auth_service, test_user_with_password):
         """GIVEN valid username and password / WHEN authenticate() / THEN returns user"""
         # Act
         result = auth_service.authenticate("testuser", "CorrectPassword123!")
@@ -139,7 +139,9 @@ class TestGenerateToken:
     """Test generate_token method."""
 
     @freeze_time("2025-01-15 10:00:00")
-    def test_generate_token_success(self, auth_service, test_user_with_password):
+    def test_generate_token_success(
+        self, auth_service, test_user_with_password
+    ):
         """GIVEN authenticated user / WHEN generate_token() / THEN returns valid JWT"""
         # Act
         token = auth_service.generate_token(test_user_with_password)
@@ -159,7 +161,9 @@ class TestGenerateToken:
         assert "iat" in payload
 
     @freeze_time("2025-01-15 10:00:00")
-    def test_generate_token_expiration_24h(self, auth_service, test_user_with_password):
+    def test_generate_token_expiration_24h(
+        self, auth_service, test_user_with_password
+    ):
         """GIVEN user / WHEN generate_token() / THEN token expires in 24h"""
         # Act
         token = auth_service.generate_token(test_user_with_password)
@@ -180,7 +184,9 @@ class TestValidateToken:
     """Test validate_token method."""
 
     @freeze_time("2025-01-15 10:00:00")
-    def test_validate_token_success(self, auth_service, test_user_with_password):
+    def test_validate_token_success(
+        self, auth_service, test_user_with_password
+    ):
         """GIVEN valid token / WHEN validate_token() / THEN returns payload"""
         # Arrange
         token = auth_service.generate_token(test_user_with_password)
@@ -194,7 +200,9 @@ class TestValidateToken:
         assert payload["username"] == "testuser"
 
     @freeze_time("2025-01-15 10:00:00")
-    def test_validate_token_expired(self, auth_service, test_user_with_password):
+    def test_validate_token_expired(
+        self, auth_service, test_user_with_password
+    ):
         """GIVEN expired token / WHEN validate_token() / THEN returns None"""
         # Arrange - Generate token at T0
         token = auth_service.generate_token(test_user_with_password)
@@ -214,7 +222,9 @@ class TestValidateToken:
         # Assert
         assert payload is None
 
-    def test_validate_token_tampered(self, auth_service, test_user_with_password):
+    def test_validate_token_tampered(
+        self, auth_service, test_user_with_password
+    ):
         """GIVEN tampered token / WHEN validate_token() / THEN returns None"""
         # Arrange - Generate valid token
         token = auth_service.generate_token(test_user_with_password)

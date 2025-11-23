@@ -109,7 +109,9 @@ class TestValidateFirstName:
 class TestValidateLastName:
     """Test validate_last_name_callback function."""
 
-    @pytest.mark.parametrize("name", ["Dupont", "Martin-Dubois", "De La Fontaine"])
+    @pytest.mark.parametrize(
+        "name", ["Dupont", "Martin-Dubois", "De La Fontaine"]
+    )
     def test_validate_last_name_valid(self, name):
         """GIVEN valid last name / WHEN validated / THEN returns name"""
         assert validators.validate_last_name_callback(name) == name
@@ -194,7 +196,9 @@ class TestValidateUsername:
 class TestValidateCompanyName:
     """Test validate_company_name_callback function."""
 
-    @pytest.mark.parametrize("name", ["Acme Corp", "Tech Solutions", "ABC Company"])
+    @pytest.mark.parametrize(
+        "name", ["Acme Corp", "Tech Solutions", "ABC Company"]
+    )
     def test_validate_company_name_valid(self, name):
         """GIVEN valid company name / WHEN validated / THEN returns name"""
         assert validators.validate_company_name_callback(name) == name
@@ -310,7 +314,9 @@ class TestValidateIdCallbacks:
             "user_id",
         ],
     )
-    def test_id_validators_invalid(self, validator_func, valid_ids, invalid_ids):
+    def test_id_validators_invalid(
+        self, validator_func, valid_ids, invalid_ids
+    ):
         """GIVEN invalid ID values / WHEN validated / THEN raises BadParameter"""
         for invalid_id in invalid_ids:
             with pytest.raises(typer.BadParameter):
@@ -320,7 +326,9 @@ class TestValidateIdCallbacks:
 class TestValidateEventName:
     """Test validate_event_name_callback function."""
 
-    @pytest.mark.parametrize("name", ["Conference 2025", "Tech Workshop", "ABC"])
+    @pytest.mark.parametrize(
+        "name", ["Conference 2025", "Tech Workshop", "ABC"]
+    )
     def test_validate_event_name_valid(self, name):
         """GIVEN valid event name / WHEN validated / THEN returns name"""
         assert validators.validate_event_name_callback(name) == name

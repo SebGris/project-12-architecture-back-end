@@ -16,7 +16,9 @@ Implementation notes:
 import pytest
 
 from src.models.client import Client
-from src.repositories.sqlalchemy_client_repository import SqlAlchemyClientRepository
+from src.repositories.sqlalchemy_client_repository import (
+    SqlAlchemyClientRepository,
+)
 from src.services.client_service import ClientService
 
 
@@ -30,7 +32,9 @@ def client_service(db_session):
 class TestCreateClient:
     """Test create_client method."""
 
-    def test_create_client_success(self, client_service, test_users, db_session):
+    def test_create_client_success(
+        self, client_service, test_users, db_session
+    ):
         """GIVEN valid client data / WHEN create_client() / THEN client created"""
         result = client_service.create_client(
             first_name="Jean",
@@ -50,7 +54,11 @@ class TestCreateClient:
         assert result.sales_contact_id == test_users["commercial1"].id
 
         # Verify it's persisted in database
-        db_client = db_session.query(Client).filter_by(email="jean.dupont@example.com").first()
+        db_client = (
+            db_session.query(Client)
+            .filter_by(email="jean.dupont@example.com")
+            .first()
+        )
         assert db_client is not None
         assert db_client.id == result.id
 

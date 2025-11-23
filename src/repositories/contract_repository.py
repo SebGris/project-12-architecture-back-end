@@ -22,7 +22,6 @@ class ContractRepository(ABC):
         Returns:
             Contract instance or None if not found
         """
-        pass
 
     @abstractmethod
     def add(self, contract: Contract) -> Contract:
@@ -34,7 +33,6 @@ class ContractRepository(ABC):
         Returns:
             The added Contract instance (with ID populated after commit)
         """
-        pass
 
     @abstractmethod
     def update(self, contract: Contract) -> Contract:
@@ -46,7 +44,6 @@ class ContractRepository(ABC):
         Returns:
             The updated Contract instance
         """
-        pass
 
     @abstractmethod
     def get_by_client_id(self, client_id: int) -> List[Contract]:
@@ -58,7 +55,6 @@ class ContractRepository(ABC):
         Returns:
             List of Contract instances for the client
         """
-        pass
 
     @abstractmethod
     def get_unsigned_contracts(self) -> List[Contract]:
@@ -67,7 +63,6 @@ class ContractRepository(ABC):
         Returns:
             List of unsigned Contract instances
         """
-        pass
 
     @abstractmethod
     def get_unpaid_contracts(self) -> List[Contract]:
@@ -76,4 +71,3 @@ class ContractRepository(ABC):
         Returns:
             List of Contract instances with unpaid balance
         """
-        pass

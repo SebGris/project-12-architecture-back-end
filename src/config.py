@@ -11,12 +11,18 @@ configuration module rather than directly importing concrete implementations.
 import os
 
 # Import concrete repository implementations
-from src.repositories.sqlalchemy_client_repository import SqlAlchemyClientRepository
+from src.repositories.sqlalchemy_client_repository import (
+    SqlAlchemyClientRepository,
+)
 from src.repositories.sqlalchemy_contract_repository import (
     SqlAlchemyContractRepository,
 )
-from src.repositories.sqlalchemy_event_repository import SqlAlchemyEventRepository
-from src.repositories.sqlalchemy_user_repository import SqlAlchemyUserRepository
+from src.repositories.sqlalchemy_event_repository import (
+    SqlAlchemyEventRepository,
+)
+from src.repositories.sqlalchemy_user_repository import (
+    SqlAlchemyUserRepository,
+)
 
 # Determine environment
 ENV = os.getenv("APP_ENV", "development")

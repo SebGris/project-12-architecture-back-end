@@ -45,7 +45,9 @@ class TestPasswordHashingService:
         wrong_password = "wrong_password"
         hashed = password_service.hash_password(password)
 
-        assert password_service.verify_password(wrong_password, hashed) is False
+        assert (
+            password_service.verify_password(wrong_password, hashed) is False
+        )
 
     def test_verify_password_empty_password(self, password_service):
         """Test that verify_password handles empty passwords."""
@@ -99,5 +101,7 @@ class TestPasswordHashingService:
         """Test that passwords exceeding 72 bytes raise a ValueError."""
         too_long_password = "a" * 100
 
-        with pytest.raises(ValueError, match="password cannot be longer than 72 bytes"):
+        with pytest.raises(
+            ValueError, match="password cannot be longer than 72 bytes"
+        ):
             password_service.hash_password(too_long_password)

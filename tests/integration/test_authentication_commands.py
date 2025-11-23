@@ -179,7 +179,7 @@ class TestTokenStorage:
         mocker.patch("src.sentry_config.set_user_context")
 
         # Execute login
-        result = runner.invoke(app, ["login"], input="admin\nAdmin123!\n")
+        runner.invoke(app, ["login"], input="admin\nAdmin123!\n")
 
         # Verify file exists
         assert mock_token_file.exists()

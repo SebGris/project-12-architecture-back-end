@@ -16,10 +16,12 @@ Implementation notes:
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from src.models.event import Event
-from src.repositories.sqlalchemy_event_repository import SqlAlchemyEventRepository
+from src.repositories.sqlalchemy_event_repository import (
+    SqlAlchemyEventRepository,
+)
 from src.services.event_service import EventService
 
 
@@ -59,7 +61,11 @@ class TestCreateEvent:
         assert result.support_contact_id == test_users["support1"].id
 
         # Verify it's persisted in database
-        db_event = db_session.query(Event).filter_by(name="Conference Tech 2025").first()
+        db_event = (
+            db_session.query(Event)
+            .filter_by(name="Conference Tech 2025")
+            .first()
+        )
         assert db_event is not None
         assert db_event.id == result.id
 
@@ -125,7 +131,9 @@ class TestAssignSupportContact:
 
         # Verify persistence
         db_session.expire_all()
-        db_event = db_session.query(Event).filter_by(id=unassigned_event.id).first()
+        db_event = (
+            db_session.query(Event).filter_by(id=unassigned_event.id).first()
+        )
         assert db_event.support_contact_id == test_users["support2"].id
 
     def test_assign_support_contact_not_found(self, event_service, test_users):
@@ -230,7 +238,8 @@ class TestGetEventsBySupportContact:
         # Should return only events assigned to support1
         assert len(result) >= 1
         assert all(
-            event.support_contact_id == test_users["support1"].id for event in result
+            event.support_contact_id == test_users["support1"].id
+            for event in result
         )
 
     def test_get_events_by_support_contact_empty(self, event_service):
