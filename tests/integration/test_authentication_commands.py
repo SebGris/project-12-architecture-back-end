@@ -54,17 +54,53 @@ def mock_token_file(tmp_path):
     return token_file
 
 
+@pytest.fixture
+def mock_auth_service(mocker, mock_token_file):
+    """Create a configured mock auth_service with common setup.
+
+    This fixture simplifies mocking by:
+    - Patching the Container to return this mock service
+    - Setting up token file operations
+    - Providing a ready-to-use mock with sensible defaults
+
+    Returns:
+        MagicMock: Configured auth_service mock
+    """
+    mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
+    mock_service = mocker.MagicMock()
+    mock_service.TOKEN_FILE = mock_token_file
+
+    # Setup token file operations
+    def save_token_mock(token):
+        mock_token_file.write_text(token)
+        try:
+            os.chmod(mock_token_file, 0o600)
+        except Exception:
+            pass  # Windows compatibility
+
+    def delete_token_mock():
+        if mock_token_file.exists():
+            mock_token_file.unlink()
+
+    mock_service.save_token.side_effect = save_token_mock
+    mock_service.delete_token.side_effect = delete_token_mock
+
+    # Connect mock to container
+    mock_container.return_value.auth_service.return_value = mock_service
+
+    return mock_service
+
+
 class TestWhoamiWithoutAuthentication:
     """Test whoami command when user is not authenticated."""
 
-    def test_whoami_without_authentication(self, mocker):
+    def test_whoami_without_authentication(self, mock_auth_service):
         """
         GIVEN no authenticated user
         WHEN whoami command is executed
         THEN it should display an error message and exit with code 1
         """
-        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
-        mock_container.return_value.auth_service.return_value.get_current_user.return_value = None
+        mock_auth_service.get_current_user.return_value = None
 
         # Execute whoami command
         result = runner.invoke(app, ["whoami"])
@@ -79,26 +115,16 @@ class TestLoginCommand:
     """Test login command with valid and invalid credentials."""
 
     def test_login_with_valid_credentials(
-        self, mocker, test_user, mock_token_file
+        self, mocker, test_user, mock_auth_service
     ):
         """
         GIVEN valid username and password
         WHEN login command is executed
         THEN it should authenticate, generate token, and save it
         """
-        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
-        # Mock auth_service
-        mock_auth_service = mocker.MagicMock()
+        # Configure mock behavior
         mock_auth_service.authenticate.return_value = test_user
         mock_auth_service.generate_token.return_value = "fake.jwt.token"
-        mock_auth_service.TOKEN_FILE = mock_token_file
-
-        # Mock save_token to write to our test file
-        def save_token_mock(token):
-            mock_token_file.write_text(token)
-
-        mock_auth_service.save_token.side_effect = save_token_mock
-        mock_container.return_value.auth_service.return_value = mock_auth_service
 
         # Mock Sentry
         mocker.patch("src.sentry_config.set_user_context")
@@ -123,17 +149,14 @@ class TestLoginCommand:
         assert "GESTION" in result.stdout
         assert "Valide pour 24 heures" in result.stdout
 
-    def test_login_with_invalid_credentials(self, mocker):
+    def test_login_with_invalid_credentials(self, mock_auth_service):
         """
         GIVEN invalid username or password
         WHEN login command is executed
         THEN it should display an error and exit with code 1
         """
-        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         # Mock auth_service to return None (authentication failed)
-        mock_auth_service = mocker.MagicMock()
         mock_auth_service.authenticate.return_value = None
-        mock_container.return_value.auth_service.return_value = mock_auth_service
 
         # Execute login command with wrong credentials
         result = runner.invoke(
@@ -148,32 +171,19 @@ class TestLoginCommand:
 class TestTokenStorage:
     """Test JWT token storage in file system."""
 
-    def test_token_saved_to_file(self, mocker, test_user, mock_token_file):
+    def test_token_saved_to_file(
+        self, mocker, test_user, mock_auth_service, mock_token_file
+    ):
         """
         GIVEN a successful login
         WHEN token is saved
         THEN the token file should exist and contain the JWT token
         """
-        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
-        # Mock auth_service
-        mock_auth_service = mocker.MagicMock()
+        # Configure mock behavior
         mock_auth_service.authenticate.return_value = test_user
         mock_auth_service.generate_token.return_value = (
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxfQ.fake_signature"
         )
-        mock_auth_service.TOKEN_FILE = mock_token_file
-
-        # Mock save_token to write to our test file
-        def save_token_mock(token):
-            mock_token_file.write_text(token)
-            # On Unix systems, set permissions to 600
-            try:
-                os.chmod(mock_token_file, 0o600)
-            except Exception:
-                pass  # Windows compatibility
-
-        mock_auth_service.save_token.side_effect = save_token_mock
-        mock_container.return_value.auth_service.return_value = mock_auth_service
 
         # Mock Sentry
         mocker.patch("src.sentry_config.set_user_context")
@@ -195,17 +205,14 @@ class TestTokenStorage:
 class TestWhoamiWithAuthentication:
     """Test whoami command when user is authenticated."""
 
-    def test_whoami_with_authentication(self, mocker, test_user):
+    def test_whoami_with_authentication(self, test_user, mock_auth_service):
         """
         GIVEN an authenticated user
         WHEN whoami command is executed
         THEN it should display user information
         """
-        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         # Mock auth_service to return authenticated user
-        mock_auth_service = mocker.MagicMock()
         mock_auth_service.get_current_user.return_value = test_user
-        mock_container.return_value.auth_service.return_value = mock_auth_service
 
         # Execute whoami command
         result = runner.invoke(app, ["whoami"])
@@ -223,7 +230,9 @@ class TestWhoamiWithAuthentication:
 class TestLogoutCommand:
     """Test logout command and token deletion."""
 
-    def test_logout_deletes_token(self, mocker, test_user, mock_token_file):
+    def test_logout_deletes_token(
+        self, mocker, test_user, mock_auth_service, mock_token_file
+    ):
         """
         GIVEN an authenticated user with a token file
         WHEN logout command is executed
@@ -233,19 +242,8 @@ class TestLogoutCommand:
         mock_token_file.write_text("fake.jwt.token")
         assert mock_token_file.exists()
 
-        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
-        # Mock auth_service
-        mock_auth_service = mocker.MagicMock()
+        # Configure mock behavior
         mock_auth_service.get_current_user.return_value = test_user
-        mock_auth_service.TOKEN_FILE = mock_token_file
-
-        # Mock delete_token to remove our test file
-        def delete_token_mock():
-            if mock_token_file.exists():
-                mock_token_file.unlink()
-
-        mock_auth_service.delete_token.side_effect = delete_token_mock
-        mock_container.return_value.auth_service.return_value = mock_auth_service
 
         # Mock Sentry
         mocker.patch("src.sentry_config.clear_user_context")
@@ -264,14 +262,13 @@ class TestLogoutCommand:
         # Verify file no longer exists
         assert not mock_token_file.exists()
 
-    def test_logout_without_authentication(self, mocker):
+    def test_logout_without_authentication(self, mock_auth_service):
         """
         GIVEN no authenticated user
         WHEN logout command is executed
         THEN it should display an error message
         """
-        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
-        mock_container.return_value.auth_service.return_value.get_current_user.return_value = None
+        mock_auth_service.get_current_user.return_value = None
 
         # Execute logout
         result = runner.invoke(app, ["logout"])
@@ -285,30 +282,13 @@ class TestAuthenticationFlow:
     """Test complete authentication flow (login -> whoami -> logout)."""
 
     def test_complete_authentication_flow(
-        self, mocker, test_user, mock_token_file
+        self, mocker, test_user, mock_auth_service, mock_token_file
     ):
         """
         GIVEN a user going through complete auth flow
         WHEN login, whoami, then logout are executed
         THEN each command should work correctly in sequence
         """
-        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
-        # Mock auth_service
-        mock_auth_service = mocker.MagicMock()
-        mock_auth_service.TOKEN_FILE = mock_token_file
-
-        # Helper functions for token operations
-        def save_token_mock(token):
-            mock_token_file.write_text(token)
-
-        def delete_token_mock():
-            if mock_token_file.exists():
-                mock_token_file.unlink()
-
-        mock_auth_service.save_token.side_effect = save_token_mock
-        mock_auth_service.delete_token.side_effect = delete_token_mock
-        mock_container.return_value.auth_service.return_value = mock_auth_service
-
         # Mock Sentry
         mocker.patch("src.sentry_config.set_user_context")
         mocker.patch("src.sentry_config.clear_user_context")
