@@ -54,6 +54,18 @@ def mock_token_file(tmp_path):
     return token_file
 
 
+@pytest.fixture(autouse=True)
+def mock_sentry(mocker):
+    """Auto-mock all Sentry calls for authentication tests.
+
+    This fixture is automatically used for all tests in this module,
+    eliminating the need to mock Sentry manually in each test.
+    """
+    mocker.patch("src.sentry_config.set_user_context")
+    mocker.patch("src.sentry_config.clear_user_context")
+    mocker.patch("src.sentry_config.add_breadcrumb")
+
+
 @pytest.fixture
 def mock_auth_service(mocker, mock_token_file):
     """Create a configured mock auth_service with common setup.
@@ -114,9 +126,7 @@ class TestWhoamiWithoutAuthentication:
 class TestLoginCommand:
     """Test login command with valid and invalid credentials."""
 
-    def test_login_with_valid_credentials(
-        self, mocker, test_user, mock_auth_service
-    ):
+    def test_login_with_valid_credentials(self, test_user, mock_auth_service):
         """
         GIVEN valid username and password
         WHEN login command is executed
@@ -125,9 +135,6 @@ class TestLoginCommand:
         # Configure mock behavior
         mock_auth_service.authenticate.return_value = test_user
         mock_auth_service.generate_token.return_value = "fake.jwt.token"
-
-        # Mock Sentry
-        mocker.patch("src.sentry_config.set_user_context")
 
         # Execute login command
         result = runner.invoke(app, ["login"], input="admin\nAdmin123!\n")
@@ -172,7 +179,7 @@ class TestTokenStorage:
     """Test JWT token storage in file system."""
 
     def test_token_saved_to_file(
-        self, mocker, test_user, mock_auth_service, mock_token_file
+        self, test_user, mock_auth_service, mock_token_file
     ):
         """
         GIVEN a successful login
@@ -184,9 +191,6 @@ class TestTokenStorage:
         mock_auth_service.generate_token.return_value = (
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxfQ.fake_signature"
         )
-
-        # Mock Sentry
-        mocker.patch("src.sentry_config.set_user_context")
 
         # Execute login
         runner.invoke(app, ["login"], input="admin\nAdmin123!\n")
@@ -231,7 +235,7 @@ class TestLogoutCommand:
     """Test logout command and token deletion."""
 
     def test_logout_deletes_token(
-        self, mocker, test_user, mock_auth_service, mock_token_file
+        self, test_user, mock_auth_service, mock_token_file
     ):
         """
         GIVEN an authenticated user with a token file
@@ -244,10 +248,6 @@ class TestLogoutCommand:
 
         # Configure mock behavior
         mock_auth_service.get_current_user.return_value = test_user
-
-        # Mock Sentry
-        mocker.patch("src.sentry_config.clear_user_context")
-        mocker.patch("src.sentry_config.add_breadcrumb")
 
         # Execute logout
         result = runner.invoke(app, ["logout"])
@@ -282,18 +282,13 @@ class TestAuthenticationFlow:
     """Test complete authentication flow (login -> whoami -> logout)."""
 
     def test_complete_authentication_flow(
-        self, mocker, test_user, mock_auth_service, mock_token_file
+        self, test_user, mock_auth_service, mock_token_file
     ):
         """
         GIVEN a user going through complete auth flow
         WHEN login, whoami, then logout are executed
         THEN each command should work correctly in sequence
         """
-        # Mock Sentry
-        mocker.patch("src.sentry_config.set_user_context")
-        mocker.patch("src.sentry_config.clear_user_context")
-        mocker.patch("src.sentry_config.add_breadcrumb")
-
         # Step 1: Login
         mock_auth_service.authenticate.return_value = test_user
         mock_auth_service.generate_token.return_value = "fake.jwt.token"
