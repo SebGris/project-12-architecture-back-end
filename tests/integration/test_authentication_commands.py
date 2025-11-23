@@ -1,18 +1,18 @@
-"""
-Tests d'intégration pour les commandes d'authentification CLI.
+"""Integration tests for authentication CLI commands.
 
-Tests couverts:
-- whoami sans authentification (doit échouer)
-- login avec credentials valides (doit réussir)
-- Sauvegarde du token JWT dans le fichier
-- whoami avec authentification (doit afficher les infos)
-- logout (doit supprimer le token)
-- login avec credentials invalides (doit échouer)
+Tests covered:
+- whoami command without authentication (should fail)
+- login command with valid credentials (should succeed)
+- JWT token file storage and persistence
+- whoami command with authentication (should display user info)
+- logout command (should delete token file)
+- login command with invalid credentials (should fail)
 
-Note: Ces tests utilisent un vrai User en BDD (test_user) au lieu de mocks.
-Les mocks Container/AuthService sont gardés car ces tests vérifient
-le comportement CLI spécifique (stockage token, interactions fichiers).
-Les mocks Sentry sont légitimes (infrastructure externe monitoring).
+Implementation notes:
+- Uses real User object in database (test_user) instead of mocks
+- Container/AuthService mocks kept for CLI-specific behavior testing (token file I/O)
+- Sentry mocks are legitimate (external infrastructure - monitoring service)
+- Follows integration testing best practices for CLI applications
 """
 
 import os

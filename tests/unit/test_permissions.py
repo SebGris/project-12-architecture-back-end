@@ -1,8 +1,17 @@
-"""
-Tests unitaires pour le module permissions.py.
+"""Unit tests for CLI permissions module.
 
-Ces tests vérifient le comportement du décorateur require_department
-dans tous les scénarios possibles.
+Tests covered:
+- require_department decorator authentication checks
+- Single department permission validation
+- Multiple departments permission validation
+- No department restriction (authenticated access)
+- current_user parameter injection
+- All departments permission (COMMERCIAL, GESTION, SUPPORT)
+
+Implementation notes:
+- Uses real User objects in database instead of mocks
+- Container/AuthService mocks kept (infrastructure - 13 mocks)
+- Tests decorator behavior and permission enforcement
 """
 
 import pytest

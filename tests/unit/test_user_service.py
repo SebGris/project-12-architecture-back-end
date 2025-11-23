@@ -1,10 +1,16 @@
-"""
-Tests unitaires pour UserService.
+"""Unit tests for UserService.
 
-Tests couverts:
-- create_user() : création avec hachage bcrypt
-- get_user() : récupération par ID
-- verify_password() : vérification mot de passe
+Tests covered:
+- create_user(): User creation with bcrypt password hashing
+- get_user(): User retrieval by ID
+- list_users(): All users listing
+- update_user(): User information updates
+- delete_user(): User deletion
+
+Implementation notes:
+- Uses real SQLite in-memory database
+- Zero mocks - uses real SqlAlchemyUserRepository
+- Tests business logic layer with real database objects
 """
 
 import pytest

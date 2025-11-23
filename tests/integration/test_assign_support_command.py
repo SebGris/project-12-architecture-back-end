@@ -1,11 +1,12 @@
-"""
-Tests d'intégration pour la commande assign-support.
+"""Integration tests for assign-support CLI command.
 
-Tests couverts:
-- assign-support : erreur utilisateur non SUPPORT (validation métier)
+Tests covered:
+- assign-support command with non-SUPPORT user (business validation error)
 
-Ce test utilise de vrais objets (User, Client, Contract, Event) créés en base de données
-SQLite in-memory, sans aucun mock. Cela respecte les bonnes pratiques de tests d'intégration.
+Implementation notes:
+- Uses real database objects (User, Client, Contract, Event) via SQLite in-memory
+- Zero mocks - follows professional integration testing best practices
+- All objects created in test database for realistic testing
 """
 
 import pytest

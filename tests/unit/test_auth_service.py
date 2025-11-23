@@ -1,15 +1,19 @@
-"""
-Tests unitaires pour AuthService.
+"""Unit tests for AuthService.
 
-Tests couverts:
-- authenticate() : authentification utilisateur (succès/échec)
-- generate_token() : génération JWT avec payload complet
-- validate_token() : validation JWT (valide, expiré, invalide)
-- save_token() / load_token() : persistance token sur disque
-- delete_token() : suppression token (logout)
-- get_current_user() : récupération utilisateur depuis token
-- is_authenticated() : vérification authentification active
-- _get_or_create_secret_key() : gestion clé secrète
+Tests covered:
+- authenticate(): User authentication (success/failure cases)
+- generate_token(): JWT generation with complete payload
+- validate_token(): JWT validation (valid, expired, invalid tokens)
+- save_token() / load_token(): Token persistence to disk
+- delete_token(): Token deletion (logout)
+- get_current_user(): User retrieval from token
+- is_authenticated(): Active authentication verification
+- _get_or_create_secret_key(): Secret key management
+
+Implementation notes:
+- Uses real SQLite in-memory database
+- Environment variable mocks for SECRET_KEY (legitimate infrastructure mock)
+- Zero repository mocks - uses real SqlAlchemyUserRepository
 """
 
 import pytest

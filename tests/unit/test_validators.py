@@ -1,31 +1,24 @@
-"""
-Tests unitaires pour les validators (sécurité).
+"""Unit tests for CLI validators module (security & input validation).
 
-Tests couverts:
-- validators.validate_email_callback() : validation format email
-- validators.validate_phone_callback() : validation téléphone français
-- validators.validate_password_callback() : politique mots de passe forts
-- validators.validate_first_name_callback() : validation prénoms
-- validators.validate_last_name_callback() : validation noms
-- validators.validate_location_callback() : validation lieux
-- validators.validate_attendees_callback() : validation entiers positifs
-- validators.validate_username_callback() : validation nom d'utilisateur
-- validators.validate_company_name_callback() : validation nom entreprise
-- validators.validate_sales_contact_id_callback() : validation ID contact commercial
-- validators.validate_client_id_callback() : validation ID client
-- validators.validate_contract_id_callback() : validation ID contrat
-- validators.validate_event_id_callback() : validation ID événement
-- validators.validate_user_id_callback() : validation ID utilisateur
-- validators.validate_support_contact_id_callback() : validation ID contact support
-- validators.validate_event_name_callback() : validation nom événement
-- validators.validate_amount_callback() : validation montants monétaires
-- validators.validate_department_callback() : validation sélection département
-- validators.validate_contract_amounts() : validation règles métier contrats
-- validators.validate_payment_amount() : validation règles métier paiements
-- validators.validate_user_is_commercial() : validation département COMMERCIAL
-- validators.validate_user_is_support() : validation département SUPPORT
-- validators.validate_event_dates() : validation dates événements
-- validators.validate_attendees_positive() : validation participants positif
+Tests covered:
+- validate_email_callback(): Email format validation
+- validate_phone_callback(): French phone number validation
+- validate_password_callback(): Strong password policy enforcement
+- validate_first_name_callback(): First name validation
+- validate_last_name_callback(): Last name validation
+- validate_location_callback(): Location validation
+- validate_attendees_callback(): Positive integer validation
+- validate_username_callback(): Username validation
+- validate_company_name_callback(): Company name validation
+- ID validation callbacks (client, user, event, contract, sales contact)
+- Amount validation (positive amounts, payment limits)
+- Date validation (event dates, future dates)
+- Business logic validators (user department, payment amounts)
+
+Implementation notes:
+- Minimal mocks (only for department validation - 4 simple user mocks)
+- Tests Typer callback validators
+- Validates business rules enforcement and input sanitization
 """
 
 import pytest

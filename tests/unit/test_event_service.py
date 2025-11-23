@@ -1,15 +1,18 @@
-"""
-Tests unitaires pour EventService.
+"""Unit tests for EventService.
 
-Tests couverts:
-- create_event() : création avec tous les paramètres incluant support_contact_id optionnel
-- get_event() : récupération par ID
-- assign_support_contact() : assignation avec event_id et support_contact_id
-- update_event() : mise à jour de plusieurs champs
-- get_events_by_support_contact() : filtrage par support
-- get_unassigned_events() : filtrage événements sans support
-- get_events_by_contract() : filtrage par contrat
-- get_upcoming_events() : filtrage événements futurs
+Tests covered:
+- create_event(): Event creation with date validation
+- get_event(): Event retrieval by ID
+- list_events(): Events listing with filters
+- update_event(): Event information updates
+- assign_support_contact(): Support contact assignment
+- get_unassigned_events(): Events without support contact
+- get_my_events(): Support user's assigned events
+
+Implementation notes:
+- Uses real SQLite in-memory database
+- Zero mocks - uses real SqlAlchemyEventRepository
+- Tests business logic with date validations and relationships
 """
 
 import pytest

@@ -1,14 +1,18 @@
-"""
-Tests unitaires pour ContractService.
+"""Unit tests for ContractService.
 
-Tests couverts:
-- create_contract() : création avec client_id
-- get_contract() : récupération par ID
-- update_contract() : mise à jour avec objet Contract entier
-- update_contract_payment() : mise à jour du paiement avec contract_id
-- sign_contract() : signature avec contract_id
-- get_unsigned_contracts() : filtrage contrats non signés
-- get_unpaid_contracts() : filtrage contrats non payés
+Tests covered:
+- create_contract(): Contract creation with validation
+- get_contract(): Contract retrieval by ID
+- list_contracts(): Contracts listing with filters
+- update_contract(): Contract updates (amount, signature status)
+- record_payment(): Payment recording with remaining amount calculation
+- get_unsigned_contracts(): Unsigned contracts filtering
+- get_unpaid_contracts(): Unpaid contracts filtering
+
+Implementation notes:
+- Uses real SQLite in-memory database
+- Zero mocks - uses real SqlAlchemyContractRepository
+- Tests business logic including payment calculations
 """
 
 import pytest

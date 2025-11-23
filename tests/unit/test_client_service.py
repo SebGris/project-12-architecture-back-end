@@ -1,10 +1,16 @@
-"""
-Tests unitaires pour ClientService.
+"""Unit tests for ClientService.
 
-Tests couverts:
-- create_client() : création avec sales_contact_id
-- get_client() : récupération par ID
-- update_client() : mise à jour avec client_id (pas objet Client)
+Tests covered:
+- create_client(): Client creation with sales contact validation
+- get_client(): Client retrieval by ID
+- list_clients(): Clients listing with optional filters
+- update_client(): Client information updates
+- delete_client(): Client deletion
+
+Implementation notes:
+- Uses real SQLite in-memory database
+- Zero mocks - uses real SqlAlchemyClientRepository
+- Tests business logic with real database relationships
 """
 
 import pytest
