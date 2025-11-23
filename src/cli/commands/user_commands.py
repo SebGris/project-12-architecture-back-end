@@ -137,19 +137,19 @@ def update_user(
         callback=validators.validate_user_id_callback,
     ),
     username: str = typer.Option(
-        None, prompt="Nouveau nom d'utilisateur (laisser vide pour ne pas modifier)"
+        "", prompt="Nouveau nom d'utilisateur (laisser vide pour ne pas modifier)"
     ),
     first_name: str = typer.Option(
-        None, prompt="Nouveau prénom (laisser vide pour ne pas modifier)"
+        "", prompt="Nouveau prénom (laisser vide pour ne pas modifier)"
     ),
     last_name: str = typer.Option(
-        None, prompt="Nouveau nom (laisser vide pour ne pas modifier)"
+        "", prompt="Nouveau nom (laisser vide pour ne pas modifier)"
     ),
     email: str = typer.Option(
-        None, prompt="Nouvel email (laisser vide pour ne pas modifier)"
+        "", prompt="Nouvel email (laisser vide pour ne pas modifier)"
     ),
     phone: str = typer.Option(
-        None, prompt="Nouveau téléphone (laisser vide pour ne pas modifier)"
+        "", prompt="Nouveau téléphone (laisser vide pour ne pas modifier)"
     ),
     department_choice: int = typer.Option(
         0,
