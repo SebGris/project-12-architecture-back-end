@@ -32,11 +32,18 @@ def test_cli_help_works(runner):
 def test_dependency_injection_wiring():
     """Test that dependency injection wiring is configured correctly."""
     from src.cli import commands
+    from src.cli.commands import auth_commands, user_commands, client_commands, contract_commands, event_commands
 
     container = Container()
 
     # Wire the container
-    container.wire(modules=[commands])
+    container.wire(modules=[
+        auth_commands,
+        user_commands,
+        client_commands,
+        contract_commands,
+        event_commands
+    ])
 
     # Verify that the container is wired
     assert hasattr(commands, "app")

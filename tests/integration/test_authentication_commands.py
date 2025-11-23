@@ -63,7 +63,7 @@ class TestWhoamiWithoutAuthentication:
         WHEN whoami command is executed
         THEN it should display an error message and exit with code 1
         """
-        mock_container = mocker.patch("src.cli.commands.Container")
+        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         mock_container.return_value.auth_service.return_value.get_current_user.return_value = None
 
         # Execute whoami command
@@ -86,7 +86,7 @@ class TestLoginCommand:
         WHEN login command is executed
         THEN it should authenticate, generate token, and save it
         """
-        mock_container = mocker.patch("src.cli.commands.Container")
+        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         # Mock auth_service
         mock_auth_service = mocker.MagicMock()
         mock_auth_service.authenticate.return_value = test_user
@@ -129,7 +129,7 @@ class TestLoginCommand:
         WHEN login command is executed
         THEN it should display an error and exit with code 1
         """
-        mock_container = mocker.patch("src.cli.commands.Container")
+        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         # Mock auth_service to return None (authentication failed)
         mock_auth_service = mocker.MagicMock()
         mock_auth_service.authenticate.return_value = None
@@ -154,7 +154,7 @@ class TestTokenStorage:
         WHEN token is saved
         THEN the token file should exist and contain the JWT token
         """
-        mock_container = mocker.patch("src.cli.commands.Container")
+        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         # Mock auth_service
         mock_auth_service = mocker.MagicMock()
         mock_auth_service.authenticate.return_value = test_user
@@ -201,7 +201,7 @@ class TestWhoamiWithAuthentication:
         WHEN whoami command is executed
         THEN it should display user information
         """
-        mock_container = mocker.patch("src.cli.commands.Container")
+        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         # Mock auth_service to return authenticated user
         mock_auth_service = mocker.MagicMock()
         mock_auth_service.get_current_user.return_value = test_user
@@ -233,7 +233,7 @@ class TestLogoutCommand:
         mock_token_file.write_text("fake.jwt.token")
         assert mock_token_file.exists()
 
-        mock_container = mocker.patch("src.cli.commands.Container")
+        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         # Mock auth_service
         mock_auth_service = mocker.MagicMock()
         mock_auth_service.get_current_user.return_value = test_user
@@ -270,7 +270,7 @@ class TestLogoutCommand:
         WHEN logout command is executed
         THEN it should display an error message
         """
-        mock_container = mocker.patch("src.cli.commands.Container")
+        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         mock_container.return_value.auth_service.return_value.get_current_user.return_value = None
 
         # Execute logout
@@ -292,7 +292,7 @@ class TestAuthenticationFlow:
         WHEN login, whoami, then logout are executed
         THEN each command should work correctly in sequence
         """
-        mock_container = mocker.patch("src.cli.commands.Container")
+        mock_container = mocker.patch("src.cli.commands.auth_commands.Container")
         # Mock auth_service
         mock_auth_service = mocker.MagicMock()
         mock_auth_service.TOKEN_FILE = mock_token_file
