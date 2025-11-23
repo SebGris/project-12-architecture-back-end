@@ -27,32 +27,59 @@ def mock_container(mocker, mock_auth_service):
 
 
 @pytest.fixture
-def mock_commercial_user(mocker):
-    """Create a mock commercial user."""
-    user = mocker.Mock(spec=User)
-    user.id = 1
-    user.username = "commercial1"
-    user.department = Department.COMMERCIAL
+def commercial_user(db_session):
+    """Create a real commercial user in database."""
+    user = User(
+        username="commercial1",
+        email="commercial1@epicevents.com",
+        first_name="Bob",
+        last_name="Commercial",
+        phone="+33122222222",
+        department=Department.COMMERCIAL,
+        password_hash="",
+    )
+    user.set_password("password123")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
     return user
 
 
 @pytest.fixture
-def mock_gestion_user(mocker):
-    """Create a mock gestion user."""
-    user = mocker.Mock(spec=User)
-    user.id = 2
-    user.username = "admin"
-    user.department = Department.GESTION
+def gestion_user(db_session):
+    """Create a real gestion user in database."""
+    user = User(
+        username="admin",
+        email="admin@epicevents.com",
+        first_name="Alice",
+        last_name="Gestion",
+        phone="+33111111111",
+        department=Department.GESTION,
+        password_hash="",
+    )
+    user.set_password("password123")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
     return user
 
 
 @pytest.fixture
-def mock_support_user(mocker):
-    """Create a mock support user."""
-    user = mocker.Mock(spec=User)
-    user.id = 3
-    user.username = "support1"
-    user.department = Department.SUPPORT
+def support_user(db_session):
+    """Create a real support user in database."""
+    user = User(
+        username="support1",
+        email="support1@epicevents.com",
+        first_name="Charlie",
+        last_name="Support",
+        phone="+33133333333",
+        department=Department.SUPPORT,
+        password_hash="",
+    )
+    user.set_password("password123")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
     return user
 
 
@@ -76,11 +103,11 @@ class TestRequireDepartmentAuthentication:
         assert exc_info.value.exit_code == 1
         mock_auth_service.get_current_user.assert_called_once()
 
-    def test_authenticated_user_allowed(self, mocker, mock_container, mock_auth_service, mock_commercial_user):
+    def test_authenticated_user_allowed(self, mocker, mock_container, mock_auth_service, commercial_user):
         """GIVEN authenticated user with correct dept / WHEN calling decorated function / THEN succeeds"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_commercial_user
+        mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(Department.COMMERCIAL)
         def test_command(current_user: User):
@@ -97,11 +124,11 @@ class TestRequireDepartmentAuthentication:
 class TestRequireDepartmentPermissions:
     """Test department-based permissions."""
 
-    def test_wrong_department_single_dept(self, mocker, mock_container, mock_auth_service, mock_commercial_user):
+    def test_wrong_department_single_dept(self, mocker, mock_container, mock_auth_service, commercial_user):
         """GIVEN user from wrong dept / WHEN single dept required / THEN raises typer.Exit"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_commercial_user
+        mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(Department.GESTION)  # Requires GESTION, user is COMMERCIAL
         def test_command(current_user: User):
@@ -113,11 +140,11 @@ class TestRequireDepartmentPermissions:
 
         assert exc_info.value.exit_code == 1
 
-    def test_wrong_department_multiple_depts(self, mocker, mock_container, mock_auth_service, mock_support_user):
+    def test_wrong_department_multiple_depts(self, mocker, mock_container, mock_auth_service, support_user):
         """GIVEN user from wrong dept / WHEN multiple depts allowed / THEN raises typer.Exit"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_support_user
+        mock_auth_service.get_current_user.return_value = support_user
 
         @require_department(Department.COMMERCIAL, Department.GESTION)  # User is SUPPORT
         def test_command(current_user: User):
@@ -129,11 +156,11 @@ class TestRequireDepartmentPermissions:
 
         assert exc_info.value.exit_code == 1
 
-    def test_correct_department_multiple_depts_first(self, mocker, mock_container, mock_auth_service, mock_commercial_user):
+    def test_correct_department_multiple_depts_first(self, mocker, mock_container, mock_auth_service, commercial_user):
         """GIVEN user from allowed dept / WHEN multiple depts allowed / THEN succeeds"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_commercial_user
+        mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(Department.COMMERCIAL, Department.GESTION)
         def test_command(current_user: User):
@@ -145,11 +172,11 @@ class TestRequireDepartmentPermissions:
         # Assert
         assert result == "success: COMMERCIAL"
 
-    def test_correct_department_multiple_depts_second(self, mocker, mock_container, mock_auth_service, mock_gestion_user):
+    def test_correct_department_multiple_depts_second(self, mocker, mock_container, mock_auth_service, gestion_user):
         """GIVEN user from 2nd allowed dept / WHEN multiple depts allowed / THEN succeeds"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_gestion_user
+        mock_auth_service.get_current_user.return_value = gestion_user
 
         @require_department(Department.COMMERCIAL, Department.GESTION)
         def test_command(current_user: User):
@@ -165,11 +192,11 @@ class TestRequireDepartmentPermissions:
 class TestRequireDepartmentNoRestriction:
     """Test decorator with no department restriction (auth only)."""
 
-    def test_no_department_restriction_authenticated(self, mocker, mock_container, mock_auth_service, mock_commercial_user):
+    def test_no_department_restriction_authenticated(self, mocker, mock_container, mock_auth_service, commercial_user):
         """GIVEN authenticated user / WHEN no dept restriction / THEN succeeds"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_commercial_user
+        mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department()  # No department restriction
         def test_command(current_user: User):
@@ -201,11 +228,11 @@ class TestRequireDepartmentNoRestriction:
 class TestRequireDepartmentCurrentUserInjection:
     """Test current_user parameter injection."""
 
-    def test_function_without_current_user_param(self, mocker, mock_container, mock_auth_service, mock_commercial_user):
+    def test_function_without_current_user_param(self, mocker, mock_container, mock_auth_service, commercial_user):
         """GIVEN function without current_user param / WHEN decorated / THEN works without injection"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_commercial_user
+        mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(Department.COMMERCIAL)
         def test_command():  # No current_user parameter
@@ -217,11 +244,11 @@ class TestRequireDepartmentCurrentUserInjection:
         # Assert
         assert result == "success without user"
 
-    def test_function_with_current_user_param(self, mocker, mock_container, mock_auth_service, mock_commercial_user):
+    def test_function_with_current_user_param(self, mocker, mock_container, mock_auth_service, commercial_user):
         """GIVEN function with current_user param / WHEN decorated / THEN injects user"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_commercial_user
+        mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(Department.COMMERCIAL)
         def test_command(current_user: User):  # Has current_user parameter
@@ -233,11 +260,11 @@ class TestRequireDepartmentCurrentUserInjection:
         # Assert
         assert result == "user: commercial1"
 
-    def test_function_with_args_and_current_user(self, mocker, mock_container, mock_auth_service, mock_gestion_user):
+    def test_function_with_args_and_current_user(self, mocker, mock_container, mock_auth_service, gestion_user):
         """GIVEN function with args and current_user / WHEN decorated / THEN preserves args and injects user"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_gestion_user
+        mock_auth_service.get_current_user.return_value = gestion_user
 
         @require_department(Department.GESTION)
         def test_command(name: str, age: int, current_user: User):
@@ -249,11 +276,11 @@ class TestRequireDepartmentCurrentUserInjection:
         # Assert
         assert result == "John (30) - admin"
 
-    def test_function_with_kwargs_and_current_user(self, mocker, mock_container, mock_auth_service, mock_support_user):
+    def test_function_with_kwargs_and_current_user(self, mocker, mock_container, mock_auth_service, support_user):
         """GIVEN function with kwargs and current_user / WHEN decorated / THEN preserves kwargs and injects user"""
         # Arrange
         mocker.patch('src.containers.Container', return_value=mock_container)
-        mock_auth_service.get_current_user.return_value = mock_support_user
+        mock_auth_service.get_current_user.return_value = support_user
 
         @require_department(Department.SUPPORT)
         def test_command(current_user: User, event_id: int = 1, notes: str = "default"):
@@ -272,9 +299,9 @@ class TestRequireDepartmentAllDepartments:
     @pytest.mark.parametrize(
         "user_fixture_name,expected_department",
         [
-            ("mock_commercial_user", "COMMERCIAL"),
-            ("mock_gestion_user", "GESTION"),
-            ("mock_support_user", "SUPPORT"),
+            ("commercial_user", "COMMERCIAL"),
+            ("gestion_user", "GESTION"),
+            ("support_user", "SUPPORT"),
         ],
         ids=["commercial", "gestion", "support"],
     )
