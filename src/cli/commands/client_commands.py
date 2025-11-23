@@ -3,30 +3,22 @@ from sqlalchemy.exc import IntegrityError
 
 from src.cli import console
 from src.cli import validators
+from src.cli.constants import (
+    LABEL_ID,
+    LABEL_EMAIL,
+    LABEL_PHONE,
+    LABEL_CONTACT_COMMERCIAL,
+    LABEL_DATE_CREATION,
+    FORMAT_DATETIME,
+    ERROR_UNEXPECTED,
+    PROMPT_TELEPHONE,
+)
 from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
 
 app = typer.Typer()
-
-# Constants for field labels to avoid string duplication (SonarQube python:S1192)
-LABEL_ID = "ID"
-LABEL_EMAIL = "Email"
-LABEL_PHONE = "Téléphone"
-LABEL_CONTACT_COMMERCIAL = "Contact commercial"
-LABEL_DATE_CREATION = "Date de création"
-
-# Constants for formats
-FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S"
-
-# Constants for error messages
-ERROR_UNEXPECTED = "Erreur inattendue: {e}"
-ERROR_INTEGRITY = "Erreur d'intégrité de la base de données: {error_msg}"
-ERROR_FOREIGN_KEY = "foreign key"
-
-# Additional constants for prompts
-PROMPT_TELEPHONE = "Téléphone"
 
 
 @app.command()

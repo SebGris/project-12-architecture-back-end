@@ -4,6 +4,11 @@ from datetime import datetime
 
 from src.cli import console
 from src.cli import validators
+from src.cli.constants import (
+    LABEL_ID,
+    FORMAT_DATETIME,
+    ERROR_UNEXPECTED,
+)
 from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
@@ -11,8 +16,7 @@ from src.cli.permissions import require_department
 
 app = typer.Typer()
 
-# Constants for field labels to avoid string duplication (SonarQube python:S1192)
-LABEL_ID = "ID"
+# Event-specific constants
 LABEL_SUPPORT_CONTACT = "Support contact"
 LABEL_EVENT_ID = "Event ID"
 LABEL_CONTRACT_ID = "Contract ID"
@@ -24,16 +28,6 @@ LABEL_LOCATION = "Location"
 LABEL_ATTENDEES = "Attendees"
 LABEL_NOTES = "Notes"
 LABEL_NON_ASSIGNE = "Non assigné"
-
-# Constants for formats
-FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S"
-
-# Constants for error messages
-ERROR_UNEXPECTED = "Erreur inattendue: {e}"
-ERROR_INTEGRITY = "Erreur d'intégrité de la base de données: {error_msg}"
-ERROR_FOREIGN_KEY = "foreign key"
-
-# Additional constants for prompts
 PROMPT_ID_CONTRAT = "ID du contrat"
 
 

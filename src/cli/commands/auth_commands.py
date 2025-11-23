@@ -1,16 +1,16 @@
 import typer
 
 from src.cli import console
+from src.cli.constants import (
+    LABEL_USERNAME,
+    LABEL_DEPARTMENT,
+    LABEL_ID,
+    LABEL_EMAIL,
+    LABEL_PHONE,
+)
 from src.containers import Container
 
 app = typer.Typer()
-
-# Constants for field labels to avoid string duplication (SonarQube python:S1192)
-LABEL_USERNAME = "Nom d'utilisateur"
-LABEL_DEPARTMENT = "Département"
-LABEL_ID = "ID"
-LABEL_EMAIL = "Email"
-LABEL_PHONE = "Téléphone"
 
 
 @app.command()

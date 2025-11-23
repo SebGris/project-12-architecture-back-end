@@ -4,6 +4,14 @@ from decimal import Decimal
 
 from src.cli import console
 from src.cli import validators
+from src.cli.constants import (
+    LABEL_ID,
+    LABEL_CONTACT_COMMERCIAL,
+    LABEL_DATE_CREATION,
+    FORMAT_DATETIME,
+    FORMAT_DATE,
+    ERROR_UNEXPECTED,
+)
 from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
@@ -11,31 +19,17 @@ from src.cli.permissions import require_department
 
 app = typer.Typer()
 
-# Constants for field labels to avoid string duplication (SonarQube python:S1192)
-LABEL_ID = "ID"
-LABEL_CONTACT_COMMERCIAL = "Contact commercial"
-LABEL_DATE_CREATION = "Date de création"
+# Contract-specific constants
 LABEL_MONTANT_TOTAL = "Montant total"
 LABEL_MONTANT_RESTANT = "Montant restant à payer"
 LABEL_CLIENT = "Client"
 LABEL_STATUT = "Statut"
 LABEL_ID_CONTRAT = "ID du contrat"
+PROMPT_ID_CONTRAT = "ID du contrat"
 
-# Constants for formats
-FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S"
-FORMAT_DATE = "%Y-%m-%d"
-
-# Constants for status messages
+# Status messages
 STATUS_SIGNED = "Signé ✓"
 STATUS_UNSIGNED = "Non signé ✗"
-
-# Constants for error messages
-ERROR_UNEXPECTED = "Erreur inattendue: {e}"
-ERROR_INTEGRITY = "Erreur d'intégrité de la base de données: {error_msg}"
-ERROR_FOREIGN_KEY = "foreign key"
-
-# Additional constants for prompts
-PROMPT_ID_CONTRAT = "ID du contrat"
 
 
 @app.command()
