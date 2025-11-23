@@ -19,7 +19,7 @@ class Base(DeclarativeBase):
     pass
 
 
-# Configuration de la base de données
+# Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/epic_events_crm.db")
 _engine = create_engine(DATABASE_URL, echo=False)
 _SessionLocal = orm.sessionmaker(autocommit=False, autoflush=False, bind=_engine)

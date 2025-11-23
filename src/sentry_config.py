@@ -1,6 +1,6 @@
-"""Configuration Sentry pour Epic Events CRM.
+"""Sentry configuration for Epic Events CRM.
 
-Ce module configure Sentry pour la journalisation et le monitoring des erreurs.
+This module configures Sentry for error logging and monitoring.
 """
 
 import os
@@ -14,65 +14,65 @@ load_dotenv()
 def init_sentry():
     """Initialize Sentry SDK for error tracking and monitoring.
 
-    Cette fonction configure Sentry avec les paramètres suivants :
-    - DSN depuis la variable d'environnement SENTRY_DSN
-    - Traces d'exécution pour le monitoring de performance
-    - Profils pour l'analyse de performance détaillée
-    - Environnement (dev/staging/production)
+    This function configures Sentry with the following parameters:
+    - DSN from SENTRY_DSN environment variable
+    - Execution traces for performance monitoring
+    - Profiles for detailed performance analysis
+    - Environment (dev/staging/production)
 
-    Si SENTRY_DSN n'est pas défini, Sentry ne sera pas initialisé.
+    If SENTRY_DSN is not defined, Sentry will not be initialized.
     """
     sentry_dsn = os.getenv("SENTRY_DSN")
     environment = os.getenv("ENVIRONMENT", "development")
 
     if not sentry_dsn:
-        # Sentry non configuré - mode développement
-        print("[INFO] Sentry non configuré (SENTRY_DSN manquant)")
+        # Sentry not configured - development mode
+        print("[INFO] Sentry not configured (SENTRY_DSN missing)")
         return False
 
     try:
         sentry_sdk.init(
             dsn=sentry_dsn,
 
-            # Configuration du monitoring de performance
+            # Performance monitoring configuration
             # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
             # Adjust this value in production to reduce overhead
             traces_sample_rate=1.0,
 
-            # Configuration des profils de performance
+            # Performance profiling configuration
             # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
             # Adjust this value in production
             profiles_sample_rate=1.0,
 
-            # Environnement (development, staging, production)
+            # Environment (development, staging, production)
             environment=environment,
 
-            # Activer le logging des requêtes SQL
+            # Enable SQL query logging
             enable_tracing=True,
 
-            # Release version (optionnel - à configurer avec git ou CI/CD)
+            # Release version (optional - configure with git or CI/CD)
             # release="epic-events-crm@1.0.0",
 
-            # Options supplémentaires
-            send_default_pii=False,  # Ne pas envoyer d'informations personnelles
-            attach_stacktrace=True,  # Attacher la stack trace à tous les messages
-            max_breadcrumbs=50,      # Nombre maximum de breadcrumbs
+            # Additional options
+            send_default_pii=False,  # Do not send personal information
+            attach_stacktrace=True,  # Attach stack trace to all messages
+            max_breadcrumbs=50,      # Maximum number of breadcrumbs
         )
 
-        print(f"[INFO] Sentry initialisé avec succès (environnement: {environment})")
+        print(f"[INFO] Sentry initialized successfully (environment: {environment})")
         return True
 
     except Exception as e:
-        print(f"[ERREUR] Échec de l'initialisation de Sentry: {e}")
+        print(f"[ERROR] Failed to initialize Sentry: {e}")
         return False
 
 
 def capture_exception(exception: Exception, context: dict = None):
-    """Capture une exception et l'envoie à Sentry.
+    """Capture an exception and send it to Sentry.
 
     Args:
-        exception: L'exception à capturer
-        context: Dictionnaire de contexte additionnel (optionnel)
+        exception: The exception to capture
+        context: Additional context dictionary (optional)
 
     Example:
         try:
@@ -87,15 +87,15 @@ def capture_exception(exception: Exception, context: dict = None):
 
 
 def capture_message(message: str, level: str = "info", context: dict = None):
-    """Capture un message et l'envoie à Sentry.
+    """Capture a message and send it to Sentry.
 
     Args:
-        message: Le message à enregistrer
-        level: Niveau de gravité ("debug", "info", "warning", "error", "fatal")
-        context: Dictionnaire de contexte additionnel (optionnel)
+        message: The message to record
+        level: Severity level ("debug", "info", "warning", "error", "fatal")
+        context: Additional context dictionary (optional)
 
     Example:
-        capture_message("Tentative de connexion échouée", level="warning",
+        capture_message("Login attempt failed", level="warning",
                        context={"username": username})
     """
     if context:
@@ -105,12 +105,12 @@ def capture_message(message: str, level: str = "info", context: dict = None):
 
 
 def set_user_context(user_id: int, username: str, department: str = None):
-    """Définir le contexte utilisateur pour Sentry.
+    """Set user context for Sentry.
 
     Args:
-        user_id: ID de l'utilisateur
-        username: Nom d'utilisateur
-        department: Département de l'utilisateur (optionnel)
+        user_id: User ID
+        username: Username
+        department: User department (optional)
 
     Example:
         set_user_context(user.id, user.username, user.department.value)
@@ -123,24 +123,24 @@ def set_user_context(user_id: int, username: str, department: str = None):
 
 
 def clear_user_context():
-    """Effacer le contexte utilisateur (lors de la déconnexion)."""
+    """Clear user context (during logout)."""
     sentry_sdk.set_user(None)
 
 
 def add_breadcrumb(message: str, category: str = "action", level: str = "info", data: dict = None):
-    """Ajouter un breadcrumb pour tracer le parcours de l'utilisateur.
+    """Add a breadcrumb to trace user journey.
 
-    Les breadcrumbs sont des événements qui permettent de retracer les actions
-    de l'utilisateur avant qu'une erreur ne se produise.
+    Breadcrumbs are events that allow retracing user actions
+    before an error occurs.
 
     Args:
-        message: Description de l'action
-        category: Catégorie de l'action (action, navigation, http, etc.)
-        level: Niveau de gravité
-        data: Données additionnelles (optionnel)
+        message: Action description
+        category: Action category (action, navigation, http, etc.)
+        level: Severity level
+        data: Additional data (optional)
 
     Example:
-        add_breadcrumb("Création d'un client", category="action",
+        add_breadcrumb("Creating a client", category="action",
                       data={"client_email": email})
     """
     sentry_sdk.add_breadcrumb(

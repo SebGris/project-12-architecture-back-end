@@ -72,18 +72,17 @@ def login(
     username: str = typer.Option(..., prompt=LABEL_USERNAME),
     password: str = typer.Option(..., prompt="Mot de passe", hide_input=True),
 ):
-    """
-    Se connecter à l'application Epic Events CRM.
+    """Login to the Epic Events CRM application.
 
-    Cette commande permet de s'authentifier avec un nom d'utilisateur et un mot de passe.
-    Un jeton JWT est généré et stocké localement pour une authentification persistante.
+    This command authenticates with a username and password.
+    A JWT token is generated and stored locally for persistent authentication.
 
     Args:
-        username: Nom d'utilisateur
-        password: Mot de passe (masqué lors de la saisie)
+        username: Username
+        password: Password (hidden during input)
 
     Returns:
-        None. Affiche un message de succès ou d'erreur.
+        None. Displays success or error message.
 
     Examples:
         epicevents login
@@ -124,13 +123,12 @@ def login(
 
 @app.command()
 def logout():
-    """
-    Se déconnecter de l'application Epic Events CRM.
+    """Logout from the Epic Events CRM application.
 
-    Cette commande supprime le jeton JWT stocké localement.
+    This command deletes the locally stored JWT token.
 
     Returns:
-        None. Affiche un message de confirmation.
+        None. Displays confirmation message.
 
     Examples:
         epicevents logout
@@ -170,13 +168,12 @@ def logout():
 
 @app.command()
 def whoami():
-    """
-    Afficher les informations de l'utilisateur actuellement connecté.
+    """Display information about the currently authenticated user.
 
-    Cette commande affiche les détails de l'utilisateur authentifié.
+    This command shows details of the authenticated user.
 
     Returns:
-        None. Affiche les informations de l'utilisateur ou un message d'erreur.
+        None. Displays user information or error message.
 
     Examples:
         epicevents whoami
@@ -236,29 +233,28 @@ def create_client(
         callback=validators.validate_sales_contact_id_callback,
     ),
 ):
-    """
-    Créer un nouveau client dans le système CRM.
+    """Create a new client in the CRM system.
 
-    Cette commande permet d'enregistrer un nouveau client avec ses informations
-    de contact et de l'associer à un contact commercial du département COMMERCIAL.
+    This command registers a new client with their contact information
+    and associates them with a sales contact from the COMMERCIAL department.
 
     Args:
-        first_name: Prénom du client (minimum 2 caractères)
-        last_name: Nom du client (minimum 2 caractères)
-        email: Adresse email valide du client
-        phone: Numéro de téléphone (minimum 10 chiffres)
-        company_name: Nom de l'entreprise du client
-        sales_contact_id: ID d'un utilisateur du département COMMERCIAL (auto-assigné si vide pour COMMERCIAL)
+        first_name: Client's first name (minimum 2 characters)
+        last_name: Client's last name (minimum 2 characters)
+        email: Valid client email address
+        phone: Phone number (minimum 10 digits)
+        company_name: Client's company name
+        sales_contact_id: ID of a COMMERCIAL department user (auto-assigned if empty for COMMERCIAL)
 
     Returns:
-        None. Affiche un message de succès avec les détails du client créé.
+        None. Displays success message with created client details.
 
     Raises:
-        typer.Exit: En cas d'erreur (données invalides, contact inexistant, etc.)
+        typer.Exit: On error (invalid data, non-existent contact, etc.)
 
     Examples:
         epicevents create-client
-        # Suit les prompts interactifs pour saisir les informations
+        # Follow interactive prompts to enter information
     """
     # Manually get services from container
     container = Container()
@@ -393,31 +389,30 @@ def create_user(
         callback=validators.validate_department_callback,
     ),
 ):
-    """
-    Créer un nouvel utilisateur dans le système CRM.
+    """Create a new user in the CRM system.
 
-    Cette commande permet d'enregistrer un nouvel utilisateur avec ses informations
-    personnelles et professionnelles. Le mot de passe est automatiquement hashé
-    avant d'être stocké en base de données.
+    This command registers a new user with their personal and professional
+    information. The password is automatically hashed before being stored
+    in the database.
 
     Args:
-        username: Nom d'utilisateur unique (4-50 caractères, lettres/chiffres/_/-)
-        first_name: Prénom de l'utilisateur (minimum 2 caractères)
-        last_name: Nom de l'utilisateur (minimum 2 caractères)
-        email: Adresse email valide et unique
-        phone: Numéro de téléphone (minimum 10 chiffres)
-        password: Mot de passe (minimum 8 caractères, sera hashé)
-        department_choice: Choix du département (1=COMMERCIAL, 2=GESTION, 3=SUPPORT)
+        username: Unique username (4-50 characters, letters/digits/_/-)
+        first_name: User's first name (minimum 2 characters)
+        last_name: User's last name (minimum 2 characters)
+        email: Valid and unique email address
+        phone: Phone number (minimum 10 digits)
+        password: Password (minimum 8 characters, will be hashed)
+        department_choice: Department choice (1=COMMERCIAL, 2=GESTION, 3=SUPPORT)
 
     Returns:
-        None. Affiche un message de succès avec les détails de l'utilisateur créé.
+        None. Displays success message with created user details.
 
     Raises:
-        typer.Exit: En cas d'erreur (username/email déjà utilisé, données invalides, etc.)
+        typer.Exit: On error (username/email already in use, invalid data, etc.)
 
     Examples:
         epicevents create-user
-        # Suit les prompts interactifs pour saisir les informations
+        # Follow interactive prompts to enter information
     """
     # Manually get services from container
     container = Container()
@@ -508,26 +503,25 @@ def update_user(
         prompt=f"Nouveau département (1={Department.COMMERCIAL.value}, 2={Department.GESTION.value}, 3={Department.SUPPORT.value}, 0=pas de changement)",
     ),
 ):
-    """
-    Mettre à jour les informations d'un utilisateur.
+    """Update user information.
 
-    Cette commande permet de modifier les informations d'un utilisateur existant.
-    Les champs laissés vides ne seront pas modifiés.
+    This command modifies information for an existing user.
+    Fields left empty will not be modified.
 
     Args:
-        user_id: ID de l'utilisateur à modifier
-        username: Nouveau nom d'utilisateur (optionnel)
-        first_name: Nouveau prénom (optionnel)
-        last_name: Nouveau nom (optionnel)
-        email: Nouvel email (optionnel)
-        phone: Nouveau téléphone (optionnel)
-        department_choice: Nouveau département (optionnel)
+        user_id: ID of the user to modify
+        username: New username (optional)
+        first_name: New first name (optional)
+        last_name: New last name (optional)
+        email: New email (optional)
+        phone: New phone number (optional)
+        department_choice: New department (optional)
 
     Returns:
-        None. Affiche un message de succès avec les détails.
+        None. Displays success message with details.
 
     Raises:
-        typer.Exit: En cas d'erreur (utilisateur inexistant, données invalides, etc.)
+        typer.Exit: On error (non-existent user, invalid data, etc.)
 
     Examples:
         epicevents update-user
@@ -633,21 +627,20 @@ def delete_user(
         False, prompt="Êtes-vous sûr de vouloir supprimer cet utilisateur ? (oui/non)"
     ),
 ):
-    """
-    Supprimer un utilisateur du système CRM.
+    """Delete a user from the CRM system.
 
-    Cette commande supprime définitivement un utilisateur de la base de données.
-    ATTENTION: Cette action est irréversible.
+    This command permanently deletes a user from the database.
+    WARNING: This action is irreversible.
 
     Args:
-        user_id: ID de l'utilisateur à supprimer
-        confirm: Confirmation de suppression
+        user_id: ID of the user to delete
+        confirm: Deletion confirmation
 
     Returns:
-        None. Affiche un message de confirmation.
+        None. Displays confirmation message.
 
     Raises:
-        typer.Exit: En cas d'erreur (utilisateur inexistant, confirmation manquante, etc.)
+        typer.Exit: On error (non-existent user, missing confirmation, etc.)
 
     Examples:
         epicevents delete-user --user-id 5 --confirm
@@ -720,27 +713,26 @@ def create_contract(
     ),
     is_signed: bool = typer.Option(False, prompt="Contrat signé ?"),
 ):
-    """
-    Créer un nouveau contrat dans le système CRM.
+    """Create a new contract in the CRM system.
 
-    Cette commande permet d'enregistrer un nouveau contrat associé à un client
-    existant, avec des montants et un statut de signature.
+    This command registers a new contract associated with an existing client,
+    with amounts and signature status.
 
     Args:
-        client_id: ID du client (doit exister dans la base)
-        total_amount: Montant total du contrat (doit être >= 0)
-        remaining_amount: Montant restant à payer (doit être >= 0 et <= total_amount)
-        is_signed: Statut de signature du contrat (True/False)
+        client_id: Client ID (must exist in database)
+        total_amount: Total contract amount (must be >= 0)
+        remaining_amount: Remaining amount to pay (must be >= 0 and <= total_amount)
+        is_signed: Contract signature status (True/False)
 
     Returns:
-        None. Affiche un message de succès avec les détails du contrat créé.
+        None. Displays success message with created contract details.
 
     Raises:
-        typer.Exit: En cas d'erreur (client inexistant, montants invalides, etc.)
+        typer.Exit: On error (non-existent client, invalid amounts, etc.)
 
     Examples:
         epicevents create-contract
-        # Suit les prompts interactifs pour saisir les informations
+        # Follow interactive prompts to enter information
     """
     from decimal import Decimal
 
@@ -836,24 +828,23 @@ def sign_contract(
         callback=validators.validate_contract_id_callback,
     ),
 ):
-    """
-    Signer un contrat existant.
+    """Sign an existing contract.
 
-    Cette commande permet à un commercial de signer un contrat pour l'un de ses clients.
-    Seul le commercial assigné au client peut signer le contrat.
+    This command allows a sales representative to sign a contract for one of their clients.
+    Only the sales contact assigned to the client can sign the contract.
 
     Args:
-        contract_id: ID du contrat à signer
+        contract_id: ID of the contract to sign
 
     Returns:
-        None. Affiche un message de succès avec les détails du contrat signé.
+        None. Displays success message with signed contract details.
 
     Raises:
-        typer.Exit: En cas d'erreur (contrat inexistant, déjà signé, non autorisé, etc.)
+        typer.Exit: On error (non-existent contract, already signed, unauthorized, etc.)
 
     Examples:
         epicevents sign-contract --contract-id 1
-        # ou de manière interactive
+        # or interactively
         epicevents sign-contract
     """
     # Get container and services
@@ -937,25 +928,24 @@ def update_contract_payment(
         callback=validators.validate_amount_callback,
     ),
 ):
-    """
-    Enregistrer un paiement pour un contrat.
+    """Record a payment for a contract.
 
-    Cette commande permet à un commercial d'enregistrer un paiement effectué par un client.
-    Le montant restant du contrat sera automatiquement mis à jour.
+    This command allows a sales representative to record a payment made by a client.
+    The contract's remaining amount will be automatically updated.
 
     Args:
-        contract_id: ID du contrat
-        amount_paid: Montant du paiement effectué
+        contract_id: Contract ID
+        amount_paid: Payment amount made
 
     Returns:
-        None. Affiche un message de succès avec les nouveaux montants.
+        None. Displays success message with updated amounts.
 
     Raises:
-        typer.Exit: En cas d'erreur (contrat inexistant, montant invalide, non autorisé, etc.)
+        typer.Exit: On error (non-existent contract, invalid amount, unauthorized, etc.)
 
     Examples:
         epicevents update-contract-payment --contract-id 1 --amount-paid 5000
-        # ou de manière interactive
+        # or interactively
         epicevents update-contract-payment
     """
     from decimal import Decimal
@@ -1071,31 +1061,30 @@ def create_event(
         0, prompt="ID du contact support (0 si aucun)"
     ),
 ):
-    """
-    Créer un nouvel événement dans le système CRM.
+    """Create a new event in the CRM system.
 
-    Cette commande permet d'enregistrer un nouvel événement associé à un contrat
-    existant, avec des détails sur la date, le lieu et le nombre de participants.
+    This command registers a new event associated with an existing contract,
+    with details about the date, location and number of attendees.
 
     Args:
-        name: Nom de l'événement (minimum 3 caractères)
-        contract_id: ID du contrat associé (doit exister dans la base)
-        event_start: Date et heure de début (format: YYYY-MM-DD HH:MM)
-        event_end: Date et heure de fin (format: YYYY-MM-DD HH:MM)
-        location: Lieu de l'événement
-        attendees: Nombre de participants attendus (>= 0)
-        notes: Notes optionnelles sur l'événement
-        support_contact_id: ID optionnel du contact support (utilisateur SUPPORT)
+        name: Event name (minimum 3 characters)
+        contract_id: Associated contract ID (must exist in database)
+        event_start: Start date and time (format: YYYY-MM-DD HH:MM)
+        event_end: End date and time (format: YYYY-MM-DD HH:MM)
+        location: Event location
+        attendees: Expected number of attendees (>= 0)
+        notes: Optional notes about the event
+        support_contact_id: Optional support contact ID (SUPPORT user)
 
     Returns:
-        None. Affiche un message de succès avec les détails de l'événement créé.
+        None. Displays success message with created event details.
 
     Raises:
-        typer.Exit: En cas d'erreur (contrat inexistant, dates invalides, etc.)
+        typer.Exit: On error (non-existent contract, invalid dates, etc.)
 
     Examples:
         epicevents create-event
-        # Suit les prompts interactifs pour saisir les informations
+        # Follow interactive prompts to enter information
     """
     from datetime import datetime
 
@@ -1259,21 +1248,20 @@ def assign_support(
         callback=validators.validate_user_id_callback,
     ),
 ):
-    """
-    Assigner un contact support à un événement.
+    """Assign a support contact to an event.
 
-    Cette commande permet d'assigner ou de réassigner un utilisateur du département
-    SUPPORT à un événement existant.
+    This command assigns or reassigns a SUPPORT department user
+    to an existing event.
 
     Args:
-        event_id: ID de l'événement
-        support_contact_id: ID de l'utilisateur SUPPORT à assigner
+        event_id: Event ID
+        support_contact_id: SUPPORT user ID to assign
 
     Returns:
-        None. Affiche un message de succès avec les détails.
+        None. Displays success message with details.
 
     Raises:
-        typer.Exit: En cas d'erreur (événement inexistant, utilisateur non SUPPORT, etc.)
+        typer.Exit: On error (non-existent event, non-SUPPORT user, etc.)
 
     Examples:
         epicevents assign-support
@@ -1351,13 +1339,12 @@ def assign_support(
 @app.command()
 @require_department()
 def filter_unsigned_contracts():
-    """
-    Afficher tous les contrats non signés.
+    """Display all unsigned contracts.
 
-    Cette commande liste tous les contrats qui n'ont pas encore été signés.
+    This command lists all contracts that have not yet been signed.
 
     Returns:
-        None. Affiche la liste des contrats non signés.
+        None. Displays the list of unsigned contracts.
 
     Examples:
         epicevents filter-unsigned-contracts
@@ -1401,13 +1388,12 @@ def filter_unsigned_contracts():
 @app.command()
 @require_department()
 def filter_unpaid_contracts():
-    """
-    Afficher tous les contrats non soldés (montant restant > 0).
+    """Display all unpaid contracts (remaining amount > 0).
 
-    Cette commande liste tous les contrats qui ont un montant restant à payer.
+    This command lists all contracts that have a remaining amount to pay.
 
     Returns:
-        None. Affiche la liste des contrats non soldés.
+        None. Displays the list of unpaid contracts.
 
     Examples:
         epicevents filter-unpaid-contracts
@@ -1455,13 +1441,12 @@ def filter_unpaid_contracts():
 @app.command()
 @require_department()
 def filter_unassigned_events():
-    """
-    Afficher tous les événements sans contact support assigné.
+    """Display all events without assigned support contact.
 
-    Cette commande liste tous les événements qui n'ont pas encore de contact support.
+    This command lists all events that do not yet have a support contact.
 
     Returns:
-        None. Affiche la liste des événements non assignés.
+        None. Displays the list of unassigned events.
 
     Examples:
         epicevents filter-unassigned-events
@@ -1512,14 +1497,13 @@ def filter_unassigned_events():
 @app.command()
 @require_department(Department.SUPPORT)
 def filter_my_events():
-    """
-    Afficher mes événements assignés.
+    """Display my assigned events.
 
-    Cette commande liste tous les événements assignés à l'utilisateur SUPPORT connecté.
-    Aucun paramètre n'est nécessaire, l'utilisateur est automatiquement détecté.
+    This command lists all events assigned to the logged-in SUPPORT user.
+    No parameters are needed, the user is automatically detected.
 
     Returns:
-        None. Affiche la liste des événements assignés à l'utilisateur connecté.
+        None. Displays the list of events assigned to the logged-in user.
 
     Examples:
         epicevents filter-my-events
@@ -1601,25 +1585,24 @@ def update_client(
         prompt="Nouveau nom d'entreprise (laisser vide pour ne pas modifier)",
     ),
 ):
-    """
-    Mettre à jour les informations d'un client.
+    """Update client information.
 
-    Cette commande permet de modifier les informations d'un client existant.
-    Les champs laissés vides ne seront pas modifiés.
+    This command modifies information for an existing client.
+    Fields left empty will not be modified.
 
     Args:
-        client_id: ID du client à modifier
-        first_name: Nouveau prénom (optionnel)
-        last_name: Nouveau nom (optionnel)
-        email: Nouvel email (optionnel)
-        phone: Nouveau téléphone (optionnel)
-        company_name: Nouveau nom d'entreprise (optionnel)
+        client_id: ID of the client to modify
+        first_name: New first name (optional)
+        last_name: New last name (optional)
+        email: New email (optional)
+        phone: New phone number (optional)
+        company_name: New company name (optional)
 
     Returns:
-        None. Affiche un message de succès avec les détails.
+        None. Displays success message with details.
 
     Raises:
-        typer.Exit: En cas d'erreur (client inexistant, données invalides, etc.)
+        typer.Exit: On error (non-existent client, invalid data, etc.)
 
     Examples:
         epicevents update-client
@@ -1739,23 +1722,22 @@ def update_contract(
     ),
     is_signed: bool = typer.Option(None, prompt="Marquer comme signé ?"),
 ):
-    """
-    Mettre à jour les informations d'un contrat.
+    """Update contract information.
 
-    Cette commande permet de modifier les informations d'un contrat existant.
-    Les champs laissés vides ne seront pas modifiés.
+    This command modifies information for an existing contract.
+    Fields left empty will not be modified.
 
     Args:
-        contract_id: ID du contrat à modifier
-        total_amount: Nouveau montant total (optionnel)
-        remaining_amount: Nouveau montant restant (optionnel)
-        is_signed: Marquer comme signé (optionnel)
+        contract_id: ID of the contract to modify
+        total_amount: New total amount (optional)
+        remaining_amount: New remaining amount (optional)
+        is_signed: Mark as signed (optional)
 
     Returns:
-        None. Affiche un message de succès avec les détails.
+        None. Displays success message with details.
 
     Raises:
-        typer.Exit: En cas d'erreur (contrat inexistant, montants invalides, etc.)
+        typer.Exit: On error (non-existent contract, invalid amounts, etc.)
 
     Examples:
         epicevents update-contract
@@ -1905,26 +1887,25 @@ def update_event(
         None, prompt="Nouvelles notes (laisser vide pour ne pas modifier)"
     ),
 ):
-    """
-    Mettre à jour les informations d'un événement.
+    """Update event information.
 
-    Cette commande permet de modifier plusieurs champs d'un événement existant.
-    Les champs laissés vides ne seront pas modifiés.
+    This command modifies multiple fields of an existing event.
+    Fields left empty will not be modified.
 
     Args:
-        event_id: ID de l'événement à modifier
-        name: Nouveau nom de l'événement (optionnel)
-        event_start: Nouvelle date/heure de début (optionnel)
-        event_end: Nouvelle date/heure de fin (optionnel)
-        location: Nouveau lieu (optionnel)
-        attendees: Nouveau nombre de participants (optionnel)
-        notes: Nouvelles notes (optionnel)
+        event_id: ID of the event to modify
+        name: New event name (optional)
+        event_start: New start date/time (optional)
+        event_end: New end date/time (optional)
+        location: New location (optional)
+        attendees: New number of attendees (optional)
+        notes: New notes (optional)
 
     Returns:
-        None. Affiche un message de succès avec les détails mis à jour.
+        None. Displays success message with updated details.
 
     Raises:
-        typer.Exit: En cas d'erreur (événement inexistant, dates invalides, etc.)
+        typer.Exit: On error (non-existent event, invalid dates, etc.)
 
     Examples:
         epicevents update-event
