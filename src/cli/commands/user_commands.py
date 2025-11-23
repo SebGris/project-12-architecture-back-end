@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.cli import console
 from src.cli import validators
+from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
@@ -109,25 +110,13 @@ def create_user(
         )
 
     except IntegrityError as e:
-        error_msg = (
-            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
+        handle_integrity_error(
+            e,
+            {
+                "username": f"Le nom d'utilisateur '{username}' est déjà utilisé",
+                "email": f"L'email '{email}' est déjà utilisé par un autre utilisateur",
+            },
         )
-
-        if "unique" in error_msg or "duplicate" in error_msg:
-            if "username" in error_msg:
-                console.print_error(
-                    f"Le nom d'utilisateur '{username}' est déjà utilisé"
-                )
-            elif "email" in error_msg:
-                console.print_error(
-                    f"L'email '{email}' est déjà utilisé par un autre utilisateur"
-                )
-            else:
-                console.print_error(
-                    "Erreur: Un utilisateur avec ces informations existe déjà"
-                )
-        else:
-            console.print_error(ERROR_INTEGRITY.format(error_msg=error_msg))
         raise typer.Exit(code=1)
 
     except Exception as e:

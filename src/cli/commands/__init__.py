@@ -12,6 +12,9 @@ from .user_commands import app as user_app
 app = typer.Typer()
 
 # Mount sub-applications
+# No 'name' parameter = commands are added directly to root level
+# This allows: epicevents login, epicevents create-client, etc.
+# Instead of: epicevents auth login, epicevents client create-client
 app.add_typer(auth_app)
 app.add_typer(client_app)
 app.add_typer(contract_app)
