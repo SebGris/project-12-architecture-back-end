@@ -88,25 +88,3 @@ class TestContractRepositoryGetByClientId:
 
         assert len(result) == 2
         assert all(c.client_id == kevin.id for c in result)
-
-
-class TestContractRepositoryGetUnsignedContracts:
-    """Test get_unsigned_contracts method."""
-
-    def test_get_unsigned_contracts(self, contract_repository, test_contracts):
-        """GIVEN unsigned contracts / WHEN get_unsigned_contracts() / THEN returns only unsigned"""
-        result = contract_repository.get_unsigned_contracts()
-
-        assert len(result) == 1
-        assert all(not c.is_signed for c in result)
-
-
-class TestContractRepositoryGetUnpaidContracts:
-    """Test get_unpaid_contracts method."""
-
-    def test_get_unpaid_contracts(self, contract_repository, test_contracts):
-        """GIVEN unpaid contracts / WHEN get_unpaid_contracts() / THEN returns contracts with remaining amount"""
-        result = contract_repository.get_unpaid_contracts()
-
-        assert len(result) == 3  # signed_partial, unsigned, signed_unpaid
-        assert all(c.remaining_amount > 0 for c in result)

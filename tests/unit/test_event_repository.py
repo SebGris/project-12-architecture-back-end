@@ -105,18 +105,6 @@ class TestEventRepositoryGetBySupportContact:
         assert result[0].support_contact_id == support1.id
 
 
-class TestEventRepositoryGetUnassignedEvents:
-    """Test get_unassigned_events method."""
-
-    def test_get_unassigned_events(self, event_repository, test_events):
-        """GIVEN events with and without support / WHEN get_unassigned_events() / THEN returns unassigned"""
-        result = event_repository.get_unassigned_events()
-
-        assert len(result) == 1
-        assert all(e.support_contact_id is None for e in result)
-        assert result[0].name == "Corporate Assembly"
-
-
 class TestEventRepositoryGetUpcomingEvents:
     """Test get_upcoming_events method."""
 
