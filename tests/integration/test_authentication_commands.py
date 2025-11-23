@@ -1,5 +1,5 @@
 """
-Tests unitaires pour les commandes d'authentification CLI.
+Tests d'intégration pour les commandes d'authentification CLI.
 
 Tests couverts:
 - whoami sans authentification (doit échouer)
@@ -8,6 +8,11 @@ Tests couverts:
 - whoami avec authentification (doit afficher les infos)
 - logout (doit supprimer le token)
 - login avec credentials invalides (doit échouer)
+
+Note: Ces tests utilisent un vrai User en BDD (test_user) au lieu de mocks.
+Les mocks Container/AuthService sont gardés car ces tests vérifient
+le comportement CLI spécifique (stockage token, interactions fichiers).
+Les mocks Sentry sont légitimes (infrastructure externe monitoring).
 """
 
 import os
@@ -16,22 +21,27 @@ import pytest
 from typer.testing import CliRunner
 
 from src.cli.commands import app
-from src.models.user import Department
+from src.models.user import Department, User
 
 runner = CliRunner()
 
 
 @pytest.fixture
-def mock_user(mocker):
-    """Create a mock user for testing."""
-    user = mocker.Mock()
-    user.id = 1
-    user.username = "admin"
-    user.email = "admin@epicevents.com"
-    user.first_name = "Alice"
-    user.last_name = "Dubois"
-    user.phone = "+33 1 23 45 67 89"
-    user.department = Department.GESTION
+def test_user(db_session):
+    """Create a real user in database for testing."""
+    user = User(
+        username="admin",
+        email="admin@epicevents.com",
+        first_name="Alice",
+        last_name="Dubois",
+        phone="+33123456789",
+        department=Department.GESTION,
+        password_hash="",
+    )
+    user.set_password("Admin123!")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
     return user
 
 
@@ -69,7 +79,7 @@ class TestLoginCommand:
     """Test login command with valid and invalid credentials."""
 
     def test_login_with_valid_credentials(
-        self, mocker, mock_user, mock_token_file
+        self, mocker, test_user, mock_token_file
     ):
         """
         GIVEN valid username and password
@@ -79,7 +89,7 @@ class TestLoginCommand:
         mock_container = mocker.patch("src.cli.commands.Container")
         # Mock auth_service
         mock_auth_service = mocker.MagicMock()
-        mock_auth_service.authenticate.return_value = mock_user
+        mock_auth_service.authenticate.return_value = test_user
         mock_auth_service.generate_token.return_value = "fake.jwt.token"
         mock_auth_service.TOKEN_FILE = mock_token_file
 
@@ -102,7 +112,7 @@ class TestLoginCommand:
         )
 
         # Verify token generation
-        mock_auth_service.generate_token.assert_called_once_with(mock_user)
+        mock_auth_service.generate_token.assert_called_once_with(test_user)
 
         # Verify token was saved
         mock_auth_service.save_token.assert_called_once_with("fake.jwt.token")
@@ -138,7 +148,7 @@ class TestLoginCommand:
 class TestTokenStorage:
     """Test JWT token storage in file system."""
 
-    def test_token_saved_to_file(self, mocker, mock_user, mock_token_file):
+    def test_token_saved_to_file(self, mocker, test_user, mock_token_file):
         """
         GIVEN a successful login
         WHEN token is saved
@@ -147,7 +157,7 @@ class TestTokenStorage:
         mock_container = mocker.patch("src.cli.commands.Container")
         # Mock auth_service
         mock_auth_service = mocker.MagicMock()
-        mock_auth_service.authenticate.return_value = mock_user
+        mock_auth_service.authenticate.return_value = test_user
         mock_auth_service.generate_token.return_value = (
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxfQ.fake_signature"
         )
@@ -185,7 +195,7 @@ class TestTokenStorage:
 class TestWhoamiWithAuthentication:
     """Test whoami command when user is authenticated."""
 
-    def test_whoami_with_authentication(self, mocker, mock_user):
+    def test_whoami_with_authentication(self, mocker, test_user):
         """
         GIVEN an authenticated user
         WHEN whoami command is executed
@@ -194,7 +204,7 @@ class TestWhoamiWithAuthentication:
         mock_container = mocker.patch("src.cli.commands.Container")
         # Mock auth_service to return authenticated user
         mock_auth_service = mocker.MagicMock()
-        mock_auth_service.get_current_user.return_value = mock_user
+        mock_auth_service.get_current_user.return_value = test_user
         mock_container.return_value.auth_service.return_value = mock_auth_service
 
         # Execute whoami command
@@ -213,7 +223,7 @@ class TestWhoamiWithAuthentication:
 class TestLogoutCommand:
     """Test logout command and token deletion."""
 
-    def test_logout_deletes_token(self, mocker, mock_user, mock_token_file):
+    def test_logout_deletes_token(self, mocker, test_user, mock_token_file):
         """
         GIVEN an authenticated user with a token file
         WHEN logout command is executed
@@ -226,7 +236,7 @@ class TestLogoutCommand:
         mock_container = mocker.patch("src.cli.commands.Container")
         # Mock auth_service
         mock_auth_service = mocker.MagicMock()
-        mock_auth_service.get_current_user.return_value = mock_user
+        mock_auth_service.get_current_user.return_value = test_user
         mock_auth_service.TOKEN_FILE = mock_token_file
 
         # Mock delete_token to remove our test file
@@ -275,7 +285,7 @@ class TestAuthenticationFlow:
     """Test complete authentication flow (login -> whoami -> logout)."""
 
     def test_complete_authentication_flow(
-        self, mocker, mock_user, mock_token_file
+        self, mocker, test_user, mock_token_file
     ):
         """
         GIVEN a user going through complete auth flow
@@ -305,7 +315,7 @@ class TestAuthenticationFlow:
         mocker.patch("src.sentry_config.add_breadcrumb")
 
         # Step 1: Login
-        mock_auth_service.authenticate.return_value = mock_user
+        mock_auth_service.authenticate.return_value = test_user
         mock_auth_service.generate_token.return_value = "fake.jwt.token"
 
         result = runner.invoke(app, ["login"], input="admin\nAdmin123!\n")
@@ -313,7 +323,7 @@ class TestAuthenticationFlow:
         assert mock_token_file.exists()
 
         # Step 2: Whoami (authenticated)
-        mock_auth_service.get_current_user.return_value = mock_user
+        mock_auth_service.get_current_user.return_value = test_user
 
         result = runner.invoke(app, ["whoami"])
         assert result.exit_code == 0
