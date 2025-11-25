@@ -4,11 +4,7 @@ from datetime import datetime
 
 from src.cli import console
 from src.cli import validators
-from src.cli.constants import (
-    LABEL_ID,
-    FORMAT_DATETIME,
-    ERROR_UNEXPECTED,
-)
+from src.cli import constants as c
 from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
@@ -198,7 +194,7 @@ def create_event(
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
@@ -412,7 +408,7 @@ def update_event(
     # Success message
     console.print_separator()
     console.print_success("Événement mis à jour avec succès!")
-    console.print_field(LABEL_ID, str(updated_event.id))
+    console.print_field(c.LABEL_ID, str(updated_event.id))
     console.print_field("Nom de l'événement", updated_event.name)
     console.print_field("Contrat ID", str(updated_event.contract_id))
     console.print_field(
@@ -436,7 +432,7 @@ def update_event(
         console.print_field(LABEL_NOTES, updated_event.notes)
     console.print_field(
         "Dernière mise à jour",
-        updated_event.updated_at.strftime(FORMAT_DATETIME),
+        updated_event.updated_at.strftime(c.FORMAT_DATETIME),
     )
     console.print_separator()
 

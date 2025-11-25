@@ -4,14 +4,7 @@ from decimal import Decimal
 
 from src.cli import console
 from src.cli import validators
-from src.cli.constants import (
-    LABEL_ID,
-    LABEL_CONTACT_COMMERCIAL,
-    LABEL_DATE_CREATION,
-    FORMAT_DATETIME,
-    FORMAT_DATE,
-    ERROR_UNEXPECTED,
-)
+from src.cli import constants as c
 from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
@@ -119,7 +112,7 @@ def create_contract(
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
@@ -133,7 +126,7 @@ def create_contract(
         f"{client.first_name} {client.last_name} ({client.company_name})",
     )
     console.print_field(
-        LABEL_CONTACT_COMMERCIAL,
+        c.LABEL_CONTACT_COMMERCIAL,
         f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
     console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
@@ -144,7 +137,7 @@ def create_contract(
         LABEL_STATUT, STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED
     )
     console.print_field(
-        LABEL_DATE_CREATION, contract.created_at.strftime(FORMAT_DATETIME)
+        c.LABEL_DATE_CREATION, contract.created_at.strftime(c.FORMAT_DATETIME)
     )
     console.print_separator()
 
@@ -220,7 +213,7 @@ def sign_contract(
     try:
         contract = contract_service.sign_contract(contract_id)
     except Exception as e:
-        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
@@ -239,7 +232,7 @@ def sign_contract(
     )
     console.print_field(LABEL_STATUT, STATUS_SIGNED)
     console.print_field(
-        LABEL_DATE_CREATION, contract.created_at.strftime(FORMAT_DATETIME)
+        c.LABEL_DATE_CREATION, contract.created_at.strftime(c.FORMAT_DATETIME)
     )
     console.print_separator()
 
@@ -330,7 +323,7 @@ def update_contract_payment(
     try:
         contract = contract_service.update_contract_payment(contract_id, amount_decimal)
     except Exception as e:
-        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
@@ -478,13 +471,13 @@ def update_contract(
     # Success message
     console.print_separator()
     console.print_success("Contrat mis à jour avec succès!")
-    console.print_field(LABEL_ID, str(updated_contract.id))
+    console.print_field(c.LABEL_ID, str(updated_contract.id))
     console.print_field(
         LABEL_CLIENT,
         f"{updated_contract.client.first_name} {updated_contract.client.last_name} ({updated_contract.client.company_name})",
     )
     console.print_field(
-        LABEL_CONTACT_COMMERCIAL,
+        c.LABEL_CONTACT_COMMERCIAL,
         f"{updated_contract.client.sales_contact.first_name} {updated_contract.client.sales_contact.last_name} (ID: {updated_contract.client.sales_contact_id})",
     )
     console.print_field(
@@ -498,12 +491,12 @@ def update_contract(
         STATUS_SIGNED if updated_contract.is_signed else STATUS_UNSIGNED,
     )
     console.print_field(
-        LABEL_DATE_CREATION,
-        updated_contract.created_at.strftime(FORMAT_DATETIME),
+        c.LABEL_DATE_CREATION,
+        updated_contract.created_at.strftime(c.FORMAT_DATETIME),
     )
     console.print_field(
         "Dernière mise à jour",
-        updated_contract.updated_at.strftime(FORMAT_DATETIME),
+        updated_contract.updated_at.strftime(c.FORMAT_DATETIME),
     )
     console.print_separator()
 
@@ -536,13 +529,13 @@ def filter_unsigned_contracts():
         return
 
     for contract in contracts:
-        console.print_field(LABEL_ID, str(contract.id))
+        console.print_field(c.LABEL_ID, str(contract.id))
         console.print_field(
             LABEL_CLIENT,
             f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
         )
         console.print_field(
-            LABEL_CONTACT_COMMERCIAL,
+            c.LABEL_CONTACT_COMMERCIAL,
             f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
         console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
@@ -550,7 +543,7 @@ def filter_unsigned_contracts():
             LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
         )
         console.print_field(
-            LABEL_DATE_CREATION, contract.created_at.strftime(FORMAT_DATE)
+            c.LABEL_DATE_CREATION, contract.created_at.strftime(c.FORMAT_DATE)
         )
         console.print_separator()
 
@@ -585,13 +578,13 @@ def filter_unpaid_contracts():
         return
 
     for contract in contracts:
-        console.print_field(LABEL_ID, str(contract.id))
+        console.print_field(c.LABEL_ID, str(contract.id))
         console.print_field(
             LABEL_CLIENT,
             f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
         )
         console.print_field(
-            LABEL_CONTACT_COMMERCIAL,
+            c.LABEL_CONTACT_COMMERCIAL,
             f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
         )
         console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
@@ -603,7 +596,7 @@ def filter_unpaid_contracts():
             STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED,
         )
         console.print_field(
-            LABEL_DATE_CREATION, contract.created_at.strftime(FORMAT_DATE)
+            c.LABEL_DATE_CREATION, contract.created_at.strftime(c.FORMAT_DATE)
         )
         console.print_separator()
 

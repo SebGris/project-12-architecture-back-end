@@ -1,13 +1,7 @@
 import typer
 
 from src.cli import console
-from src.cli.constants import (
-    LABEL_USERNAME,
-    LABEL_DEPARTMENT,
-    LABEL_ID,
-    LABEL_EMAIL,
-    LABEL_PHONE,
-)
+from src.cli import constants as c
 from src.containers import Container
 
 app = typer.Typer()
@@ -15,7 +9,7 @@ app = typer.Typer()
 
 @app.command()
 def login(
-    username: str = typer.Option(..., prompt=LABEL_USERNAME),
+    username: str = typer.Option(..., prompt=c.LABEL_USERNAME),
     password: str = typer.Option(..., prompt="Mot de passe", hide_input=True),
 ):
     """Login to the Epic Events CRM application.
@@ -62,7 +56,7 @@ def login(
     # Success message
     console.print_separator()
     console.print_success(f"Bienvenue {user.first_name} {user.last_name} !")
-    console.print_field(LABEL_DEPARTMENT, user.department.value)
+    console.print_field(c.LABEL_DEPARTMENT, user.department.value)
     console.print_field("Session", "Valide pour 24 heures")
     console.print_separator()
 
@@ -142,10 +136,10 @@ def whoami():
         raise typer.Exit(code=1)
 
     # Display user info
-    console.print_field(LABEL_ID, str(user.id))
-    console.print_field(LABEL_USERNAME, user.username)
+    console.print_field(c.LABEL_ID, str(user.id))
+    console.print_field(c.LABEL_USERNAME, user.username)
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
-    console.print_field(LABEL_EMAIL, user.email)
-    console.print_field(LABEL_PHONE, user.phone)
-    console.print_field(LABEL_DEPARTMENT, user.department.value)
+    console.print_field(c.LABEL_EMAIL, user.email)
+    console.print_field(c.LABEL_PHONE, user.phone)
+    console.print_field(c.LABEL_DEPARTMENT, user.department.value)
     console.print_separator()

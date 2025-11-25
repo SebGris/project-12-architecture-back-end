@@ -3,16 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.cli import console
 from src.cli import validators
-from src.cli.constants import (
-    LABEL_ID,
-    LABEL_EMAIL,
-    LABEL_PHONE,
-    LABEL_CONTACT_COMMERCIAL,
-    LABEL_DATE_CREATION,
-    FORMAT_DATETIME,
-    ERROR_UNEXPECTED,
-    PROMPT_TELEPHONE,
-)
+from src.cli import constants as c
 from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
@@ -35,7 +26,7 @@ def create_client(
     ),
     phone: str = typer.Option(
         ...,
-        prompt=PROMPT_TELEPHONE,
+        prompt=c.PROMPT_TELEPHONE,
         callback=validators.validate_phone_callback,
     ),
     company_name: str = typer.Option(
@@ -91,7 +82,7 @@ def create_client(
         if current_user.department == Department.COMMERCIAL:
             sales_contact_id = current_user.id
             console.print_field(
-                LABEL_CONTACT_COMMERCIAL,
+                c.LABEL_CONTACT_COMMERCIAL,
                 f"Auto-assigné à {current_user.username}",
             )
         else:
@@ -136,7 +127,7 @@ def create_client(
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
@@ -144,16 +135,16 @@ def create_client(
     console.print_success(
         f"Client {client.first_name} {client.last_name} créé avec succès!"
     )
-    console.print_field(LABEL_ID, str(client.id))
-    console.print_field(LABEL_EMAIL, client.email)
-    console.print_field(LABEL_PHONE, client.phone)
+    console.print_field(c.LABEL_ID, str(client.id))
+    console.print_field(c.LABEL_EMAIL, client.email)
+    console.print_field(c.LABEL_PHONE, client.phone)
     console.print_field("Entreprise", client.company_name)
     console.print_field(
-        LABEL_CONTACT_COMMERCIAL,
+        c.LABEL_CONTACT_COMMERCIAL,
         f"{client.sales_contact.first_name} {client.sales_contact.last_name} (ID: {client.sales_contact_id})",
     )
     console.print_field(
-        LABEL_DATE_CREATION, client.created_at.strftime(FORMAT_DATETIME)
+        c.LABEL_DATE_CREATION, client.created_at.strftime(c.FORMAT_DATETIME)
     )
     console.print_separator()
 
@@ -271,29 +262,29 @@ def update_client(
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
     console.print_separator()
     console.print_success("Client mis à jour avec succès!")
-    console.print_field(LABEL_ID, str(updated_client.id))
+    console.print_field(c.LABEL_ID, str(updated_client.id))
     console.print_field(
         "Nom", f"{updated_client.first_name} {updated_client.last_name}"
     )
-    console.print_field(LABEL_EMAIL, updated_client.email)
-    console.print_field(LABEL_PHONE, updated_client.phone)
+    console.print_field(c.LABEL_EMAIL, updated_client.email)
+    console.print_field(c.LABEL_PHONE, updated_client.phone)
     console.print_field("Entreprise", updated_client.company_name)
     console.print_field(
-        LABEL_CONTACT_COMMERCIAL,
+        c.LABEL_CONTACT_COMMERCIAL,
         f"{updated_client.sales_contact.first_name} {updated_client.sales_contact.last_name} (ID: {updated_client.sales_contact_id})",
     )
     console.print_field(
-        LABEL_DATE_CREATION,
-        updated_client.created_at.strftime(FORMAT_DATETIME),
+        c.LABEL_DATE_CREATION,
+        updated_client.created_at.strftime(c.FORMAT_DATETIME),
     )
     console.print_field(
         "Dernière mise à jour",
-        updated_client.updated_at.strftime(FORMAT_DATETIME),
+        updated_client.updated_at.strftime(c.FORMAT_DATETIME),
     )
     console.print_separator()

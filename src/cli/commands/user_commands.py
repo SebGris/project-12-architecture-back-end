@@ -3,15 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.cli import console
 from src.cli import validators
-from src.cli.constants import (
-    LABEL_USERNAME,
-    LABEL_DEPARTMENT,
-    LABEL_ID,
-    LABEL_EMAIL,
-    LABEL_PHONE,
-    ERROR_UNEXPECTED,
-    PROMPT_TELEPHONE,
-)
+from src.cli import constants as c
 from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
@@ -25,7 +17,7 @@ app = typer.Typer()
 def create_user(
     username: str = typer.Option(
         ...,
-        prompt=LABEL_USERNAME,
+        prompt=c.LABEL_USERNAME,
         callback=validators.validate_username_callback,
     ),
     first_name: str = typer.Option(
@@ -39,7 +31,7 @@ def create_user(
     ),
     phone: str = typer.Option(
         ...,
-        prompt=PROMPT_TELEPHONE,
+        prompt=c.PROMPT_TELEPHONE,
         callback=validators.validate_phone_callback,
     ),
     password: str = typer.Option(
@@ -115,16 +107,16 @@ def create_user(
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
     console.print_separator()
     console.print_success(f"Utilisateur {user.username} créé avec succès!")
-    console.print_field(LABEL_ID, str(user.id))
+    console.print_field(c.LABEL_ID, str(user.id))
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
-    console.print_field(LABEL_EMAIL, user.email)
-    console.print_field(LABEL_DEPARTMENT, user.department.value)
+    console.print_field(c.LABEL_EMAIL, user.email)
+    console.print_field(c.LABEL_DEPARTMENT, user.department.value)
     console.print_separator()
 
 
@@ -251,20 +243,20 @@ def update_user(
         raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
     console.print_separator()
     console.print_success("Utilisateur mis à jour avec succès!")
-    console.print_field(LABEL_ID, str(updated_user.id))
-    console.print_field(LABEL_USERNAME, updated_user.username)
+    console.print_field(c.LABEL_ID, str(updated_user.id))
+    console.print_field(c.LABEL_USERNAME, updated_user.username)
     console.print_field(
         "Nom complet", f"{updated_user.first_name} {updated_user.last_name}"
     )
-    console.print_field(LABEL_EMAIL, updated_user.email)
-    console.print_field(LABEL_PHONE, updated_user.phone)
-    console.print_field(LABEL_DEPARTMENT, updated_user.department.value)
+    console.print_field(c.LABEL_EMAIL, updated_user.email)
+    console.print_field(c.LABEL_PHONE, updated_user.phone)
+    console.print_field(c.LABEL_DEPARTMENT, updated_user.department.value)
     console.print_separator()
 
 
@@ -309,11 +301,11 @@ def delete_user(
         raise typer.Exit(code=1)
 
     # Afficher les informations de l'utilisateur avant suppression
-    console.print_field(LABEL_ID, str(user.id))
-    console.print_field(LABEL_USERNAME, user.username)
+    console.print_field(c.LABEL_ID, str(user.id))
+    console.print_field(c.LABEL_USERNAME, user.username)
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")
-    console.print_field(LABEL_EMAIL, user.email)
-    console.print_field(LABEL_DEPARTMENT, user.department.value)
+    console.print_field(c.LABEL_EMAIL, user.email)
+    console.print_field(c.LABEL_DEPARTMENT, user.department.value)
     console.print_separator()
 
     # Demander confirmation
@@ -334,7 +326,7 @@ def delete_user(
             raise typer.Exit(code=1)
 
     except Exception as e:
-        console.print_error(ERROR_UNEXPECTED.format(e=e))
+        console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
     # Success message
