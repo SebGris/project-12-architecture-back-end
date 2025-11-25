@@ -104,9 +104,7 @@ def create_event(
     auth_service = container.auth_service()
 
     # Show header at the beginning
-    console.print_separator()
-    console.print_header("Création d'un nouvel événement")
-    console.print_separator()
+    console.print_command_header("Création d'un nouvel événement")
 
     # Get current user for permission checks
     current_user = auth_service.get_current_user()
@@ -282,9 +280,7 @@ def update_event(
     event_service = container.event_service()
     auth_service = container.auth_service()
 
-    console.print_separator()
-    console.print_header("Mise à jour d'un événement")
-    console.print_separator()
+    console.print_command_header("Mise à jour d'un événement")
 
     # Get current user for permission check
     current_user = auth_service.get_current_user()
@@ -468,9 +464,7 @@ def assign_support(
     event_service = container.event_service()
     user_service = container.user_service()
 
-    console.print_separator()
-    console.print_header("Assignation d'un contact support")
-    console.print_separator()
+    console.print_command_header("Assignation d'un contact support")
 
     # Vérifier que l'événement existe
     event = event_service.get_event(event_id)
@@ -550,9 +544,7 @@ def filter_unassigned_events():
     container = Container()
     event_service = container.event_service()
 
-    console.print_separator()
-    console.print_header("Événements sans contact support")
-    console.print_separator()
+    console.print_command_header("Événements sans contact support")
 
     events = event_service.get_unassigned_events()
 
@@ -608,9 +600,7 @@ def filter_my_events():
     event_service = container.event_service()
     auth_service = container.auth_service()
 
-    console.print_separator()
-    console.print_header("Mes événements")
-    console.print_separator()
+    console.print_command_header("Mes événements")
 
     # Get current user (already validated as SUPPORT by decorator)
     user = auth_service.get_current_user()

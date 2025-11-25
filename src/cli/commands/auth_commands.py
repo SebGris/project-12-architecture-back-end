@@ -31,9 +31,7 @@ def login(
     container = Container()
     auth_service = container.auth_service()
 
-    console.print_separator()
-    console.print_header("Authentification")
-    console.print_separator()
+    console.print_command_header("Authentification")
 
     # Authenticate user
     user = auth_service.authenticate(username, password)
@@ -77,9 +75,7 @@ def logout():
     container = Container()
     auth_service = container.auth_service()
 
-    console.print_separator()
-    console.print_header("Déconnexion")
-    console.print_separator()
+    console.print_command_header("Déconnexion")
 
     # Check if user is authenticated
     user = auth_service.get_current_user()
@@ -122,9 +118,7 @@ def whoami():
     container = Container()
     auth_service = container.auth_service()
 
-    console.print_separator()
-    console.print_header("Utilisateur actuel")
-    console.print_separator()
+    console.print_command_header("Utilisateur actuel")
 
     # Get current user
     user = auth_service.get_current_user()
