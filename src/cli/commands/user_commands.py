@@ -1,10 +1,8 @@
 import typer
-from sqlalchemy.exc import IntegrityError
 
 from src.cli import console
 from src.cli import validators
 from src.cli import constants as c
-from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
@@ -84,6 +82,19 @@ def create_user(
     departments = list(Department)
     department = departments[department_choice - 1]
 
+    # Vérifications préventives: username et email déjà utilisés
+    if user_service.username_exists(username):
+        console.print_error(
+            f"Le nom d'utilisateur '{username}' est déjà utilisé"
+        )
+        raise typer.Exit(code=1)
+
+    if user_service.email_exists(email):
+        console.print_error(
+            f"L'email '{email}' est déjà utilisé par un autre utilisateur"
+        )
+        raise typer.Exit(code=1)
+
     try:
         # Create user via service
         user = user_service.create_user(
@@ -95,16 +106,6 @@ def create_user(
             password=password,
             department=department,
         )
-
-    except IntegrityError as e:
-        handle_integrity_error(
-            e,
-            {
-                "username": f"Le nom d'utilisateur '{username}' est déjà utilisé",
-                "email": f"L'email '{email}' est déjà utilisé par un autre utilisateur",
-            },
-        )
-        raise typer.Exit(code=1)
 
     except Exception as e:
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
@@ -211,6 +212,17 @@ def update_user(
         console.print_error("Le nom doit avoir au moins 2 caractères")
         raise typer.Exit(code=1)
 
+    # Vérifications préventives: username et email déjà utilisés (en excluant l'utilisateur actuel)
+    if username and user_service.username_exists(username, exclude_id=user_id):
+        console.print_error(
+            f"Le nom d'utilisateur '{username}' est déjà utilisé"
+        )
+        raise typer.Exit(code=1)
+
+    if email and user_service.email_exists(email, exclude_id=user_id):
+        console.print_error(f"L'email '{email}' est déjà utilisé")
+        raise typer.Exit(code=1)
+
     try:
         # Mettre à jour l'utilisateur
         updated_user = user_service.update_user(
@@ -222,25 +234,6 @@ def update_user(
             phone=phone,
             department=department,
         )
-
-    except IntegrityError as e:
-        error_msg = (
-            str(e.orig).lower() if hasattr(e, "orig") else str(e).lower()
-        )
-        if "unique" in error_msg or "duplicate" in error_msg:
-            if "username" in error_msg:
-                console.print_error(
-                    f"Le nom d'utilisateur '{username}' est déjà utilisé"
-                )
-            elif "email" in error_msg:
-                console.print_error(f"L'email '{email}' est déjà utilisé")
-            else:
-                console.print_error(
-                    "Un utilisateur avec ces informations existe déjà"
-                )
-        else:
-            console.print_error(f"Erreur d'intégrité: {error_msg}")
-        raise typer.Exit(code=1)
 
     except Exception as e:
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))

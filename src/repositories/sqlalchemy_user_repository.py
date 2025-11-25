@@ -94,3 +94,44 @@ class SqlAlchemyUserRepository(UserRepository):
         self.session.delete(user)
         self.session.commit()
         return True
+
+    def exists(self, user_id: int) -> bool:
+        """Check if a user exists by ID.
+
+        Args:
+            user_id: The user's ID
+
+        Returns:
+            True if the user exists, False otherwise
+        """
+        return self.session.query(User).filter_by(id=user_id).first() is not None
+
+    def username_exists(self, username: str, exclude_id: int = None) -> bool:
+        """Check if a username is already in use.
+
+        Args:
+            username: The username to check
+            exclude_id: Optional user ID to exclude from the check (for updates)
+
+        Returns:
+            True if the username is already used, False otherwise
+        """
+        query = self.session.query(User).filter_by(username=username)
+        if exclude_id is not None:
+            query = query.filter(User.id != exclude_id)
+        return query.first() is not None
+
+    def email_exists(self, email: str, exclude_id: int = None) -> bool:
+        """Check if an email is already in use.
+
+        Args:
+            email: The email to check
+            exclude_id: Optional user ID to exclude from the check (for updates)
+
+        Returns:
+            True if the email is already used, False otherwise
+        """
+        query = self.session.query(User).filter_by(email=email)
+        if exclude_id is not None:
+            query = query.filter(User.id != exclude_id)
+        return query.first() is not None

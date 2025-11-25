@@ -101,3 +101,26 @@ class ClientService:
             client.company_name = company_name
 
         return self.repository.update(client)
+
+    def exists(self, client_id: int) -> bool:
+        """Check if a client exists by ID.
+
+        Args:
+            client_id: The client's ID
+
+        Returns:
+            True if the client exists, False otherwise
+        """
+        return self.repository.exists(client_id)
+
+    def email_exists(self, email: str, exclude_id: int = None) -> bool:
+        """Check if an email is already in use by a client.
+
+        Args:
+            email: The email to check
+            exclude_id: Optional client ID to exclude from the check (for updates)
+
+        Returns:
+            True if the email is already used, False otherwise
+        """
+        return self.repository.email_exists(email, exclude_id)

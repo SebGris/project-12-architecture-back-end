@@ -55,3 +55,29 @@ class SqlAlchemyClientRepository(ClientRepository):
         self.session.commit()
         self.session.refresh(client)
         return client
+
+    def exists(self, client_id: int) -> bool:
+        """Check if a client exists by ID.
+
+        Args:
+            client_id: The client's ID
+
+        Returns:
+            True if the client exists, False otherwise
+        """
+        return self.session.query(Client).filter_by(id=client_id).first() is not None
+
+    def email_exists(self, email: str, exclude_id: int = None) -> bool:
+        """Check if an email is already in use by a client.
+
+        Args:
+            email: The email to check
+            exclude_id: Optional client ID to exclude from the check (for updates)
+
+        Returns:
+            True if the email is already used, False otherwise
+        """
+        query = self.session.query(Client).filter_by(email=email)
+        if exclude_id is not None:
+            query = query.filter(Client.id != exclude_id)
+        return query.first() is not None

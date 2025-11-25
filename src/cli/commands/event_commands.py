@@ -1,11 +1,9 @@
 import typer
-from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
 from src.cli import console
 from src.cli import validators
 from src.cli import constants as c
-from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
@@ -187,10 +185,6 @@ def create_event(
 
     except ValueError as e:
         console.print_error(str(e))
-        raise typer.Exit(code=1)
-
-    except IntegrityError as e:
-        handle_integrity_error(e, {})
         raise typer.Exit(code=1)
 
     except Exception as e:

@@ -116,3 +116,16 @@ class SqlAlchemyEventRepository(EventRepository):
             .order_by(Event.event_start)
             .all()
         )
+
+    def exists(self, event_id: int) -> bool:
+        """Check if an event exists by ID.
+
+        Args:
+            event_id: The event's ID
+
+        Returns:
+            True if the event exists, False otherwise
+        """
+        return (
+            self.session.query(Event).filter_by(id=event_id).first() is not None
+        )

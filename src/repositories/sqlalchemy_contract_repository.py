@@ -89,3 +89,17 @@ class SqlAlchemyContractRepository(ContractRepository):
             .filter(Contract.remaining_amount > 0)
             .all()
         )
+
+    def exists(self, contract_id: int) -> bool:
+        """Check if a contract exists by ID.
+
+        Args:
+            contract_id: The contract's ID
+
+        Returns:
+            True if the contract exists, False otherwise
+        """
+        return (
+            self.session.query(Contract).filter_by(id=contract_id).first()
+            is not None
+        )

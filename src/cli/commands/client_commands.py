@@ -1,10 +1,8 @@
 import typer
-from sqlalchemy.exc import IntegrityError
 
 from src.cli import console
 from src.cli import validators
 from src.cli import constants as c
-from src.cli.error_handlers import handle_integrity_error
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
@@ -106,6 +104,13 @@ def create_client(
         console.print_error(str(e))
         raise typer.Exit(code=1)
 
+    # Vérification préventive: email déjà utilisé
+    if client_service.email_exists(email):
+        console.print_error(
+            f"Un client avec l'email '{email}' existe déjà dans le système"
+        )
+        raise typer.Exit(code=1)
+
     try:
         # Create client via service
         client = client_service.create_client(
@@ -116,15 +121,6 @@ def create_client(
             company_name=company_name,
             sales_contact_id=sales_contact_id,
         )
-
-    except IntegrityError as e:
-        handle_integrity_error(
-            e,
-            {
-                "email": f"Un client avec l'email '{email}' existe déjà dans le système",
-            },
-        )
-        raise typer.Exit(code=1)
 
     except Exception as e:
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
@@ -241,6 +237,11 @@ def update_client(
         console.print_error("Le nom doit avoir au moins 2 caractères")
         raise typer.Exit(code=1)
 
+    # Vérification préventive: email déjà utilisé (en excluant le client actuel)
+    if email and client_service.email_exists(email, exclude_id=client_id):
+        console.print_error(f"Un client avec l'email '{email}' existe déjà")
+        raise typer.Exit(code=1)
+
     try:
         # Mettre à jour le client
         updated_client = client_service.update_client(
@@ -251,15 +252,6 @@ def update_client(
             phone=phone,
             company_name=company_name,
         )
-
-    except IntegrityError as e:
-        handle_integrity_error(
-            e,
-            {
-                "email": f"Un client avec l'email '{email}' existe déjà",
-            },
-        )
-        raise typer.Exit(code=1)
 
     except Exception as e:
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))

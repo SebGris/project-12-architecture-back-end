@@ -71,3 +71,14 @@ class ContractRepository(ABC):
         Returns:
             List of Contract instances with unpaid balance
         """
+
+    @abstractmethod
+    def exists(self, contract_id: int) -> bool:
+        """Check if a contract exists by ID.
+
+        Args:
+            contract_id: The contract's ID
+
+        Returns:
+            True if the contract exists, False otherwise
+        """

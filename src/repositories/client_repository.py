@@ -45,3 +45,26 @@ class ClientRepository(ABC):
         Returns:
             The updated Client instance
         """
+
+    @abstractmethod
+    def exists(self, client_id: int) -> bool:
+        """Check if a client exists by ID.
+
+        Args:
+            client_id: The client's ID
+
+        Returns:
+            True if the client exists, False otherwise
+        """
+
+    @abstractmethod
+    def email_exists(self, email: str, exclude_id: int = None) -> bool:
+        """Check if an email is already in use by a client.
+
+        Args:
+            email: The email to check
+            exclude_id: Optional client ID to exclude from the check (for updates)
+
+        Returns:
+            True if the email is already used, False otherwise
+        """

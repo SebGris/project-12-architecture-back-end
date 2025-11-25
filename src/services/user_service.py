@@ -132,3 +132,38 @@ class UserService:
             True if the user was deleted, False if not found
         """
         return self.repository.delete(user_id)
+
+    def exists(self, user_id: int) -> bool:
+        """Check if a user exists by ID.
+
+        Args:
+            user_id: The user's ID
+
+        Returns:
+            True if the user exists, False otherwise
+        """
+        return self.repository.exists(user_id)
+
+    def username_exists(self, username: str, exclude_id: int = None) -> bool:
+        """Check if a username is already in use.
+
+        Args:
+            username: The username to check
+            exclude_id: Optional user ID to exclude from the check (for updates)
+
+        Returns:
+            True if the username is already used, False otherwise
+        """
+        return self.repository.username_exists(username, exclude_id)
+
+    def email_exists(self, email: str, exclude_id: int = None) -> bool:
+        """Check if an email is already in use.
+
+        Args:
+            email: The email to check
+            exclude_id: Optional user ID to exclude from the check (for updates)
+
+        Returns:
+            True if the email is already used, False otherwise
+        """
+        return self.repository.email_exists(email, exclude_id)
