@@ -3,9 +3,6 @@
 This module defines the dependency injection container using the
 dependency-injector library. It wires together all services, repositories,
 and database sessions for the application.
-
-Configuration is externalized in src/config.py, following professional
-best practices for dependency injection and the Dependency Inversion Principle.
 """
 
 import os
@@ -14,7 +11,18 @@ from pathlib import Path
 from dependency_injector import containers, providers
 
 from src.database import get_db_session
-from src.config import REPOSITORY_IMPLEMENTATIONS
+from src.repositories.sqlalchemy_client_repository import (
+    SqlAlchemyClientRepository,
+)
+from src.repositories.sqlalchemy_contract_repository import (
+    SqlAlchemyContractRepository,
+)
+from src.repositories.sqlalchemy_event_repository import (
+    SqlAlchemyEventRepository,
+)
+from src.repositories.sqlalchemy_user_repository import (
+    SqlAlchemyUserRepository,
+)
 from src.services.auth_service import AuthService
 from src.services.client_service import ClientService
 from src.services.contract_service import ContractService
@@ -33,12 +41,6 @@ class Container(containers.DeclarativeContainer):
 
     Each dependency is configured as a Factory provider, creating
     new instances on each call for proper session management.
-
-    The container supports multiple environments (development, testing, production)
-    by loading the appropriate configuration file from the config/ directory.
-
-    Repository implementations are loaded from src.config.REPOSITORY_IMPLEMENTATIONS,
-    making it easy to swap implementations for different environments or testing.
     """
 
     # Configuration provider - loads from YAML based on APP_ENV
@@ -49,40 +51,37 @@ class Container(containers.DeclarativeContainer):
     config_path = Path(__file__).parent.parent / "config" / f"{env}.yml"
 
     # Load YAML config if file exists and PyYAML is available
-    # This is optional - the container works without it
     try:
         if config_path.exists():
             config.from_yaml(str(config_path))
     except Exception:
-        # PyYAML not installed or config file error - continue without it
         pass
 
     # Database session resource (context manager)
     db_session = providers.Resource(get_db_session)
 
-    # Repositories - loaded from config.REPOSITORY_IMPLEMENTATIONS
-    # This allows easy switching of implementations for testing or different environments
+    # Repositories
     client_repository = providers.Factory(
-        REPOSITORY_IMPLEMENTATIONS["client"],
+        SqlAlchemyClientRepository,
         session=db_session,
     )
 
     user_repository = providers.Factory(
-        REPOSITORY_IMPLEMENTATIONS["user"],
+        SqlAlchemyUserRepository,
         session=db_session,
     )
 
     contract_repository = providers.Factory(
-        REPOSITORY_IMPLEMENTATIONS["contract"],
+        SqlAlchemyContractRepository,
         session=db_session,
     )
 
     event_repository = providers.Factory(
-        REPOSITORY_IMPLEMENTATIONS["event"],
+        SqlAlchemyEventRepository,
         session=db_session,
     )
 
-    # Services (unchanged - depend on repository abstractions)
+    # Services
     auth_service = providers.Factory(
         AuthService,
         repository=user_repository,
