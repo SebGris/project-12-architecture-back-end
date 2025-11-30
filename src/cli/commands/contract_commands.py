@@ -70,9 +70,7 @@ def create_contract(
     client_service = container.client_service()
 
     # Show header at the beginning
-    console.print_separator()
-    console.print_header("Création d'un nouveau contrat")
-    console.print_separator()
+    console.print_command_header("Création d'un nouveau contrat")
 
     # Business validation: check if client exists
     client = client_service.get_client(client_id)
@@ -171,9 +169,7 @@ def sign_contract(
     auth_service = container.auth_service()
 
     # Show header
-    console.print_separator()
-    console.print_header("Signature d'un contrat")
-    console.print_separator()
+    console.print_command_header("Signature d'un contrat")
 
     # Get current user
     current_user = auth_service.get_current_user()
@@ -272,9 +268,7 @@ def update_contract_payment(
     auth_service = container.auth_service()
 
     # Show header
-    console.print_separator()
-    console.print_header("Enregistrement d'un paiement")
-    console.print_separator()
+    console.print_command_header("Enregistrement d'un paiement")
 
     # Get current user
     current_user = auth_service.get_current_user()
@@ -387,9 +381,7 @@ def update_contract(
     contract_service = container.contract_service()
     auth_service = container.auth_service()
 
-    console.print_separator()
-    console.print_header("Mise à jour d'un contrat")
-    console.print_separator()
+    console.print_command_header("Mise à jour d'un contrat")
 
     # Get current user for permission check
     current_user = auth_service.get_current_user()
@@ -512,9 +504,7 @@ def filter_unsigned_contracts():
     container = Container()
     contract_service = container.contract_service()
 
-    console.print_separator()
-    console.print_header("Contrats non signés")
-    console.print_separator()
+    console.print_command_header("Contrats non signés")
 
     contracts = contract_service.get_unsigned_contracts()
 
@@ -561,9 +551,7 @@ def filter_unpaid_contracts():
     container = Container()
     contract_service = container.contract_service()
 
-    console.print_separator()
-    console.print_header("Contrats non soldés")
-    console.print_separator()
+    console.print_command_header("Contrats non soldés")
 
     contracts = contract_service.get_unpaid_contracts()
 

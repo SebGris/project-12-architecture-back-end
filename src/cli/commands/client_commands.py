@@ -68,9 +68,7 @@ def create_client(
     auth_service = container.auth_service()
 
     # Show header at the beginning
-    console.print_separator()
-    console.print_header("Création d'un nouveau client")
-    console.print_separator()
+    console.print_command_header("Création d'un nouveau client")
 
     # Get current user from auth_service (decorator already verified authentication)
     current_user = auth_service.get_current_user()
@@ -197,9 +195,7 @@ def update_client(
     client_service = container.client_service()
     auth_service = container.auth_service()
 
-    console.print_separator()
-    console.print_header("Mise à jour d'un client")
-    console.print_separator()
+    console.print_command_header("Mise à jour d'un client")
 
     # Get current user for permission check
     current_user = auth_service.get_current_user()

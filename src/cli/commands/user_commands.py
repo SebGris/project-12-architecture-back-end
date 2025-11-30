@@ -74,9 +74,7 @@ def create_user(
     user_service = container.user_service()
 
     # Show header at the beginning
-    console.print_separator()
-    console.print_header("Création d'un nouvel utilisateur")
-    console.print_separator()
+    console.print_command_header("Création d'un nouvel utilisateur")
 
     # Convert department choice (int) to Department enum
     departments = list(Department)
@@ -176,9 +174,7 @@ def update_user(
     container = Container()
     user_service = container.user_service()
 
-    console.print_separator()
-    console.print_header("Mise à jour d'un utilisateur")
-    console.print_separator()
+    console.print_command_header("Mise à jour d'un utilisateur")
 
     # Vérifier que l'utilisateur existe
     user = user_service.get_user(user_id)
@@ -283,9 +279,7 @@ def delete_user(
     container = Container()
     user_service = container.user_service()
 
-    console.print_separator()
-    console.print_header("Suppression d'un utilisateur")
-    console.print_separator()
+    console.print_command_header("Suppression d'un utilisateur")
 
     # Vérifier que l'utilisateur existe
     user = user_service.get_user(user_id)

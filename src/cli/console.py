@@ -47,3 +47,10 @@ def print_field(label: str, value: str, label_color: str = "cyan") -> None:
 def print_separator() -> None:
     """Print a visual separator."""
     console.print()
+
+
+def print_command_header(title: str) -> None:
+    """Print a command header with separators."""
+    print_separator()
+    print_header(title)
+    print_separator()
