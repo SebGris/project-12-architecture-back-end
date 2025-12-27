@@ -140,7 +140,6 @@ project-12-architecture-back-end/
 │   ├── __init__.py
 │   ├── database.py           # Configuration DB et sessions
 │   ├── containers.py         # Dependency Injection (dependency-injector)
-│   ├── config.py             # Configuration externalisée (SOLID DIP)
 │   ├── finders.py            # Finders pour requêtes SQLite
 │   ├── sentry_config.py      # Configuration Sentry
 │   ├── validators.py         # Validateurs de saisie
