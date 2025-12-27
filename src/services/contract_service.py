@@ -87,6 +87,14 @@ class ContractService:
         """
         return self.repository.get_unpaid_contracts()
 
+    def get_signed_contracts(self) -> List[Contract]:
+        """Get all signed contracts.
+
+        Returns:
+            List of signed Contract instances
+        """
+        return self.repository.get_signed_contracts()
+
     def update_contract_payment(
         self, contract_id: int, amount_paid: Decimal
     ) -> Optional[Contract]:

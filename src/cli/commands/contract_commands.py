@@ -583,3 +583,50 @@ def filter_unpaid_contracts():
         console.print_separator()
 
     console.print_success(f"Total: {len(contracts)} contrat(s) non soldé(s)")
+
+
+@app.command()
+@require_department()
+def filter_signed_contracts():
+    """Display all signed contracts.
+
+    This command lists all contracts that have been signed.
+
+    Returns:
+        None. Displays the list of signed contracts.
+
+    Examples:
+        epicevents filter-signed-contracts
+    """
+    # Manually get services from container
+    container = Container()
+    contract_service = container.contract_service()
+
+    console.print_command_header("Contrats signés")
+
+    contracts = contract_service.get_signed_contracts()
+
+    if not contracts:
+        console.print_success("Aucun contrat signé")
+        return
+
+    for contract in contracts:
+        console.print_field(c.LABEL_ID, str(contract.id))
+        console.print_field(
+            LABEL_CLIENT,
+            f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
+        )
+        console.print_field(
+            c.LABEL_CONTACT_COMMERCIAL,
+            f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name} (ID: {contract.client.sales_contact_id})",
+        )
+        console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
+        console.print_field(
+            LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
+        )
+        console.print_field(
+            c.LABEL_DATE_CREATION, contract.created_at.strftime(c.FORMAT_DATE)
+        )
+        console.print_separator()
+
+    console.print_success(f"Total: {len(contracts)} contrat(s) signé(s)")

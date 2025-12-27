@@ -73,6 +73,14 @@ class ContractRepository(ABC):
         """
 
     @abstractmethod
+    def get_signed_contracts(self) -> List[Contract]:
+        """Get all signed contracts.
+
+        Returns:
+            List of signed Contract instances
+        """
+
+    @abstractmethod
     def exists(self, contract_id: int) -> bool:
         """Check if a contract exists by ID.
 

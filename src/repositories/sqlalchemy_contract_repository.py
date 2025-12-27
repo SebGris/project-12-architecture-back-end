@@ -90,6 +90,14 @@ class SqlAlchemyContractRepository(ContractRepository):
             .all()
         )
 
+    def get_signed_contracts(self) -> List[Contract]:
+        """Get all signed contracts.
+
+        Returns:
+            List of signed Contract instances
+        """
+        return self.session.query(Contract).filter_by(is_signed=True).all()
+
     def exists(self, contract_id: int) -> bool:
         """Check if a contract exists by ID.
 
