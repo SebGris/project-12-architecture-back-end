@@ -53,7 +53,7 @@ src/cli/
 
 src/
 ├── containers.py             # Conteneur de dépendances
-├── config.py                 # Configuration externalisée
+├── database.py               # Configuration DB et sessions
 ├── services/                 # Logique métier
 ├── repositories/             # Accès aux données
 └── models/                   # Entités du domaine

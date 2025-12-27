@@ -428,7 +428,8 @@ erDiagram
 
 - **Models**: `src/models/user.py`, `client.py`, `contract.py`, `event.py`
 - **Migration**: `migrations/versions/ed491b2bb0cd_initial_tables.py`
-- **Config**: `src/config.py` (DATABASE_URL, JWT_SECRET)
+- **Database**: `src/database.py` (Configuration DB et sessions)
+- **Containers**: `src/containers.py` (Injection de dépendances)
 - **Tests**: `tests/integration/` (tests de workflow complet)
 
 ---
