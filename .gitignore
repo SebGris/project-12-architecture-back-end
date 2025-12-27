@@ -75,6 +75,7 @@ coverage.xml
 
 # Documentation
 docs/_build/
+docs/doc/
 site/
 
 # macOS
