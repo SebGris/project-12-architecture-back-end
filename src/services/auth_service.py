@@ -3,10 +3,8 @@
 This module handles user authentication, JWT token generation and validation.
 """
 
-import secrets
 import os
-from src.sentry_config import add_breadcrumb, capture_message
-
+import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -16,6 +14,7 @@ from dotenv import load_dotenv
 
 from src.models.user import User
 from src.repositories.user_repository import UserRepository
+from src.sentry_config import add_breadcrumb, capture_message
 
 # Load environment variables from .env file
 load_dotenv()

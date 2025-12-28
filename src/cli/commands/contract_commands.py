@@ -1,5 +1,6 @@
-import typer
 from decimal import Decimal
+
+import typer
 
 from src.cli import console
 from src.cli import validators

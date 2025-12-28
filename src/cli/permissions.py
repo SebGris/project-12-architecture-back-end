@@ -3,9 +3,9 @@
 This module provides decorators to enforce permissions based on user roles/departments.
 """
 
+import inspect
 from functools import wraps
 from typing import Callable
-import inspect
 
 import typer
 

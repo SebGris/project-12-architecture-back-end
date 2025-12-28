@@ -1,5 +1,6 @@
-import typer
 from datetime import datetime
+
+import typer
 
 from src.cli import console
 from src.cli import validators
