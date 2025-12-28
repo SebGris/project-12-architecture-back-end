@@ -12,6 +12,12 @@ def main():
     # 1. Initialize Sentry for error tracking
     init_sentry()
 
+    # try:
+    #     raise ValueError("Test erreur Sentry - provoquée volontairement")
+    # except Exception as e:
+    #     capture_exception(e, context={"test": True, "source": "manual_test"})
+    #     print("Exception capturée et envoyée à Sentry!")
+
     # 2. Launch the Typer application
     try:
         commands.app()
