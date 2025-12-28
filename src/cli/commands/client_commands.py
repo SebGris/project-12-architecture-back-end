@@ -37,6 +37,7 @@ def create_client(
         prompt="ID du contact commercial, ENTRER pour auto-assignation (valeur par défaut: 0)",
         callback=validators.validate_sales_contact_id_callback,
     ),
+    current_user=None,
 ):
     """Create a new client in the CRM system.
 
@@ -65,13 +66,9 @@ def create_client(
     container = Container()
     client_service = container.client_service()
     user_service = container.user_service()
-    auth_service = container.auth_service()
 
     # Show header at the beginning
     console.print_command_header("Création d'un nouveau client")
-
-    # Get current user from auth_service (decorator already verified authentication)
-    current_user = auth_service.get_current_user()
 
     # Auto-assign for COMMERCIAL users if no sales_contact_id provided
     if sales_contact_id == 0:
@@ -167,6 +164,7 @@ def update_client(
         "",
         prompt="Nouveau nom d'entreprise (laisser vide pour ne pas modifier)",
     ),
+    current_user=None,
 ):
     """Update client information.
 
@@ -193,12 +191,8 @@ def update_client(
     # Manually get services from container
     container = Container()
     client_service = container.client_service()
-    auth_service = container.auth_service()
 
     console.print_command_header("Mise à jour d'un client")
-
-    # Get current user for permission check
-    current_user = auth_service.get_current_user()
 
     # Vérifier que le client existe
     client = client_service.get_client(client_id)

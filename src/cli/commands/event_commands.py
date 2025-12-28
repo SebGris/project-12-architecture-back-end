@@ -71,6 +71,7 @@ def create_event(
     support_contact_id: int = typer.Option(
         0, prompt="ID du contact support (0 si aucun)"
     ),
+    current_user=None,
 ):
     """Create a new event in the CRM system.
 
@@ -102,13 +103,9 @@ def create_event(
     event_service = container.event_service()
     contract_service = container.contract_service()
     user_service = container.user_service()
-    auth_service = container.auth_service()
 
     # Show header at the beginning
     console.print_command_header("Création d'un nouvel événement")
-
-    # Get current user for permission checks
-    current_user = auth_service.get_current_user()
 
     # Business validation: check if contract exists
     contract = contract_service.get_contract(contract_id)
@@ -252,6 +249,7 @@ def update_event(
     notes: str = typer.Option(
         "", prompt="Nouvelles notes (laisser vide pour ne pas modifier)"
     ),
+    current_user=None,
 ):
     """Update event information.
 
@@ -279,12 +277,8 @@ def update_event(
     # Manually get services from container
     container = Container()
     event_service = container.event_service()
-    auth_service = container.auth_service()
 
     console.print_command_header("Mise à jour d'un événement")
-
-    # Get current user for permission check
-    current_user = auth_service.get_current_user()
 
     # Vérifier que l'événement existe
     event = event_service.get_event(event_id)
@@ -584,7 +578,7 @@ def filter_unassigned_events():
 
 @app.command()
 @require_department(Department.SUPPORT)
-def filter_my_events():
+def filter_my_events(current_user=None):
     """Display my assigned events.
 
     This command lists all events assigned to the logged-in SUPPORT user.
@@ -599,18 +593,14 @@ def filter_my_events():
     # Manually get services from container
     container = Container()
     event_service = container.event_service()
-    auth_service = container.auth_service()
 
     console.print_command_header("Mes événements")
 
-    # Get current user (already validated as SUPPORT by decorator)
-    user = auth_service.get_current_user()
-
-    events = event_service.get_events_by_support_contact(user.id)
+    events = event_service.get_events_by_support_contact(current_user.id)
 
     if not events:
         console.print_error(
-            f"Aucun événement assigné à {user.first_name} {user.last_name}"
+            f"Aucun événement assigné à {current_user.first_name} {current_user.last_name}"
         )
         return
 
@@ -633,7 +623,7 @@ def filter_my_events():
         )
         console.print_field(
             LABEL_SUPPORT_CONTACT,
-            f"{user.first_name} {user.last_name} (ID: {user.id})",
+            f"{current_user.first_name} {current_user.last_name} (ID: {current_user.id})",
         )
         console.print_field(LABEL_LOCATION, event.location)
         console.print_field(LABEL_ATTENDEES, str(event.attendees))
@@ -642,5 +632,5 @@ def filter_my_events():
         console.print_separator()
 
     console.print_success(
-        f"Total: {len(events)} événement(s) assigné(s) à {user.first_name} {user.last_name}"
+        f"Total: {len(events)} événement(s) assigné(s) à {current_user.first_name} {current_user.last_name}"
     )

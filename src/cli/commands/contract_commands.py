@@ -143,6 +143,7 @@ def sign_contract(
         prompt="ID du contrat à signer",
         callback=validators.validate_contract_id_callback,
     ),
+    current_user=None,
 ):
     """Sign an existing contract.
 
@@ -167,13 +168,9 @@ def sign_contract(
     container = Container()
     contract_service = container.contract_service()
     client_service = container.client_service()
-    auth_service = container.auth_service()
 
     # Show header
     console.print_command_header("Signature d'un contrat")
-
-    # Get current user
-    current_user = auth_service.get_current_user()
 
     # Get contract
     contract = contract_service.get_contract(contract_id)
@@ -241,6 +238,7 @@ def update_contract_payment(
         prompt="Montant payé",
         callback=validators.validate_amount_callback,
     ),
+    current_user=None,
 ):
     """Record a payment for a contract.
 
@@ -266,13 +264,9 @@ def update_contract_payment(
     container = Container()
     contract_service = container.contract_service()
     client_service = container.client_service()
-    auth_service = container.auth_service()
 
     # Show header
     console.print_command_header("Enregistrement d'un paiement")
-
-    # Get current user
-    current_user = auth_service.get_current_user()
 
     # Convert amount to Decimal
     try:
@@ -356,6 +350,7 @@ def update_contract(
         prompt="Nouveau montant restant (laisser vide pour ne pas modifier)",
     ),
     is_signed: bool = typer.Option(None, prompt="Marquer comme signé ?"),
+    current_user=None,
 ):
     """Update contract information.
 
@@ -380,12 +375,8 @@ def update_contract(
     # Manually get services from container
     container = Container()
     contract_service = container.contract_service()
-    auth_service = container.auth_service()
 
     console.print_command_header("Mise à jour d'un contrat")
-
-    # Get current user for permission check
-    current_user = auth_service.get_current_user()
 
     # Vérifier que le contrat existe
     contract = contract_service.get_contract(contract_id)
