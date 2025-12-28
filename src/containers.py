@@ -5,9 +5,6 @@ dependency-injector library. It wires together all services, repositories,
 and database sessions for the application.
 """
 
-import os
-from pathlib import Path
-
 from dependency_injector import containers, providers
 
 from src.database import get_db_session
@@ -34,7 +31,6 @@ class Container(containers.DeclarativeContainer):
     """Dependency injection container for Epic Events CRM.
 
     This container manages the lifecycle of all application dependencies:
-    - Configuration (loaded from YAML files based on APP_ENV)
     - Database sessions
     - Repositories (data access layer)
     - Services (business logic layer)
@@ -42,20 +38,6 @@ class Container(containers.DeclarativeContainer):
     Each dependency is configured as a Factory provider, creating
     new instances on each call for proper session management.
     """
-
-    # Configuration provider - loads from YAML based on APP_ENV
-    config = providers.Configuration()
-
-    # Determine which config file to load based on environment
-    env = os.getenv("APP_ENV", "development")
-    config_path = Path(__file__).parent.parent / "config" / f"{env}.yml"
-
-    # Load YAML config if file exists and PyYAML is available
-    try:
-        if config_path.exists():
-            config.from_yaml(str(config_path))
-    except Exception:
-        pass
 
     # Database session resource (context manager)
     db_session = providers.Resource(get_db_session)
