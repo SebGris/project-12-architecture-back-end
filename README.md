@@ -70,6 +70,25 @@ ENVIRONMENT=development
 python -m poetry run alembic upgrade head
 ```
 
+5. **Créer les utilisateurs de test (optionnel)**
+
+Pour démarrer rapidement avec des données de test, exécutez le script de seed :
+```bash
+python -m poetry run python seed_database.py
+```
+
+Ce script crée 5 utilisateurs de test :
+
+| Département | Username | Mot de passe |
+|-------------|----------|--------------|
+| GESTION | admin | Admin123! |
+| COMMERCIAL | commercial1 | Commercial123! |
+| COMMERCIAL | commercial2 | Commercial123! |
+| SUPPORT | support1 | Support123! |
+| SUPPORT | support2 | Support123! |
+
+> **Note** : Ces identifiants sont uniquement pour le développement. En production, créez des utilisateurs avec des mots de passe sécurisés via la commande `epicevents create-user`.
+
 ## 🚀 Utilisation
 
 ### Installation de la commande
