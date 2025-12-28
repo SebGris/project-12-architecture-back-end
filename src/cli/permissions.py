@@ -13,10 +13,13 @@ from src.cli.console import print_error, print_separator
 from src.containers import Container
 from src.models.user import Department
 
+# Error messages
+MSG_NOT_LOGGED_IN = "Vous devez être connecté pour effectuer cette action"
+MSG_LOGIN_HINT = "Utilisez 'epicevents login' pour vous connecter"
+MSG_UNAUTHORIZED = "Action non autorisée pour votre département"
 
-def require_department(
-    *allowed_departments: Department,
-):
+
+def require_department(*valid_departments: Department):
     """Decorator to require authentication and optionally specific department(s).
 
     This decorator checks if the user is authenticated before executing the command.
@@ -60,21 +63,16 @@ def require_department(
 
             if not user:
                 print_separator()
-                print_error(
-                    "Vous devez être connecté pour effectuer cette action"
-                )
-                print_error("Utilisez 'epicevents login' pour vous connecter")
+                print_error(MSG_NOT_LOGGED_IN)
+                print_error(MSG_LOGIN_HINT)
                 print_separator()
                 raise typer.Exit(code=1)
 
             # Check if user has the required department (only if departments are specified)
-            if (
-                allowed_departments
-                and user.department not in allowed_departments
-            ):
-                dept_names = ", ".join([d.value for d in allowed_departments])
+            if valid_departments and user.department not in valid_departments:
+                dept_names = ", ".join(d.value for d in valid_departments)
                 print_separator()
-                print_error("Action non autorisée pour votre département")
+                print_error(MSG_UNAUTHORIZED)
                 print_error(f"Départements autorisés : {dept_names}")
                 print_error(f"Votre département : {user.department.value}")
                 print_separator()
