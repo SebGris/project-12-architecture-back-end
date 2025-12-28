@@ -134,15 +134,14 @@ project-12-architecture-back-end/
 ├── pyproject.toml            # Configuration Poetry + entry points CLI
 ├── poetry.lock
 ├── alembic.ini               # Configuration Alembic
-├── alembic/                  # Migrations
+├── schema_de_la_base_de_donnees.png  # Schéma de la base de données
+├── migrations/               # Migrations Alembic
 │   └── versions/
 ├── src/
 │   ├── __init__.py
 │   ├── database.py           # Configuration DB et sessions
 │   ├── containers.py         # Dependency Injection (dependency-injector)
-│   ├── finders.py            # Finders pour requêtes SQLite
 │   ├── sentry_config.py      # Configuration Sentry
-│   ├── validators.py         # Validateurs de saisie
 │   ├── models/               # Modèles SQLAlchemy ORM
 │   │   ├── __init__.py
 │   │   ├── user.py
@@ -170,6 +169,8 @@ project-12-architecture-back-end/
 │       ├── __init__.py
 │       ├── main.py           # Point d'entrée CLI (epicevents)
 │       ├── permissions.py    # Décorateurs de permissions
+│       ├── validators.py     # Validateurs de saisie
+│       ├── constants.py      # Constantes CLI
 │       ├── console.py        # Utilities d'affichage
 │       └── commands/         # Commandes Typer modulaires
 │           ├── __init__.py           # Agrégation des sous-applications
@@ -179,18 +180,12 @@ project-12-architecture-back-end/
 │           ├── contract_commands.py  # Commandes contrats
 │           └── event_commands.py     # Commandes événements
 ├── tests/
+│   ├── conftest.py           # Fixtures pytest partagées
 │   ├── unit/                 # Tests unitaires
-│   │   └── test_client.py
 │   ├── integration/          # Tests d'intégration
-│   │   └── test_orm.py
-│   └── contract/             # Tests de contrat
-│       └── test_auth_commands.py
+│   └── fixtures/             # Fixtures de test
 └── docs/                     # Documentation du projet
-    ├── database-schema.md
-    ├── explication-models.md
-    ├── TYPER_SOUS_APPLICATIONS.md
-    ├── DEPENDENCY_INJECTION_GUIDE.md
-    └── ...
+    └── IDENTIFIANTS-TEST.md
 ```
 
 ## 📝 Modèles de données
@@ -207,7 +202,7 @@ project-12-architecture-back-end/
 ### Event
 - id, name, contract_id, support_contact_id, event_start, event_end, location, attendees, notes, created_at, updated_at
 
-Pour plus de détails, voir [docs/database-schema.md](docs/database-schema.md) et [docs/explication-models.md](docs/explication-models.md)
+Pour plus de détails, voir le [schéma de la base de données](schema_de_la_base_de_donnees.png)
 
 ## 🔒 Permissions granulaires
 

@@ -12,11 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import bcrypt
 
-# Import de tous les modèles pour que SQLAlchemy puisse résoudre les relations
 from src.models.user import User, Department
-from src.models.client import Client
-from src.models.contract import Contract
-from src.models.event import Event
 
 
 def hash_password(password: str) -> str:
