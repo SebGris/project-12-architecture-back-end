@@ -319,11 +319,20 @@ SELECT name FROM sqlite_master WHERE type='table';  -- Lister les tables
 
 ### Lancer les tests avec Poetry
 
+**Si l'environnement virtuel est activé** (vous voyez `(project-12-...)` dans le terminal) :
 ```bash
 pytest
 
 # Tests avec couverture
 pytest --cov=src tests/
+```
+
+**Sans activer l'environnement virtuel** :
+```bash
+python -m poetry run pytest
+
+# Tests avec couverture
+python -m poetry run pytest --cov=src tests/
 ```
 
 ### Résolution de problèmes courants
