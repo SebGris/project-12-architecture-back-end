@@ -10,6 +10,7 @@ from typing import Callable
 import typer
 
 from src.cli.console import print_error, print_separator
+from src.containers import Container
 from src.models.user import Department
 
 
@@ -51,8 +52,6 @@ def require_department(
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Instantiate auth_service directly from container
-            from src.containers import Container
-
             container = Container()
             auth_service = container.auth_service()
 

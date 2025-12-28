@@ -100,7 +100,7 @@ class TestRequireDepartmentAuthentication:
     ):
         """GIVEN unauthenticated user / WHEN calling decorated function / THEN raises typer.Exit"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = None
 
         @require_department(Department.COMMERCIAL)
@@ -119,7 +119,7 @@ class TestRequireDepartmentAuthentication:
     ):
         """GIVEN authenticated user with correct dept / WHEN calling decorated function / THEN succeeds"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(Department.COMMERCIAL)
@@ -142,7 +142,7 @@ class TestRequireDepartmentPermissions:
     ):
         """GIVEN user from wrong dept / WHEN single dept required / THEN raises typer.Exit"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(
@@ -162,7 +162,7 @@ class TestRequireDepartmentPermissions:
     ):
         """GIVEN user from wrong dept / WHEN multiple depts allowed / THEN raises typer.Exit"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = support_user
 
         @require_department(
@@ -182,7 +182,7 @@ class TestRequireDepartmentPermissions:
     ):
         """GIVEN user from allowed dept / WHEN multiple depts allowed / THEN succeeds"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(Department.COMMERCIAL, Department.GESTION)
@@ -200,7 +200,7 @@ class TestRequireDepartmentPermissions:
     ):
         """GIVEN user from 2nd allowed dept / WHEN multiple depts allowed / THEN succeeds"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = gestion_user
 
         @require_department(Department.COMMERCIAL, Department.GESTION)
@@ -222,7 +222,7 @@ class TestRequireDepartmentNoRestriction:
     ):
         """GIVEN authenticated user / WHEN no dept restriction / THEN succeeds"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department()  # No department restriction
@@ -240,7 +240,7 @@ class TestRequireDepartmentNoRestriction:
     ):
         """GIVEN unauthenticated user / WHEN no dept restriction / THEN raises typer.Exit"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = None
 
         @require_department()  # No department restriction
@@ -262,7 +262,7 @@ class TestRequireDepartmentCurrentUserInjection:
     ):
         """GIVEN function without current_user param / WHEN decorated / THEN works without injection"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(Department.COMMERCIAL)
@@ -280,7 +280,7 @@ class TestRequireDepartmentCurrentUserInjection:
     ):
         """GIVEN function with current_user param / WHEN decorated / THEN injects user"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = commercial_user
 
         @require_department(Department.COMMERCIAL)
@@ -298,7 +298,7 @@ class TestRequireDepartmentCurrentUserInjection:
     ):
         """GIVEN function with args and current_user / WHEN decorated / THEN preserves args and injects user"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = gestion_user
 
         @require_department(Department.GESTION)
@@ -316,7 +316,7 @@ class TestRequireDepartmentCurrentUserInjection:
     ):
         """GIVEN function with kwargs and current_user / WHEN decorated / THEN preserves kwargs and injects user"""
         # Arrange
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
         mock_auth_service.get_current_user.return_value = support_user
 
         @require_department(Department.SUPPORT)
@@ -354,7 +354,7 @@ class TestRequireDepartmentAllDepartments:
         request,
     ):
         """GIVEN user from any department / WHEN all departments allowed / THEN succeeds"""
-        mocker.patch("src.containers.Container", return_value=mock_container)
+        mocker.patch("src.cli.permissions.Container", return_value=mock_container)
 
         # Get the user fixture dynamically using request.getfixturevalue()
         user = request.getfixturevalue(user_fixture_name)
