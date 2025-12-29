@@ -112,24 +112,47 @@ python -m poetry run epicevents --help
 
 ### Liste des commandes
 
-Si vous ne voulez pas utiliser Poetry shell, vous pouvez exécuter les commandes directement :
-
 ```bash
-# Avec Poetry run
-python -m poetry run epicevents login
-python -m poetry run epicevents whoami
-python -m poetry run epicevents logout
+# Authentification
+epicevents login                    # Se connecter
+epicevents logout                   # Se déconnecter
+epicevents whoami                   # Afficher l'utilisateur connecté
 
-python -m poetry run epicevents create-user
-python -m poetry run epicevents create-client
+# Utilisateurs (GESTION uniquement)
+epicevents create-user              # Créer un utilisateur
+epicevents update-user              # Modifier un utilisateur
+epicevents delete-user              # Supprimer un utilisateur
 
-# Afficher l'aide
-python -m poetry run epicevents --help
-python -m poetry run epicevents create-user --help
+# Clients
+epicevents create-client            # Créer un client
+epicevents update-client            # Modifier un client
+epicevents my-clients               # Lister mes clients (COMMERCIAL)
+epicevents list-clients             # Lister tous les clients
 
-# Ou en tant que module Python
-python -m poetry run python -m src.cli.main
+# Contrats
+epicevents create-contract          # Créer un contrat
+epicevents update-contract          # Modifier un contrat
+epicevents sign-contract            # Signer un contrat
+epicevents update-contract-payment  # Enregistrer un paiement
+epicevents filter-unsigned-contracts # Filtrer contrats non signés
+epicevents filter-unpaid-contracts  # Filtrer contrats non payés
+epicevents filter-signed-contracts  # Filtrer contrats signés
+epicevents list-contracts           # Lister tous les contrats
+
+# Événements
+epicevents create-event             # Créer un événement
+epicevents update-event             # Modifier un événement
+epicevents assign-support           # Assigner un support (GESTION)
+epicevents filter-unassigned-events # Filtrer événements sans support
+epicevents filter-my-events         # Mes événements (SUPPORT)
+epicevents list-events              # Lister tous les événements
+
+# Aide
+epicevents --help                   # Aide générale
+epicevents <commande> --help        # Aide sur une commande
 ```
+
+> **Note** : Préfixer avec `python -m poetry run` si l'environnement virtuel n'est pas activé.
 
 ## 🔐 Sécurité
 
@@ -233,15 +256,23 @@ Le système implémente des **permissions granulaires par département** pour s�
 |----------|---------|------------|---------|
 | **Clients** | | | |
 | `create-client` | ✅ Tous | ✅ Auto-assigné | ❌ |
-| `update-client` | ✅ Tous | ✅ **Ses clients** | ❌ |
+| `update-client` | ✅ Tous | ✅ Ses clients | ❌ |
+| `my-clients` | ❌ | ✅ | ❌ |
+| `list-clients` | ✅ | ✅ | ✅ |
 | **Contrats** | | | |
 | `create-contract` | ✅ Tous | ✅ Ses clients | ❌ |
-| `update-contract` | ✅ Tous | ✅ **Ses contrats** | ❌ |
+| `update-contract` | ✅ Tous | ✅ Ses contrats | ❌ |
+| `sign-contract` | ❌ | ✅ Ses contrats | ❌ |
+| `filter-unsigned-contracts` | ✅ | ✅ | ❌ |
+| `filter-unpaid-contracts` | ✅ | ✅ | ❌ |
+| `list-contracts` | ✅ | ✅ | ✅ |
 | **Événements** | | | |
-| `create-event` | ✅ | ✅ | ❌ |
-| `update-event-attendees` | ✅ Tous | ❌ | ✅ **Ses events** |
+| `create-event` | ✅ | ✅ Contrat signé | ❌ |
+| `update-event` | ✅ Tous | ❌ | ✅ Ses events |
 | `assign-support` | ✅ | ❌ | ❌ |
-| `filter-my-events` | ❌ | ❌ | ✅ Auto-détection |
+| `filter-unassigned-events` | ✅ | ❌ | ✅ |
+| `filter-my-events` | ❌ | ❌ | ✅ |
+| `list-events` | ✅ | ✅ | ✅ |
 
 ### Principe de moindre privilège
 
