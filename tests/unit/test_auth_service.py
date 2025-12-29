@@ -28,22 +28,47 @@ from src.repositories.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
 from src.services.auth_service import AuthService
+from src.services.token_service import TokenService
+from src.services.token_storage_service import TokenStorageService
+from src.services.password_hashing_service import PasswordHashingService
 
 
 @pytest.fixture
-def auth_service(db_session, mocker):
-    """Create an AuthService instance with real repository and SQLite DB."""
-    # Mock environment variable to ensure consistent secret key
+def password_service():
+    """Create a PasswordHashingService instance."""
+    return PasswordHashingService()
+
+
+@pytest.fixture
+def token_service(mocker):
+    """Create a TokenService instance with mocked secret key."""
     mocker.patch.dict(
         os.environ,
         {"EPICEVENTS_SECRET_KEY": "test_secret_key_32_chars_long_1234567890"},
     )
-    repository = SqlAlchemyUserRepository(session=db_session)
-    return AuthService(repository=repository)
+    return TokenService()
 
 
 @pytest.fixture
-def test_user_with_password(db_session):
+def token_storage_service():
+    """Create a TokenStorageService instance."""
+    return TokenStorageService()
+
+
+@pytest.fixture
+def auth_service(db_session, token_service, token_storage_service, password_service):
+    """Create an AuthService instance with real repository and SQLite DB."""
+    repository = SqlAlchemyUserRepository(session=db_session)
+    return AuthService(
+        repository=repository,
+        token_service=token_service,
+        token_storage=token_storage_service,
+        password_service=password_service,
+    )
+
+
+@pytest.fixture
+def test_user_with_password(db_session, password_service):
     """Create a real user with hashed password in database."""
     user = User(
         username="testuser",
@@ -52,9 +77,8 @@ def test_user_with_password(db_session):
         last_name="User",
         phone="0612345678",
         department=Department.COMMERCIAL,
-        password_hash="",  # Will be set by set_password
+        password_hash=password_service.hash_password("CorrectPassword123!"),
     )
-    user.set_password("CorrectPassword123!")
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -71,29 +95,27 @@ def cleanup_token_file():
 
 
 class TestGetOrCreateSecretKey:
-    """Test _get_or_create_secret_key method."""
+    """Test _get_or_create_secret_key method in TokenService."""
 
-    def test_get_secret_key_from_env(self, mocker, db_session):
-        """GIVEN EPICEVENTS_SECRET_KEY in env / WHEN service created / THEN uses env key"""
+    def test_get_secret_key_from_env(self, mocker):
+        """GIVEN EPICEVENTS_SECRET_KEY in env / WHEN TokenService created / THEN uses env key"""
         # Arrange
         expected_key = "my_custom_secret_key_from_env_1234567890"
         mocker.patch.dict(os.environ, {"EPICEVENTS_SECRET_KEY": expected_key})
-        repository = SqlAlchemyUserRepository(session=db_session)
 
         # Act
-        service = AuthService(repository=repository)
+        service = TokenService()
 
         # Assert
         assert service._secret_key == expected_key
 
-    def test_generate_secret_key_if_not_in_env(self, mocker, db_session):
-        """GIVEN no EPICEVENTS_SECRET_KEY in env / WHEN service created / THEN generates key"""
+    def test_generate_secret_key_if_not_in_env(self, mocker):
+        """GIVEN no EPICEVENTS_SECRET_KEY in env / WHEN TokenService created / THEN generates key"""
         # Arrange - Remove env variable
         mocker.patch.dict(os.environ, {}, clear=True)
-        repository = SqlAlchemyUserRepository(session=db_session)
 
         # Act
-        service = AuthService(repository=repository)
+        service = TokenService()
 
         # Assert
         assert service._secret_key is not None
@@ -140,7 +162,7 @@ class TestGenerateToken:
 
     @freeze_time("2025-01-15 10:00:00")
     def test_generate_token_success(
-        self, auth_service, test_user_with_password
+        self, auth_service, test_user_with_password, token_service
     ):
         """GIVEN authenticated user / WHEN generate_token() / THEN returns valid JWT"""
         # Act
@@ -152,7 +174,7 @@ class TestGenerateToken:
 
         # Decode and verify payload
         payload = jwt.decode(
-            token, auth_service._secret_key, algorithms=["HS256"]
+            token, token_service._secret_key, algorithms=["HS256"]
         )
         assert payload["user_id"] == test_user_with_password.id
         assert payload["username"] == "testuser"
@@ -162,7 +184,7 @@ class TestGenerateToken:
 
     @freeze_time("2025-01-15 10:00:00")
     def test_generate_token_expiration_24h(
-        self, auth_service, test_user_with_password
+        self, auth_service, test_user_with_password, token_service
     ):
         """GIVEN user / WHEN generate_token() / THEN token expires in 24h"""
         # Act
@@ -170,7 +192,7 @@ class TestGenerateToken:
 
         # Assert
         payload = jwt.decode(
-            token, auth_service._secret_key, algorithms=["HS256"]
+            token, token_service._secret_key, algorithms=["HS256"]
         )
         iat = datetime.fromtimestamp(payload["iat"], tz=timezone.utc)
         exp = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
@@ -222,6 +244,7 @@ class TestValidateToken:
         # Assert
         assert payload is None
 
+    @freeze_time("2025-01-15 10:00:00")
     def test_validate_token_tampered(
         self, auth_service, test_user_with_password
     ):
@@ -378,7 +401,7 @@ class TestGetCurrentUser:
 
     @freeze_time("2025-01-15 10:00:00")
     def test_get_current_user_invalid_payload(
-        self, auth_service, cleanup_token_file
+        self, auth_service, token_service, cleanup_token_file
     ):
         """GIVEN token with no user_id / WHEN get_current_user() / THEN returns None"""
         # Arrange - Manually create token without user_id
@@ -388,7 +411,7 @@ class TestGetCurrentUser:
             "iat": datetime.now(timezone.utc),
         }
         token = jwt.encode(
-            payload, auth_service._secret_key, algorithm="HS256"
+            payload, token_service._secret_key, algorithm="HS256"
         )
         auth_service.save_token(token)
 

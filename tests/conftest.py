@@ -16,6 +16,7 @@ try:
     from src.models.contract import Contract
     from src.models.event import Event
     from src.models.user import Department, User
+    from src.services.password_hashing_service import PasswordHashingService
 except ImportError:
     # Mock for TDD phase
     User = None
@@ -24,6 +25,7 @@ except ImportError:
     Event = None
     Base = None
     Department = None
+    PasswordHashingService = None
 
 
 @pytest.fixture
@@ -62,6 +64,7 @@ def test_users(db_session):
     if User is None or Department is None:
         pytest.skip("User model not implemented yet (TDD)")
 
+    password_service = PasswordHashingService()
     users = {}
 
     # Admin (GESTION)
@@ -72,8 +75,8 @@ def test_users(db_session):
         last_name="Gestion",
         phone="+33 1 23 45 67 89",
         department=Department.GESTION,
+        password_hash=password_service.hash_password("AdminPass123"),
     )
-    admin.set_password("AdminPass123")
     db_session.add(admin)
 
     # Commercial 1
@@ -84,8 +87,8 @@ def test_users(db_session):
         last_name="One",
         phone="+33 1 98 76 54 32",
         department=Department.COMMERCIAL,
+        password_hash=password_service.hash_password("CommPass123"),
     )
-    commercial1.set_password("CommPass123")
     db_session.add(commercial1)
 
     # Commercial 2
@@ -96,8 +99,8 @@ def test_users(db_session):
         last_name="Two",
         phone="+33 1 11 22 33 44",
         department=Department.COMMERCIAL,
+        password_hash=password_service.hash_password("Comm2Pass123"),
     )
-    commercial2.set_password("Comm2Pass123")
     db_session.add(commercial2)
 
     # Support 1
@@ -108,8 +111,8 @@ def test_users(db_session):
         last_name="One",
         phone="+33 1 55 66 77 88",
         department=Department.SUPPORT,
+        password_hash=password_service.hash_password("SuppPass123"),
     )
-    support1.set_password("SuppPass123")
     db_session.add(support1)
 
     # Support 2
@@ -120,8 +123,8 @@ def test_users(db_session):
         last_name="Two",
         phone="+33 1 99 88 77 66",
         department=Department.SUPPORT,
+        password_hash=password_service.hash_password("Supp2Pass123"),
     )
-    support2.set_password("Supp2Pass123")
     db_session.add(support2)
 
     db_session.commit()

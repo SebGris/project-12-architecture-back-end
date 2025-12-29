@@ -18,12 +18,19 @@ from src.models.user import Department, User
 from src.models.client import Client
 from src.models.contract import Contract
 from src.models.event import Event
+from src.services.password_hashing_service import PasswordHashingService
 
 runner = CliRunner()
 
 
 @pytest.fixture
-def support_user(db_session):
+def password_service():
+    """Create a PasswordHashingService instance."""
+    return PasswordHashingService()
+
+
+@pytest.fixture
+def support_user(db_session, password_service):
     """Create a real support user in database."""
     user = User(
         username="support1",
@@ -32,9 +39,8 @@ def support_user(db_session):
         last_name="Support",
         phone="+33133333333",
         department=Department.SUPPORT,
-        password_hash="",
+        password_hash=password_service.hash_password("password123"),
     )
-    user.set_password("password123")
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -42,7 +48,7 @@ def support_user(db_session):
 
 
 @pytest.fixture
-def commercial_user(db_session):
+def commercial_user(db_session, password_service):
     """Create a real commercial user in database."""
     user = User(
         username="commercial1",
@@ -51,9 +57,8 @@ def commercial_user(db_session):
         last_name="Commercial",
         phone="+33122222222",
         department=Department.COMMERCIAL,
-        password_hash="",
+        password_hash=password_service.hash_password("password123"),
     )
-    user.set_password("password123")
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -61,7 +66,7 @@ def commercial_user(db_session):
 
 
 @pytest.fixture
-def gestion_user(db_session):
+def gestion_user(db_session, password_service):
     """Create a real gestion user in database."""
     user = User(
         username="gestion1",
@@ -70,9 +75,8 @@ def gestion_user(db_session):
         last_name="Gestion",
         phone="+33111111111",
         department=Department.GESTION,
-        password_hash="",
+        password_hash=password_service.hash_password("password123"),
     )
-    user.set_password("password123")
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)

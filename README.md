@@ -206,12 +206,16 @@ project-12-architecture-back-end/
 │   │   ├── contract_service.py
 │   │   ├── event_service.py
 │   │   ├── auth_service.py
+│   │   ├── token_service.py           # Gestion JWT
+│   │   ├── token_storage_service.py   # Persistance token
 │   │   └── password_hashing_service.py
 │   └── cli/                  # Interface en ligne de commande
 │       ├── __init__.py
 │       ├── main.py           # Point d'entrée CLI (epicevents)
 │       ├── permissions.py    # Décorateurs de permissions
-│       ├── validators.py     # Validateurs de saisie
+│       ├── validators.py     # Validateurs de saisie CLI
+│       ├── business_validator.py  # Validateurs métier
+│       ├── pagination.py     # Gestion pagination
 │       ├── constants.py      # Constantes CLI
 │       ├── console.py        # Utilities d'affichage
 │       └── commands/         # Commandes Typer modulaires

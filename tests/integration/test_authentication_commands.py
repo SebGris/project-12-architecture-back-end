@@ -22,6 +22,7 @@ from typer.testing import CliRunner
 
 from src.cli.commands import app
 from src.models.user import Department, User
+from src.services.password_hashing_service import PasswordHashingService
 
 runner = CliRunner()
 
@@ -29,6 +30,7 @@ runner = CliRunner()
 @pytest.fixture
 def test_user(db_session):
     """Create a real user in database for testing."""
+    password_service = PasswordHashingService()
     user = User(
         username="admin",
         email="admin@epicevents.com",
@@ -36,9 +38,8 @@ def test_user(db_session):
         last_name="Dubois",
         phone="+33123456789",
         department=Department.GESTION,
-        password_hash="",
+        password_hash=password_service.hash_password("Admin123!"),
     )
-    user.set_password("Admin123!")
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)

@@ -20,13 +20,20 @@ from src.repositories.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
 from src.services.user_service import UserService
+from src.services.password_hashing_service import PasswordHashingService
 
 
 @pytest.fixture
-def user_service(db_session):
+def password_service():
+    """Create a PasswordHashingService instance."""
+    return PasswordHashingService()
+
+
+@pytest.fixture
+def user_service(db_session, password_service):
     """Create a UserService instance with real repository and SQLite DB."""
     repository = SqlAlchemyUserRepository(session=db_session)
-    return UserService(repository=repository)
+    return UserService(repository=repository, password_service=password_service)
 
 
 class TestCreateUser:

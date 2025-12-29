@@ -26,6 +26,7 @@ import typer
 from datetime import datetime, timedelta
 from decimal import Decimal
 from src.cli import validators
+from src.cli.business_validator import BusinessValidator
 from src.models.user import Department
 
 
@@ -389,20 +390,20 @@ class TestValidateContractAmounts:
     def test_validate_contract_amounts_valid(self):
         """GIVEN valid amounts / WHEN validated / THEN no error"""
         # Should not raise any exception
-        validators.validate_contract_amounts(
+        BusinessValidator.validate_contract_amounts(
             total_amount=Decimal("10000"), remaining_amount=Decimal("5000")
         )
-        validators.validate_contract_amounts(
+        BusinessValidator.validate_contract_amounts(
             total_amount=Decimal("10000"), remaining_amount=Decimal("10000")
         )
-        validators.validate_contract_amounts(
+        BusinessValidator.validate_contract_amounts(
             total_amount=Decimal("10000"), remaining_amount=Decimal("0")
         )
 
     def test_validate_contract_amounts_negative_total(self):
         """GIVEN negative total / WHEN validated / THEN raises ValueError"""
         with pytest.raises(ValueError) as exc_info:
-            validators.validate_contract_amounts(
+            BusinessValidator.validate_contract_amounts(
                 total_amount=Decimal("-100"), remaining_amount=Decimal("0")
             )
         assert "positif" in str(exc_info.value)
@@ -410,14 +411,14 @@ class TestValidateContractAmounts:
     def test_validate_contract_amounts_negative_remaining(self):
         """GIVEN negative remaining / WHEN validated / THEN raises ValueError"""
         with pytest.raises(ValueError):
-            validators.validate_contract_amounts(
+            BusinessValidator.validate_contract_amounts(
                 total_amount=Decimal("1000"), remaining_amount=Decimal("-100")
             )
 
     def test_validate_contract_amounts_remaining_exceeds_total(self):
         """GIVEN remaining > total / WHEN validated / THEN raises ValueError"""
         with pytest.raises(ValueError) as exc_info:
-            validators.validate_contract_amounts(
+            BusinessValidator.validate_contract_amounts(
                 total_amount=Decimal("1000"), remaining_amount=Decimal("1500")
             )
         assert "dépasser" in str(exc_info.value)
@@ -428,31 +429,31 @@ class TestValidatePaymentAmount:
 
     def test_validate_payment_amount_valid(self):
         """GIVEN valid payment / WHEN validated / THEN no error"""
-        validators.validate_payment_amount(
+        BusinessValidator.validate_payment_amount(
             amount_paid=Decimal("500"), remaining_amount=Decimal("1000")
         )
-        validators.validate_payment_amount(
+        BusinessValidator.validate_payment_amount(
             amount_paid=Decimal("1000"), remaining_amount=Decimal("1000")
         )
 
     def test_validate_payment_amount_zero(self):
         """GIVEN payment = 0 / WHEN validated / THEN raises ValueError"""
         with pytest.raises(ValueError):
-            validators.validate_payment_amount(
+            BusinessValidator.validate_payment_amount(
                 amount_paid=Decimal("0"), remaining_amount=Decimal("1000")
             )
 
     def test_validate_payment_amount_negative(self):
         """GIVEN negative payment / WHEN validated / THEN raises ValueError"""
         with pytest.raises(ValueError):
-            validators.validate_payment_amount(
+            BusinessValidator.validate_payment_amount(
                 amount_paid=Decimal("-100"), remaining_amount=Decimal("1000")
             )
 
     def test_validate_payment_amount_exceeds_remaining(self):
         """GIVEN payment > remaining / WHEN validated / THEN raises ValueError"""
         with pytest.raises(ValueError) as exc_info:
-            validators.validate_payment_amount(
+            BusinessValidator.validate_payment_amount(
                 amount_paid=Decimal("1500"), remaining_amount=Decimal("1000")
             )
         assert "dépasse" in str(exc_info.value)
@@ -468,7 +469,7 @@ class TestValidateUserIsCommercial:
         user.department = Department.COMMERCIAL
 
         # Should not raise any exception
-        validators.validate_user_is_commercial(user)
+        BusinessValidator.validate_user_is_commercial(user)
 
     def test_validate_user_is_commercial_invalid(self, mocker):
         """GIVEN non-COMMERCIAL user / WHEN validated / THEN raises ValueError"""
@@ -477,7 +478,7 @@ class TestValidateUserIsCommercial:
         user.department = Department.GESTION
 
         with pytest.raises(ValueError) as exc_info:
-            validators.validate_user_is_commercial(user)
+            BusinessValidator.validate_user_is_commercial(user)
         assert "COMMERCIAL" in str(exc_info.value)
 
 
@@ -491,7 +492,7 @@ class TestValidateUserIsSupport:
         user.department = Department.SUPPORT
 
         # Should not raise any exception
-        validators.validate_user_is_support(user)
+        BusinessValidator.validate_user_is_support(user)
 
     def test_validate_user_is_support_invalid(self, mocker):
         """GIVEN non-SUPPORT user / WHEN validated / THEN raises ValueError"""
@@ -500,7 +501,7 @@ class TestValidateUserIsSupport:
         user.department = Department.COMMERCIAL
 
         with pytest.raises(ValueError) as exc_info:
-            validators.validate_user_is_support(user)
+            BusinessValidator.validate_user_is_support(user)
         assert "SUPPORT" in str(exc_info.value)
 
 
@@ -513,7 +514,7 @@ class TestValidateEventDates:
         start = datetime.now() + timedelta(days=1)
         end = start + timedelta(hours=2)
 
-        validators.validate_event_dates(
+        BusinessValidator.validate_event_dates(
             event_start=start, event_end=end, attendees=50
         )
 
@@ -523,7 +524,7 @@ class TestValidateEventDates:
         end = start - timedelta(hours=1)  # End before start
 
         with pytest.raises(ValueError) as exc_info:
-            validators.validate_event_dates(
+            BusinessValidator.validate_event_dates(
                 event_start=start, event_end=end, attendees=50
             )
         assert "postérieure" in str(exc_info.value)
@@ -534,7 +535,7 @@ class TestValidateEventDates:
         end = start + timedelta(hours=2)
 
         with pytest.raises(ValueError):
-            validators.validate_event_dates(
+            BusinessValidator.validate_event_dates(
                 event_start=start, event_end=end, attendees=-5
             )
 
@@ -544,7 +545,7 @@ class TestValidateEventDates:
         end = start + timedelta(hours=2)
 
         with pytest.raises(ValueError) as exc_info:
-            validators.validate_event_dates(
+            BusinessValidator.validate_event_dates(
                 event_start=start, event_end=end, attendees=50
             )
         assert "futur" in str(exc_info.value)
@@ -555,11 +556,11 @@ class TestValidateAttendeesPositive:
 
     def test_validate_attendees_positive_valid(self):
         """GIVEN positive attendees / WHEN validated / THEN no error"""
-        validators.validate_attendees_positive(0)
-        validators.validate_attendees_positive(1)
-        validators.validate_attendees_positive(100)
+        BusinessValidator.validate_attendees_positive(0)
+        BusinessValidator.validate_attendees_positive(1)
+        BusinessValidator.validate_attendees_positive(100)
 
     def test_validate_attendees_positive_negative(self):
         """GIVEN negative attendees / WHEN validated / THEN raises ValueError"""
         with pytest.raises(ValueError):
-            validators.validate_attendees_positive(-5)
+            BusinessValidator.validate_attendees_positive(-5)

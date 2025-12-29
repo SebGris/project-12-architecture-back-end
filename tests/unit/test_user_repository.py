@@ -11,6 +11,7 @@ from src.models.user import Department, User
 from src.repositories.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
+from src.services.password_hashing_service import PasswordHashingService
 
 
 @pytest.fixture
@@ -81,6 +82,7 @@ class TestUserRepositoryAdd:
 
     def test_add_new_user(self, user_repository, db_session):
         """GIVEN new user / WHEN add() / THEN user saved with ID"""
+        password_service = PasswordHashingService()
         new_user = User(
             username="newuser",
             email="newuser@epicevents.com",
@@ -88,8 +90,8 @@ class TestUserRepositoryAdd:
             last_name="User",
             phone="0123456789",
             department=Department.COMMERCIAL,
+            password_hash=password_service.hash_password("SecurePass123!"),
         )
-        new_user.set_password("SecurePass123!")
 
         result = user_repository.add(new_user)
 
