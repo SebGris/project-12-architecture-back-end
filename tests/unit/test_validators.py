@@ -106,6 +106,13 @@ class TestValidateFirstName:
         with pytest.raises(typer.BadParameter):
             validators.validate_first_name_callback("A")
 
+    @pytest.mark.parametrize("name", ["Jean123", "Marie@Claire", "Anne#1"])
+    def test_validate_first_name_invalid_chars(self, name):
+        """GIVEN name with invalid chars / WHEN validated / THEN raises BadParameter"""
+        with pytest.raises(typer.BadParameter) as exc_info:
+            validators.validate_first_name_callback(name)
+        assert "lettres" in str(exc_info.value)
+
 
 class TestValidateLastName:
     """Test validate_last_name_callback function."""
@@ -121,6 +128,13 @@ class TestValidateLastName:
         """GIVEN too short name / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter):
             validators.validate_last_name_callback("D")
+
+    @pytest.mark.parametrize("name", ["Dupont123", "Martin@Dubois", "Test#Name"])
+    def test_validate_last_name_invalid_chars(self, name):
+        """GIVEN name with invalid chars / WHEN validated / THEN raises BadParameter"""
+        with pytest.raises(typer.BadParameter) as exc_info:
+            validators.validate_last_name_callback(name)
+        assert "lettres" in str(exc_info.value)
 
 
 class TestValidateLocation:
