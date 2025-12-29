@@ -92,9 +92,23 @@ class ContractRepository(ABC):
         """
 
     @abstractmethod
-    def get_all(self) -> List[Contract]:
-        """Get all contracts (read-only access for all departments).
+    def get_all(
+        self, offset: int = 0, limit: int = 10
+    ) -> List[Contract]:
+        """Get contracts with pagination (read-only access for all departments).
+
+        Args:
+            offset: Number of records to skip (default: 0)
+            limit: Maximum number of records to return (default: 10)
 
         Returns:
-            List of all Contract instances
+            List of Contract instances
+        """
+
+    @abstractmethod
+    def count(self) -> int:
+        """Count total number of contracts.
+
+        Returns:
+            Total number of contracts in the repository
         """

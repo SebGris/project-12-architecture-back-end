@@ -136,10 +136,24 @@ class ClientService:
         """
         return self.repository.get_by_sales_contact(sales_contact_id)
 
-    def get_all_clients(self) -> List[Client]:
-        """Get all clients (read-only access for all departments).
+    def get_all_clients(
+        self, offset: int = 0, limit: int = 10
+    ) -> List[Client]:
+        """Get clients with pagination (read-only access for all departments).
+
+        Args:
+            offset: Number of records to skip (default: 0)
+            limit: Maximum number of records to return (default: 10)
 
         Returns:
-            List of all Client instances
+            List of Client instances
         """
-        return self.repository.get_all()
+        return self.repository.get_all(offset=offset, limit=limit)
+
+    def count_clients(self) -> int:
+        """Count total number of clients.
+
+        Returns:
+            Total number of clients
+        """
+        return self.repository.count()

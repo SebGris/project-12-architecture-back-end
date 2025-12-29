@@ -179,10 +179,24 @@ class EventService:
 
         return self.repository.update(event)
 
-    def get_all_events(self) -> List[Event]:
-        """Get all events (read-only access for all departments).
+    def get_all_events(
+        self, offset: int = 0, limit: int = 10
+    ) -> List[Event]:
+        """Get events with pagination (read-only access for all departments).
+
+        Args:
+            offset: Number of records to skip (default: 0)
+            limit: Maximum number of records to return (default: 10)
 
         Returns:
-            List of all Event instances
+            List of Event instances
         """
-        return self.repository.get_all()
+        return self.repository.get_all(offset=offset, limit=limit)
+
+    def count_events(self) -> int:
+        """Count total number of events.
+
+        Returns:
+            Total number of events
+        """
+        return self.repository.count()

@@ -25,8 +25,12 @@ from src.models.event import Event
 def get_users(session):
     """Récupère les utilisateurs existants."""
     users = {
-        "commercial1": session.query(User).filter_by(username="commercial1").first(),
-        "commercial2": session.query(User).filter_by(username="commercial2").first(),
+        "commercial1": session.query(User)
+        .filter_by(username="commercial1")
+        .first(),
+        "commercial2": session.query(User)
+        .filter_by(username="commercial2")
+        .first(),
         "support1": session.query(User).filter_by(username="support1").first(),
         "support2": session.query(User).filter_by(username="support2").first(),
     }
@@ -89,6 +93,14 @@ def create_clients(session, users):
             "phone": "+33656789012",
             "company_name": "Petit Enterprises",
             "sales_contact_id": users["commercial1"].id,
+        },
+        {
+            "first_name": "Camille",
+            "last_name": "Rousseau",
+            "email": "camille.rousseau@example.com",
+            "phone": "+33667890123",
+            "company_name": "Rousseau & Fils",
+            "sales_contact_id": users["commercial2"].id,
         },
     ]
 
@@ -252,13 +264,13 @@ def create_events(session, contracts, users):
         client = session.query(Client).get(contract.client_id)
 
         # Determine support status
-        support_id = event_data.get('support_contact_id')
-        if support_id == users['support1'].id:
-            support_name = users['support1'].first_name
-        elif support_id == users['support2'].id:
-            support_name = users['support2'].first_name
+        support_id = event_data.get("support_contact_id")
+        if support_id == users["support1"].id:
+            support_name = users["support1"].first_name
+        elif support_id == users["support2"].id:
+            support_name = users["support2"].first_name
         else:
-            support_name = 'Non assigné'
+            support_name = "Non assigné"
 
         support_status = f"Support: {support_name}"
 
@@ -286,13 +298,19 @@ def display_summary(session):
     total_clients = session.query(Client).count()
     print(f"\nClients: {total_clients}")
 
-    for user in session.query(User).filter_by(department=Department.COMMERCIAL):
-        count = session.query(Client).filter_by(sales_contact_id=user.id).count()
+    for user in session.query(User).filter_by(
+        department=Department.COMMERCIAL
+    ):
+        count = (
+            session.query(Client).filter_by(sales_contact_id=user.id).count()
+        )
         print(f"  - {user.first_name} {user.last_name}: {count} client(s)")
 
     # Contrats
     total_contracts = session.query(Contract).count()
-    signed_contracts = session.query(Contract).filter_by(is_signed=True).count()
+    signed_contracts = (
+        session.query(Contract).filter_by(is_signed=True).count()
+    )
     unsigned_contracts = total_contracts - signed_contracts
     print(f"\nContrats: {total_contracts}")
     print(f"  - Signés: {signed_contracts}")
@@ -313,7 +331,9 @@ def display_summary(session):
     # Événements
     total_events = session.query(Event).count()
     assigned_events = (
-        session.query(Event).filter(Event.support_contact_id.isnot(None)).count()
+        session.query(Event)
+        .filter(Event.support_contact_id.isnot(None))
+        .count()
     )
     unassigned_events = total_events - assigned_events
     print(f"\nÉvénements: {total_events}")
@@ -321,9 +341,13 @@ def display_summary(session):
     print(f"  - Sans support: {unassigned_events}")
 
     for user in session.query(User).filter_by(department=Department.SUPPORT):
-        count = session.query(Event).filter_by(support_contact_id=user.id).count()
+        count = (
+            session.query(Event).filter_by(support_contact_id=user.id).count()
+        )
         if count > 0:
-            print(f"  - {user.first_name} {user.last_name}: {count} événement(s)")
+            print(
+                f"  - {user.first_name} {user.last_name}: {count} événement(s)"
+            )
 
     print("\n" + "=" * 60)
 
@@ -364,13 +388,6 @@ def main():
 
         print("\nSEED TEST DATA TERMINE AVEC SUCCES !")
         print("=" * 60 + "\n")
-
-        print("\nPour tester, vous pouvez maintenant:")
-        print("  - poetry run epicevents login")
-        print("  - poetry run epicevents filter-unsigned-contracts")
-        print("  - poetry run epicevents filter-unpaid-contracts")
-        print("  - poetry run epicevents filter-unassigned-events")
-        print("\n" + "=" * 60 + "\n")
 
     except Exception as e:
         print(f"\nERREUR: {e}")

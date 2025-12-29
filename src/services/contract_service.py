@@ -144,10 +144,24 @@ class ContractService:
         """
         return self.repository.update(contract)
 
-    def get_all_contracts(self) -> List[Contract]:
-        """Get all contracts (read-only access for all departments).
+    def get_all_contracts(
+        self, offset: int = 0, limit: int = 10
+    ) -> List[Contract]:
+        """Get contracts with pagination (read-only access for all departments).
+
+        Args:
+            offset: Number of records to skip (default: 0)
+            limit: Maximum number of records to return (default: 10)
 
         Returns:
-            List of all Contract instances
+            List of Contract instances
         """
-        return self.repository.get_all()
+        return self.repository.get_all(offset=offset, limit=limit)
+
+    def count_contracts(self) -> int:
+        """Count total number of contracts.
+
+        Returns:
+            Total number of contracts
+        """
+        return self.repository.count()
