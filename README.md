@@ -292,10 +292,6 @@ epicevents update-client  # ❌ REFUSÉ si c'est le client d'un autre
 # [ERREUR] Vous ne pouvez modifier que vos propres clients
 ```
 
-Pour plus de détails, voir :
-- [PERMISSIONS_GRANULAIRES.md](PERMISSIONS_GRANULAIRES.md) - Documentation complète
-- [docs/AMELIORATIONS_PERMISSIONS.md](docs/AMELIORATIONS_PERMISSIONS.md) - Récapitulatif technique
-
 ## 💻 Aide-mémoire
 
 ### Gestion avec Poetry
