@@ -3,9 +3,12 @@
 Tests covered:
 - create_client(): Client creation with sales contact validation
 - get_client(): Client retrieval by ID
-- list_clients(): Clients listing with optional filters
 - update_client(): Client information updates
-- delete_client(): Client deletion
+- exists(): Client existence check by ID
+- email_exists(): Email uniqueness check with exclusion support
+- get_my_clients(): Clients by sales contact
+- get_all_clients(): Clients listing with pagination
+- count_clients(): Total clients count
 
 Implementation notes:
 - Uses real SQLite in-memory database
@@ -157,3 +160,104 @@ class TestUpdateClient:
         db_session.expire_all()
         db_client = db_session.query(Client).filter_by(id=lou.id).first()
         assert db_client.company_name == "RenamedCompany"
+
+
+class TestClientServiceExists:
+    """Test exists method."""
+
+    def test_exists_returns_true_for_existing_client(
+        self, client_service, test_clients
+    ):
+        """GIVEN existing client / WHEN exists() / THEN returns True"""
+        kevin = test_clients["kevin"]
+
+        result = client_service.exists(kevin.id)
+
+        assert result is True
+
+    def test_exists_returns_false_for_nonexistent_client(self, client_service):
+        """GIVEN nonexistent client_id / WHEN exists() / THEN returns False"""
+        result = client_service.exists(99999)
+
+        assert result is False
+
+
+class TestClientServiceEmailExists:
+    """Test email_exists method."""
+
+    def test_email_exists_returns_true(self, client_service, test_clients):
+        """GIVEN existing email / WHEN email_exists() / THEN returns True"""
+        result = client_service.email_exists("kevin@startup.io")
+
+        assert result is True
+
+    def test_email_exists_returns_false(self, client_service):
+        """GIVEN nonexistent email / WHEN email_exists() / THEN returns False"""
+        result = client_service.email_exists("nonexistent@email.com")
+
+        assert result is False
+
+    def test_email_exists_excludes_id(self, client_service, test_clients):
+        """GIVEN existing email with exclude_id / WHEN email_exists() / THEN returns False"""
+        kevin = test_clients["kevin"]
+
+        result = client_service.email_exists("kevin@startup.io", exclude_id=kevin.id)
+
+        assert result is False
+
+
+class TestGetMyClients:
+    """Test get_my_clients method."""
+
+    def test_get_my_clients_returns_assigned_clients(
+        self, client_service, test_clients, test_users
+    ):
+        """GIVEN sales_contact_id / WHEN get_my_clients() / THEN returns assigned clients"""
+        commercial1 = test_users["commercial1"]
+
+        result = client_service.get_my_clients(sales_contact_id=commercial1.id)
+
+        # Should return clients assigned to commercial1
+        assert len(result) >= 1
+        assert all(client.sales_contact_id == commercial1.id for client in result)
+
+    def test_get_my_clients_returns_empty_for_no_assignments(self, client_service):
+        """GIVEN sales_contact_id with no clients / WHEN get_my_clients() / THEN returns empty list"""
+        result = client_service.get_my_clients(sales_contact_id=99999)
+
+        assert result == []
+
+
+class TestGetAllClients:
+    """Test get_all_clients method with pagination."""
+
+    def test_get_all_clients_default_pagination(self, client_service, test_clients):
+        """GIVEN clients in database / WHEN get_all_clients() / THEN returns paginated list"""
+        result = client_service.get_all_clients()
+
+        assert len(result) >= 1
+        assert isinstance(result, list)
+
+    def test_get_all_clients_with_offset_and_limit(
+        self, client_service, test_clients
+    ):
+        """GIVEN clients in database / WHEN get_all_clients(offset, limit) / THEN returns correct slice"""
+        result = client_service.get_all_clients(offset=0, limit=1)
+
+        assert len(result) == 1
+
+    def test_get_all_clients_offset_beyond_data(self, client_service, test_clients):
+        """GIVEN offset beyond data / WHEN get_all_clients() / THEN returns empty list"""
+        result = client_service.get_all_clients(offset=1000, limit=10)
+
+        assert result == []
+
+
+class TestCountClients:
+    """Test count_clients method."""
+
+    def test_count_clients_returns_total(self, client_service, test_clients):
+        """GIVEN clients in database / WHEN count_clients() / THEN returns total count"""
+        result = client_service.count_clients()
+
+        assert result >= 2  # At least kevin and lou from test_clients

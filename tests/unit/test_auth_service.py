@@ -2,13 +2,15 @@
 
 Tests covered:
 - authenticate(): User authentication (success/failure cases)
+- login(): Full login flow with token generation and storage
+- logout(): Token deletion
 - generate_token(): JWT generation with complete payload
 - validate_token(): JWT validation (valid, expired, invalid tokens)
 - save_token() / load_token(): Token persistence to disk
-- delete_token(): Token deletion (logout)
+- delete_token(): Token deletion
 - get_current_user(): User retrieval from token
 - is_authenticated(): Active authentication verification
-- _get_or_create_secret_key(): Secret key management
+- _get_or_create_secret_key(): Secret key management (in TokenService)
 
 Implementation notes:
 - Uses real SQLite in-memory database
@@ -452,3 +454,70 @@ class TestIsAuthenticated:
 
         # Assert
         assert result is False
+
+
+class TestLogin:
+    """Test login method."""
+
+    @freeze_time("2025-01-15 10:00:00")
+    def test_login_success(
+        self, auth_service, test_user_with_password, cleanup_token_file
+    ):
+        """GIVEN valid credentials / WHEN login() / THEN returns token and saves it"""
+        # Act
+        token = auth_service.login("testuser", "CorrectPassword123!")
+
+        # Assert
+        assert token is not None
+        assert isinstance(token, str)
+
+        # Verify token was saved
+        loaded_token = auth_service.load_token()
+        assert loaded_token == token
+
+    def test_login_invalid_username(self, auth_service, cleanup_token_file):
+        """GIVEN invalid username / WHEN login() / THEN returns None"""
+        # Act
+        result = auth_service.login("nonexistent", "password")
+
+        # Assert
+        assert result is None
+
+    def test_login_invalid_password(
+        self, auth_service, test_user_with_password, cleanup_token_file
+    ):
+        """GIVEN invalid password / WHEN login() / THEN returns None"""
+        # Act
+        result = auth_service.login("testuser", "WrongPassword")
+
+        # Assert
+        assert result is None
+
+
+class TestLogout:
+    """Test logout method."""
+
+    def test_logout_deletes_token(
+        self, auth_service, test_user_with_password, cleanup_token_file
+    ):
+        """GIVEN saved token / WHEN logout() / THEN token is deleted"""
+        # Arrange - Login first
+        auth_service.save_token("test.token")
+        token_file = Path.home() / ".epicevents" / "token"
+        assert token_file.exists()
+
+        # Act
+        auth_service.logout()
+
+        # Assert
+        assert not token_file.exists()
+
+    def test_logout_no_token(self, auth_service, cleanup_token_file):
+        """GIVEN no saved token / WHEN logout() / THEN no error"""
+        # Arrange - Ensure no token
+        token_file = Path.home() / ".epicevents" / "token"
+        if token_file.exists():
+            token_file.unlink()
+
+        # Act & Assert - Should not raise error
+        auth_service.logout()

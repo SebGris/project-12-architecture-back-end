@@ -126,3 +126,67 @@ class TestEventRepositoryGetUpcomingEvents:
         # but NOT "Product Demo" (2025-10-20)
         assert len(result) == 2
         assert all(e.event_start >= from_date for e in result)
+
+
+class TestEventRepositoryGetUnassignedEvents:
+    """Test get_unassigned_events method."""
+
+    def test_get_unassigned_events(self, event_repository, test_events):
+        """GIVEN events without support contact / WHEN get_unassigned_events() / THEN returns unassigned"""
+        result = event_repository.get_unassigned_events()
+
+        assert len(result) >= 1
+        assert all(e.support_contact_id is None for e in result)
+
+
+class TestEventRepositoryExists:
+    """Test exists method."""
+
+    def test_exists_returns_true_for_existing_event(
+        self, event_repository, test_events
+    ):
+        """GIVEN existing event / WHEN exists() / THEN returns True"""
+        event = test_events["launch"]
+
+        result = event_repository.exists(event.id)
+
+        assert result is True
+
+    def test_exists_returns_false_for_nonexistent_event(self, event_repository):
+        """GIVEN nonexistent event_id / WHEN exists() / THEN returns False"""
+        result = event_repository.exists(99999)
+
+        assert result is False
+
+
+class TestEventRepositoryGetAll:
+    """Test get_all method with pagination."""
+
+    def test_get_all_default_pagination(self, event_repository, test_events):
+        """GIVEN events in database / WHEN get_all() / THEN returns paginated list"""
+        result = event_repository.get_all()
+
+        assert len(result) >= 1
+        assert isinstance(result, list)
+
+    def test_get_all_with_offset_and_limit(self, event_repository, test_events):
+        """GIVEN events in database / WHEN get_all(offset, limit) / THEN returns correct slice"""
+        result = event_repository.get_all(offset=0, limit=1)
+
+        assert len(result) == 1
+
+    def test_get_all_offset_beyond_data(self, event_repository, test_events):
+        """GIVEN offset beyond data / WHEN get_all() / THEN returns empty list"""
+        result = event_repository.get_all(offset=1000, limit=10)
+
+        assert result == []
+
+
+class TestEventRepositoryCount:
+    """Test count method."""
+
+    def test_count_returns_total(self, event_repository, test_events):
+        """GIVEN events in database / WHEN count() / THEN returns total count"""
+        result = event_repository.count()
+
+        assert result >= 3  # At least launch, demo, assembly from test_events

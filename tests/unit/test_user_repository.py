@@ -123,3 +123,73 @@ class TestUserRepositoryUpdate:
         db_user = db_session.query(User).filter_by(id=user.id).first()
         assert db_user.phone == "0999999999"
         assert db_user.email == "newemail@epicevents.com"
+
+
+class TestUserRepositoryExists:
+    """Test exists method."""
+
+    def test_exists_returns_true_for_existing_user(self, user_repository, test_users):
+        """GIVEN existing user / WHEN exists() / THEN returns True"""
+        admin = test_users["admin"]
+
+        result = user_repository.exists(admin.id)
+
+        assert result is True
+
+    def test_exists_returns_false_for_nonexistent_user(self, user_repository):
+        """GIVEN nonexistent user_id / WHEN exists() / THEN returns False"""
+        result = user_repository.exists(99999)
+
+        assert result is False
+
+
+class TestUserRepositoryUsernameExists:
+    """Test username_exists method."""
+
+    def test_username_exists_returns_true(self, user_repository, test_users):
+        """GIVEN existing username / WHEN username_exists() / THEN returns True"""
+        result = user_repository.username_exists("admin")
+
+        assert result is True
+
+    def test_username_exists_returns_false(self, user_repository):
+        """GIVEN nonexistent username / WHEN username_exists() / THEN returns False"""
+        result = user_repository.username_exists("nonexistent_user")
+
+        assert result is False
+
+    def test_username_exists_excludes_id(self, user_repository, test_users):
+        """GIVEN existing username with exclude_id / WHEN username_exists() / THEN returns False"""
+        admin = test_users["admin"]
+
+        # Username exists but we exclude admin's ID (for update scenario)
+        result = user_repository.username_exists("admin", exclude_id=admin.id)
+
+        assert result is False
+
+
+class TestUserRepositoryEmailExists:
+    """Test email_exists method."""
+
+    def test_email_exists_returns_true(self, user_repository, test_users):
+        """GIVEN existing email / WHEN email_exists() / THEN returns True"""
+        result = user_repository.email_exists("admin@epicevents.com")
+
+        assert result is True
+
+    def test_email_exists_returns_false(self, user_repository):
+        """GIVEN nonexistent email / WHEN email_exists() / THEN returns False"""
+        result = user_repository.email_exists("nonexistent@email.com")
+
+        assert result is False
+
+    def test_email_exists_excludes_id(self, user_repository, test_users):
+        """GIVEN existing email with exclude_id / WHEN email_exists() / THEN returns False"""
+        admin = test_users["admin"]
+
+        # Email exists but we exclude admin's ID (for update scenario)
+        result = user_repository.email_exists(
+            "admin@epicevents.com", exclude_id=admin.id
+        )
+
+        assert result is False

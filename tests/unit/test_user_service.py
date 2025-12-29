@@ -228,3 +228,131 @@ class TestDeleteUser:
         result = user_service.delete_user(user_id=99999)
 
         assert result is False
+
+
+class TestVerifyPassword:
+    """Test verify_password method."""
+
+    def test_verify_password_correct(self, user_service):
+        """GIVEN user with hashed password / WHEN verify_password() with correct password / THEN returns True"""
+        user = user_service.create_user(
+            username="passtest",
+            email="passtest@epicevents.com",
+            password="MyPassword123!",
+            first_name="Test",
+            last_name="User",
+            phone="0600000000",
+            department=Department.COMMERCIAL,
+        )
+
+        result = user_service.verify_password(user, "MyPassword123!")
+
+        assert result is True
+
+    def test_verify_password_incorrect(self, user_service):
+        """GIVEN user with hashed password / WHEN verify_password() with wrong password / THEN returns False"""
+        user = user_service.create_user(
+            username="passtest2",
+            email="passtest2@epicevents.com",
+            password="MyPassword123!",
+            first_name="Test",
+            last_name="User",
+            phone="0600000001",
+            department=Department.COMMERCIAL,
+        )
+
+        result = user_service.verify_password(user, "WrongPassword!")
+
+        assert result is False
+
+
+class TestSetPassword:
+    """Test set_password method."""
+
+    def test_set_password_updates_hash(self, user_service):
+        """GIVEN user / WHEN set_password() / THEN password_hash is updated"""
+        user = user_service.create_user(
+            username="setpasstest",
+            email="setpasstest@epicevents.com",
+            password="OldPassword123!",
+            first_name="Test",
+            last_name="User",
+            phone="0600000002",
+            department=Department.SUPPORT,
+        )
+        old_hash = user.password_hash
+
+        user_service.set_password(user, "NewPassword456!")
+
+        # Hash should be different
+        assert user.password_hash != old_hash
+        # New password should verify
+        assert user_service.verify_password(user, "NewPassword456!")
+        # Old password should not verify
+        assert not user_service.verify_password(user, "OldPassword123!")
+
+
+class TestUserServiceExists:
+    """Test exists method."""
+
+    def test_exists_returns_true_for_existing_user(self, user_service, test_users):
+        """GIVEN existing user / WHEN exists() / THEN returns True"""
+        admin = test_users["admin"]
+
+        result = user_service.exists(admin.id)
+
+        assert result is True
+
+    def test_exists_returns_false_for_nonexistent_user(self, user_service):
+        """GIVEN nonexistent user_id / WHEN exists() / THEN returns False"""
+        result = user_service.exists(99999)
+
+        assert result is False
+
+
+class TestUsernameExists:
+    """Test username_exists method."""
+
+    def test_username_exists_returns_true(self, user_service, test_users):
+        """GIVEN existing username / WHEN username_exists() / THEN returns True"""
+        result = user_service.username_exists("admin")
+
+        assert result is True
+
+    def test_username_exists_returns_false(self, user_service):
+        """GIVEN nonexistent username / WHEN username_exists() / THEN returns False"""
+        result = user_service.username_exists("nonexistent_user")
+
+        assert result is False
+
+    def test_username_exists_excludes_id(self, user_service, test_users):
+        """GIVEN existing username with exclude_id / WHEN username_exists() / THEN returns False"""
+        admin = test_users["admin"]
+
+        result = user_service.username_exists("admin", exclude_id=admin.id)
+
+        assert result is False
+
+
+class TestEmailExists:
+    """Test email_exists method."""
+
+    def test_email_exists_returns_true(self, user_service, test_users):
+        """GIVEN existing email / WHEN email_exists() / THEN returns True"""
+        result = user_service.email_exists("admin@epicevents.com")
+
+        assert result is True
+
+    def test_email_exists_returns_false(self, user_service):
+        """GIVEN nonexistent email / WHEN email_exists() / THEN returns False"""
+        result = user_service.email_exists("nonexistent@email.com")
+
+        assert result is False
+
+    def test_email_exists_excludes_id(self, user_service, test_users):
+        """GIVEN existing email with exclude_id / WHEN email_exists() / THEN returns False"""
+        admin = test_users["admin"]
+
+        result = user_service.email_exists("admin@epicevents.com", exclude_id=admin.id)
+
+        assert result is False

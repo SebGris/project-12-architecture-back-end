@@ -3,11 +3,15 @@
 Tests covered:
 - create_contract(): Contract creation with validation
 - get_contract(): Contract retrieval by ID
-- list_contracts(): Contracts listing with filters
 - update_contract(): Contract updates (amount, signature status)
-- record_payment(): Payment recording with remaining amount calculation
+- update_contract_payment(): Payment recording with remaining amount calculation
+- sign_contract(): Contract signature
 - get_unsigned_contracts(): Unsigned contracts filtering
 - get_unpaid_contracts(): Unpaid contracts filtering
+- get_signed_contracts(): Signed contracts filtering
+- get_contracts_by_client(): Contracts by client ID
+- get_all_contracts(): Contracts listing with pagination
+- count_contracts(): Total contracts count
 
 Implementation notes:
 - Uses real SQLite in-memory database
@@ -335,3 +339,69 @@ class TestGetContractsByClient:
         result = contract_service.get_contracts_by_client(client_id=99999)
 
         assert result == []
+
+
+class TestGetSignedContracts:
+    """Test get_signed_contracts method."""
+
+    def test_get_signed_contracts(self, contract_service, test_contracts):
+        """WHEN get_signed_contracts() / THEN returns list of signed contracts"""
+        result = contract_service.get_signed_contracts()
+
+        # Assert - should include signed contracts
+        assert len(result) >= 1
+        assert all(contract.is_signed for contract in result)
+
+        # Verify specific test contracts are present
+        contract_ids = [c.id for c in result]
+        assert test_contracts["signed_partial"].id in contract_ids
+        assert test_contracts["signed_paid"].id in contract_ids
+
+    def test_get_signed_contracts_excludes_unsigned(
+        self, contract_service, test_contracts
+    ):
+        """GIVEN unsigned contracts exist / WHEN get_signed_contracts() / THEN excludes unsigned ones"""
+        result = contract_service.get_signed_contracts()
+
+        # Assert - should NOT include unsigned contracts
+        contract_ids = [c.id for c in result]
+        assert test_contracts["unsigned"].id not in contract_ids
+
+
+class TestGetAllContracts:
+    """Test get_all_contracts method with pagination."""
+
+    def test_get_all_contracts_default_pagination(
+        self, contract_service, test_contracts
+    ):
+        """GIVEN contracts in database / WHEN get_all_contracts() / THEN returns paginated list"""
+        result = contract_service.get_all_contracts()
+
+        assert len(result) >= 1
+        assert isinstance(result, list)
+
+    def test_get_all_contracts_with_offset_and_limit(
+        self, contract_service, test_contracts
+    ):
+        """GIVEN contracts in database / WHEN get_all_contracts(offset, limit) / THEN returns correct slice"""
+        result = contract_service.get_all_contracts(offset=0, limit=1)
+
+        assert len(result) == 1
+
+    def test_get_all_contracts_offset_beyond_data(
+        self, contract_service, test_contracts
+    ):
+        """GIVEN offset beyond data / WHEN get_all_contracts() / THEN returns empty list"""
+        result = contract_service.get_all_contracts(offset=1000, limit=10)
+
+        assert result == []
+
+
+class TestCountContracts:
+    """Test count_contracts method."""
+
+    def test_count_contracts_returns_total(self, contract_service, test_contracts):
+        """GIVEN contracts in database / WHEN count_contracts() / THEN returns total count"""
+        result = contract_service.count_contracts()
+
+        assert result >= 4  # At least 4 contracts from test_contracts fixture
