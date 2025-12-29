@@ -72,41 +72,33 @@ class TestCreateUser:
         # Verify password hash is persisted
         assert db_user.password_hash.startswith("$2b$")
 
-    def test_create_user_gestion_department(self, user_service, db_session):
-        """GIVEN GESTION department / WHEN create_user() / THEN user created with GESTION"""
+    @pytest.mark.parametrize(
+        "username,email,department",
+        [
+            ("gestion1", "gestion@epicevents.com", Department.GESTION),
+            ("support1", "support@epicevents.com", Department.SUPPORT),
+        ],
+        ids=["gestion", "support"],
+    )
+    def test_create_user_departments(
+        self, user_service, db_session, username, email, department
+    ):
+        """Test create_user with different departments."""
         result = user_service.create_user(
-            username="gestion1",
-            email="gestion@epicevents.com",
+            username=username,
+            email=email,
             password="Password123!",
-            first_name="Marie",
-            last_name="Martin",
+            first_name="Test",
+            last_name="User",
             phone="0123456789",
-            department=Department.GESTION,
+            department=department,
         )
 
-        assert result.department == Department.GESTION
+        assert result.department == department
 
         # Verify persistence
-        db_user = db_session.query(User).filter_by(username="gestion1").first()
-        assert db_user.department == Department.GESTION
-
-    def test_create_user_support_department(self, user_service, db_session):
-        """GIVEN SUPPORT department / WHEN create_user() / THEN user created with SUPPORT"""
-        result = user_service.create_user(
-            username="support1",
-            email="support@epicevents.com",
-            password="SecurePass456!",
-            first_name="Pierre",
-            last_name="Durand",
-            phone="0987654321",
-            department=Department.SUPPORT,
-        )
-
-        assert result.department == Department.SUPPORT
-
-        # Verify persistence
-        db_user = db_session.query(User).filter_by(username="support1").first()
-        assert db_user.department == Department.SUPPORT
+        db_user = db_session.query(User).filter_by(username=username).first()
+        assert db_user.department == department
 
 
 class TestGetUser:
@@ -295,64 +287,53 @@ class TestSetPassword:
 class TestUserServiceExists:
     """Test exists method."""
 
-    def test_exists_returns_true_for_existing_user(self, user_service, test_users):
-        """GIVEN existing user / WHEN exists() / THEN returns True"""
-        admin = test_users["admin"]
-
-        result = user_service.exists(admin.id)
-
-        assert result is True
-
-    def test_exists_returns_false_for_nonexistent_user(self, user_service):
-        """GIVEN nonexistent user_id / WHEN exists() / THEN returns False"""
-        result = user_service.exists(99999)
-
-        assert result is False
+    @pytest.mark.parametrize(
+        "get_id,expected",
+        [("existing", True), ("nonexistent", False)],
+        ids=["existing", "nonexistent"],
+    )
+    def test_exists(self, user_service, test_users, get_id, expected):
+        """Test exists returns correct boolean for existing/nonexistent users."""
+        user_id = test_users["admin"].id if get_id == "existing" else 99999
+        result = user_service.exists(user_id)
+        assert result is expected
 
 
 class TestUsernameExists:
     """Test username_exists method."""
 
-    def test_username_exists_returns_true(self, user_service, test_users):
-        """GIVEN existing username / WHEN username_exists() / THEN returns True"""
-        result = user_service.username_exists("admin")
-
-        assert result is True
-
-    def test_username_exists_returns_false(self, user_service):
-        """GIVEN nonexistent username / WHEN username_exists() / THEN returns False"""
-        result = user_service.username_exists("nonexistent_user")
-
-        assert result is False
-
-    def test_username_exists_excludes_id(self, user_service, test_users):
-        """GIVEN existing username with exclude_id / WHEN username_exists() / THEN returns False"""
-        admin = test_users["admin"]
-
-        result = user_service.username_exists("admin", exclude_id=admin.id)
-
-        assert result is False
+    @pytest.mark.parametrize(
+        "username,exclude_id,expected",
+        [
+            ("admin", None, True),
+            ("nonexistent_user", None, False),
+            ("admin", "admin", False),
+        ],
+        ids=["exists", "not_exists", "excluded"],
+    )
+    def test_username_exists(
+        self, user_service, test_users, username, exclude_id, expected
+    ):
+        """Test username_exists with various scenarios."""
+        exclude = test_users["admin"].id if exclude_id == "admin" else None
+        result = user_service.username_exists(username, exclude_id=exclude)
+        assert result is expected
 
 
 class TestEmailExists:
     """Test email_exists method."""
 
-    def test_email_exists_returns_true(self, user_service, test_users):
-        """GIVEN existing email / WHEN email_exists() / THEN returns True"""
-        result = user_service.email_exists("admin@epicevents.com")
-
-        assert result is True
-
-    def test_email_exists_returns_false(self, user_service):
-        """GIVEN nonexistent email / WHEN email_exists() / THEN returns False"""
-        result = user_service.email_exists("nonexistent@email.com")
-
-        assert result is False
-
-    def test_email_exists_excludes_id(self, user_service, test_users):
-        """GIVEN existing email with exclude_id / WHEN email_exists() / THEN returns False"""
-        admin = test_users["admin"]
-
-        result = user_service.email_exists("admin@epicevents.com", exclude_id=admin.id)
-
-        assert result is False
+    @pytest.mark.parametrize(
+        "email,exclude_id,expected",
+        [
+            ("admin@epicevents.com", None, True),
+            ("nonexistent@email.com", None, False),
+            ("admin@epicevents.com", "admin", False),
+        ],
+        ids=["exists", "not_exists", "excluded"],
+    )
+    def test_email_exists(self, user_service, test_users, email, exclude_id, expected):
+        """Test email_exists with various scenarios."""
+        exclude = test_users["admin"].id if exclude_id == "admin" else None
+        result = user_service.email_exists(email, exclude_id=exclude)
+        assert result is expected

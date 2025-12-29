@@ -323,24 +323,21 @@ class TestGetUpcomingEvents:
 class TestGetAllEvents:
     """Test get_all_events method with pagination."""
 
-    def test_get_all_events_default_pagination(self, event_service, test_events):
-        """GIVEN events in database / WHEN get_all_events() / THEN returns paginated list"""
-        result = event_service.get_all_events()
+    @pytest.mark.parametrize(
+        "offset,limit,expected_len",
+        [(0, 100, None), (0, 1, 1), (1000, 10, 0)],
+        ids=["default", "limit_1", "beyond_data"],
+    )
+    def test_get_all_events_pagination(
+        self, event_service, test_events, offset, limit, expected_len
+    ):
+        """Test get_all_events with various pagination scenarios."""
+        result = event_service.get_all_events(offset=offset, limit=limit)
 
-        assert len(result) >= 1
-        assert isinstance(result, list)
-
-    def test_get_all_events_with_offset_and_limit(self, event_service, test_events):
-        """GIVEN events in database / WHEN get_all_events(offset, limit) / THEN returns correct slice"""
-        result = event_service.get_all_events(offset=0, limit=1)
-
-        assert len(result) == 1
-
-    def test_get_all_events_offset_beyond_data(self, event_service, test_events):
-        """GIVEN offset beyond data / WHEN get_all_events() / THEN returns empty list"""
-        result = event_service.get_all_events(offset=1000, limit=10)
-
-        assert result == []
+        if expected_len is None:
+            assert len(result) >= 1
+        else:
+            assert len(result) == expected_len
 
 
 class TestCountEvents:
