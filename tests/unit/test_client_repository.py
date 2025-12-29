@@ -89,48 +89,37 @@ class TestClientRepositoryUpdate:
 class TestClientRepositoryExists:
     """Test exists method."""
 
-    def test_exists_returns_true_for_existing_client(
-        self, client_repository, test_clients
-    ):
-        """GIVEN existing client / WHEN exists() / THEN returns True"""
-        kevin = test_clients["kevin"]
-
-        result = client_repository.exists(kevin.id)
-
-        assert result is True
-
-    def test_exists_returns_false_for_nonexistent_client(self, client_repository):
-        """GIVEN nonexistent client_id / WHEN exists() / THEN returns False"""
-        result = client_repository.exists(99999)
-
-        assert result is False
+    @pytest.mark.parametrize(
+        "get_id,expected",
+        [("existing", True), ("nonexistent", False)],
+        ids=["existing", "nonexistent"],
+    )
+    def test_exists(self, client_repository, test_clients, get_id, expected):
+        """Test exists returns correct boolean for existing/nonexistent clients."""
+        client_id = test_clients["kevin"].id if get_id == "existing" else 99999
+        result = client_repository.exists(client_id)
+        assert result is expected
 
 
 class TestClientRepositoryEmailExists:
     """Test email_exists method."""
 
-    def test_email_exists_returns_true(self, client_repository, test_clients):
-        """GIVEN existing email / WHEN email_exists() / THEN returns True"""
-        result = client_repository.email_exists("kevin@startup.io")
-
-        assert result is True
-
-    def test_email_exists_returns_false(self, client_repository):
-        """GIVEN nonexistent email / WHEN email_exists() / THEN returns False"""
-        result = client_repository.email_exists("nonexistent@email.com")
-
-        assert result is False
-
-    def test_email_exists_excludes_id(self, client_repository, test_clients):
-        """GIVEN existing email with exclude_id / WHEN email_exists() / THEN returns False"""
-        kevin = test_clients["kevin"]
-
-        # Email exists but we exclude Kevin's ID (for update scenario)
-        result = client_repository.email_exists(
-            "kevin@startup.io", exclude_id=kevin.id
-        )
-
-        assert result is False
+    @pytest.mark.parametrize(
+        "email,exclude_id,expected",
+        [
+            ("kevin@startup.io", None, True),
+            ("nonexistent@email.com", None, False),
+            ("kevin@startup.io", "kevin", False),  # exclude_id scenario
+        ],
+        ids=["exists", "not_exists", "excluded"],
+    )
+    def test_email_exists(
+        self, client_repository, test_clients, email, exclude_id, expected
+    ):
+        """Test email_exists with various scenarios."""
+        exclude = test_clients["kevin"].id if exclude_id == "kevin" else None
+        result = client_repository.email_exists(email, exclude_id=exclude)
+        assert result is expected
 
 
 class TestClientRepositoryGetBySalesContact:
@@ -145,42 +134,34 @@ class TestClientRepositoryGetBySalesContact:
         assert len(result) >= 1
         assert all(c.sales_contact_id == commercial1.id for c in result)
 
-    def test_get_by_sales_contact_no_clients(self, client_repository, test_users):
+    def test_get_by_sales_contact_no_clients(self, client_repository):
         """GIVEN commercial with no clients / WHEN get_by_sales_contact() / THEN returns empty list"""
-        # Use a user ID that has no clients
         result = client_repository.get_by_sales_contact(99999)
 
         assert result == []
 
 
-class TestClientRepositoryGetAll:
-    """Test get_all method with pagination."""
+class TestClientRepositoryPagination:
+    """Test get_all and count methods."""
 
-    def test_get_all_default_pagination(self, client_repository, test_clients):
-        """GIVEN clients in database / WHEN get_all() / THEN returns paginated list"""
-        result = client_repository.get_all()
+    @pytest.mark.parametrize(
+        "offset,limit,expected_len",
+        [(0, 100, None), (0, 1, 1), (1000, 10, 0)],
+        ids=["default", "limit_1", "beyond_data"],
+    )
+    def test_get_all_pagination(
+        self, client_repository, test_clients, offset, limit, expected_len
+    ):
+        """Test get_all with various pagination scenarios."""
+        result = client_repository.get_all(offset=offset, limit=limit)
 
-        assert len(result) >= 1
-        assert isinstance(result, list)
-
-    def test_get_all_with_offset_and_limit(self, client_repository, test_clients):
-        """GIVEN clients in database / WHEN get_all(offset, limit) / THEN returns correct slice"""
-        result = client_repository.get_all(offset=0, limit=1)
-
-        assert len(result) == 1
-
-    def test_get_all_offset_beyond_data(self, client_repository, test_clients):
-        """GIVEN offset beyond data / WHEN get_all() / THEN returns empty list"""
-        result = client_repository.get_all(offset=1000, limit=10)
-
-        assert result == []
-
-
-class TestClientRepositoryCount:
-    """Test count method."""
+        if expected_len is None:
+            assert len(result) >= 1
+        else:
+            assert len(result) == expected_len
 
     def test_count_returns_total(self, client_repository, test_clients):
         """GIVEN clients in database / WHEN count() / THEN returns total count"""
         result = client_repository.count()
 
-        assert result >= 2  # At least kevin and sarah from test_clients
+        assert result >= 2

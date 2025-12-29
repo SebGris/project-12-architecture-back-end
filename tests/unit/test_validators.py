@@ -35,11 +35,7 @@ class TestValidateEmail:
 
     @pytest.mark.parametrize(
         "email",
-        [
-            "user@example.com",
-            "test.user@example.com",
-            "user+tag@example.co.uk",
-        ],
+        ["user@example.com", "test.user@example.com", "user+tag@example.co.uk"],
     )
     def test_validate_email_valid(self, email):
         """GIVEN valid email / WHEN validated / THEN returns email"""
@@ -73,13 +69,7 @@ class TestValidatePassword:
     """Test validate_password_callback function."""
 
     @pytest.mark.parametrize(
-        "password",
-        [
-            "SecurePass123!",
-            "MyP@ssw0rd",
-            "Test1234!",
-            "12345678",
-        ],
+        "password", ["SecurePass123!", "MyP@ssw0rd", "Test1234!", "12345678"]
     )
     def test_validate_password_valid(self, password):
         """GIVEN valid password (>= 8 chars) / WHEN validated / THEN returns password"""
@@ -89,51 +79,67 @@ class TestValidatePassword:
         """GIVEN password < 8 chars / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter) as exc_info:
             validators.validate_password_callback("Short1")
-
         assert "au moins 8 caractères" in str(exc_info.value)
 
 
-class TestValidateFirstName:
-    """Test validate_first_name_callback function."""
-
-    @pytest.mark.parametrize("name", ["Jean", "Marie-Claire", "Anne"])
-    def test_validate_first_name_valid(self, name):
-        """GIVEN valid first name / WHEN validated / THEN returns name"""
-        assert validators.validate_first_name_callback(name) == name
-
-    def test_validate_first_name_too_short(self):
-        """GIVEN too short name / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_first_name_callback("A")
-
-    @pytest.mark.parametrize("name", ["Jean123", "Marie@Claire", "Anne#1"])
-    def test_validate_first_name_invalid_chars(self, name):
-        """GIVEN name with invalid chars / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter) as exc_info:
-            validators.validate_first_name_callback(name)
-        assert "lettres" in str(exc_info.value)
-
-
-class TestValidateLastName:
-    """Test validate_last_name_callback function."""
+class TestValidateNames:
+    """Test validate_first_name_callback and validate_last_name_callback functions."""
 
     @pytest.mark.parametrize(
-        "name", ["Dupont", "Martin-Dubois", "De La Fontaine"]
+        "validator,name",
+        [
+            (validators.validate_first_name_callback, "Jean"),
+            (validators.validate_first_name_callback, "Marie-Claire"),
+            (validators.validate_first_name_callback, "O'Connor"),
+            (validators.validate_last_name_callback, "Dupont"),
+            (validators.validate_last_name_callback, "Martin-Dubois"),
+            (validators.validate_last_name_callback, "De La Fontaine"),
+        ],
+        ids=[
+            "first_name-simple",
+            "first_name-hyphen",
+            "first_name-apostrophe",
+            "last_name-simple",
+            "last_name-hyphen",
+            "last_name-spaces",
+        ],
     )
-    def test_validate_last_name_valid(self, name):
-        """GIVEN valid last name / WHEN validated / THEN returns name"""
-        assert validators.validate_last_name_callback(name) == name
+    def test_validate_name_valid(self, validator, name):
+        """GIVEN valid name / WHEN validated / THEN returns name"""
+        assert validator(name) == name
 
-    def test_validate_last_name_too_short(self):
+    @pytest.mark.parametrize(
+        "validator,name",
+        [
+            (validators.validate_first_name_callback, "A"),
+            (validators.validate_last_name_callback, "D"),
+        ],
+        ids=["first_name-too_short", "last_name-too_short"],
+    )
+    def test_validate_name_too_short(self, validator, name):
         """GIVEN too short name / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter):
-            validators.validate_last_name_callback("D")
+            validator(name)
 
-    @pytest.mark.parametrize("name", ["Dupont123", "Martin@Dubois", "Test#Name"])
-    def test_validate_last_name_invalid_chars(self, name):
+    @pytest.mark.parametrize(
+        "validator,name",
+        [
+            (validators.validate_first_name_callback, "Jean123"),
+            (validators.validate_first_name_callback, "Marie@Claire"),
+            (validators.validate_last_name_callback, "Dupont123"),
+            (validators.validate_last_name_callback, "Martin@Dubois"),
+        ],
+        ids=[
+            "first_name-digits",
+            "first_name-symbol",
+            "last_name-digits",
+            "last_name-symbol",
+        ],
+    )
+    def test_validate_name_invalid_chars(self, validator, name):
         """GIVEN name with invalid chars / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter) as exc_info:
-            validators.validate_last_name_callback(name)
+            validator(name)
         assert "lettres" in str(exc_info.value)
 
 
@@ -151,33 +157,27 @@ class TestValidateLocation:
         """GIVEN empty location / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter) as exc_info:
             validators.validate_location_callback("")
-
         assert "requis" in str(exc_info.value)
 
     def test_validate_location_too_long(self):
         """GIVEN location > 255 chars / WHEN validated / THEN raises BadParameter"""
-        long_location = "A" * 256
         with pytest.raises(typer.BadParameter) as exc_info:
-            validators.validate_location_callback(long_location)
-
+            validators.validate_location_callback("A" * 256)
         assert "255 caractères" in str(exc_info.value)
 
 
 class TestValidateAttendees:
     """Test validate_attendees_callback function."""
 
-    def test_validate_attendees_valid(self):
+    @pytest.mark.parametrize("value", [0, 1, 100, 999])
+    def test_validate_attendees_valid(self, value):
         """GIVEN positive integer or zero / WHEN validated / THEN returns integer"""
-        assert validators.validate_attendees_callback(0) == 0  # Zero is valid
-        assert validators.validate_attendees_callback(1) == 1
-        assert validators.validate_attendees_callback(100) == 100
-        assert validators.validate_attendees_callback(999) == 999
+        assert validators.validate_attendees_callback(value) == value
 
     def test_validate_attendees_negative(self):
         """GIVEN negative integer / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter) as exc_info:
             validators.validate_attendees_callback(-5)
-
         assert "positif" in str(exc_info.value)
 
 
@@ -185,27 +185,21 @@ class TestValidateUsername:
     """Test validate_username_callback function."""
 
     @pytest.mark.parametrize(
-        "username",
-        [
-            "user123",
-            "john_doe",
-            "admin-user",
-            "test_user_123",
-        ],
+        "username", ["user123", "john_doe", "admin-user", "test_user_123"]
     )
     def test_validate_username_valid(self, username):
         """GIVEN valid username / WHEN validated / THEN returns username"""
         assert validators.validate_username_callback(username) == username
 
-    def test_validate_username_too_short(self):
-        """GIVEN username < 4 chars / WHEN validated / THEN raises BadParameter"""
+    @pytest.mark.parametrize(
+        "username,reason",
+        [("abc", "too_short"), ("user@123", "invalid_chars")],
+        ids=["too_short", "invalid_chars"],
+    )
+    def test_validate_username_invalid(self, username, reason):
+        """GIVEN invalid username / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter):
-            validators.validate_username_callback("abc")
-
-    def test_validate_username_invalid_chars(self):
-        """GIVEN username with invalid chars / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_username_callback("user@123")
+            validators.validate_username_callback(username)
 
 
 class TestValidateCompanyName:
@@ -218,120 +212,44 @@ class TestValidateCompanyName:
         """GIVEN valid company name / WHEN validated / THEN returns name"""
         assert validators.validate_company_name_callback(name) == name
 
-    def test_validate_company_name_empty(self):
-        """GIVEN empty company name / WHEN validated / THEN raises BadParameter"""
+    @pytest.mark.parametrize("name", ["", "   "], ids=["empty", "whitespace"])
+    def test_validate_company_name_invalid(self, name):
+        """GIVEN empty or whitespace company name / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter):
-            validators.validate_company_name_callback("")
+            validators.validate_company_name_callback(name)
 
-    def test_validate_company_name_whitespace(self):
-        """GIVEN only whitespace / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_company_name_callback("   ")
+
+# Configuration for ID validators - single source of truth
+ID_VALIDATORS_CONFIG = [
+    # (validator_func, valid_ids, invalid_ids, name)
+    (validators.validate_sales_contact_id_callback, [0, 1, 999], [-1], "sales_contact"),
+    (validators.validate_support_contact_id_callback, [0, 1, 999], [-1], "support_contact"),
+    (validators.validate_client_id_callback, [1, 999], [0, -1], "client"),
+    (validators.validate_contract_id_callback, [1, 999], [0, -1], "contract"),
+    (validators.validate_event_id_callback, [1, 999], [0, -1], "event"),
+    (validators.validate_user_id_callback, [1, 999], [0, -1], "user"),
+]
 
 
 class TestValidateIdCallbacks:
     """Test ID validation callbacks using parametrize for DRY principle."""
 
     @pytest.mark.parametrize(
-        "validator_func,valid_ids,invalid_ids",
-        [
-            # Sales contact ID: accepts 0 (auto-assign) and positive integers
-            (
-                validators.validate_sales_contact_id_callback,
-                [0, 1, 999],
-                [-1],
-            ),
-            # Support contact ID: accepts 0 (optional) and positive integers
-            (
-                validators.validate_support_contact_id_callback,
-                [0, 1, 999],
-                [-1],
-            ),
-            # Client ID: only positive integers (0 not allowed)
-            (
-                validators.validate_client_id_callback,
-                [1, 999],
-                [0, -1],
-            ),
-            # Contract ID: only positive integers
-            (
-                validators.validate_contract_id_callback,
-                [1, 999],
-                [0, -1],
-            ),
-            # Event ID: only positive integers
-            (
-                validators.validate_event_id_callback,
-                [1, 999],
-                [0],
-            ),
-            # User ID: only positive integers
-            (
-                validators.validate_user_id_callback,
-                [1, 999],
-                [0],
-            ),
-        ],
-        ids=[
-            "sales_contact_id",
-            "support_contact_id",
-            "client_id",
-            "contract_id",
-            "event_id",
-            "user_id",
-        ],
+        "validator_func,valid_ids,invalid_ids,name",
+        ID_VALIDATORS_CONFIG,
+        ids=[c[3] for c in ID_VALIDATORS_CONFIG],
     )
-    def test_id_validators_valid(self, validator_func, valid_ids, invalid_ids):
+    def test_id_validators_valid(self, validator_func, valid_ids, invalid_ids, name):
         """GIVEN valid ID values / WHEN validated / THEN returns ID unchanged"""
         for valid_id in valid_ids:
             assert validator_func(valid_id) == valid_id
 
     @pytest.mark.parametrize(
-        "validator_func,valid_ids,invalid_ids",
-        [
-            (
-                validators.validate_sales_contact_id_callback,
-                [0, 1, 999],
-                [-1],
-            ),
-            (
-                validators.validate_support_contact_id_callback,
-                [0, 1, 999],
-                [-1],
-            ),
-            (
-                validators.validate_client_id_callback,
-                [1, 999],
-                [0, -1],
-            ),
-            (
-                validators.validate_contract_id_callback,
-                [1, 999],
-                [0, -1],
-            ),
-            (
-                validators.validate_event_id_callback,
-                [1, 999],
-                [0],
-            ),
-            (
-                validators.validate_user_id_callback,
-                [1, 999],
-                [0],
-            ),
-        ],
-        ids=[
-            "sales_contact_id",
-            "support_contact_id",
-            "client_id",
-            "contract_id",
-            "event_id",
-            "user_id",
-        ],
+        "validator_func,valid_ids,invalid_ids,name",
+        ID_VALIDATORS_CONFIG,
+        ids=[c[3] for c in ID_VALIDATORS_CONFIG],
     )
-    def test_id_validators_invalid(
-        self, validator_func, valid_ids, invalid_ids
-    ):
+    def test_id_validators_invalid(self, validator_func, valid_ids, invalid_ids, name):
         """GIVEN invalid ID values / WHEN validated / THEN raises BadParameter"""
         for invalid_id in invalid_ids:
             with pytest.raises(typer.BadParameter):
@@ -348,175 +266,173 @@ class TestValidateEventName:
         """GIVEN valid event name / WHEN validated / THEN returns name"""
         assert validators.validate_event_name_callback(name) == name
 
-    def test_validate_event_name_too_short(self):
-        """GIVEN name < 3 chars / WHEN validated / THEN raises BadParameter"""
+    @pytest.mark.parametrize(
+        "name,reason",
+        [("AB", "too_short"), ("A" * 101, "too_long")],
+        ids=["too_short", "too_long"],
+    )
+    def test_validate_event_name_invalid(self, name, reason):
+        """GIVEN invalid event name / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter):
-            validators.validate_event_name_callback("AB")
-
-    def test_validate_event_name_too_long(self):
-        """GIVEN name > 100 chars / WHEN validated / THEN raises BadParameter"""
-        long_name = "A" * 101
-        with pytest.raises(typer.BadParameter):
-            validators.validate_event_name_callback(long_name)
+            validators.validate_event_name_callback(name)
 
 
 class TestValidateAmount:
     """Test validate_amount_callback function."""
 
-    def test_validate_amount_valid(self):
+    @pytest.mark.parametrize("amount", ["100.00", "0", "1234.56"])
+    def test_validate_amount_valid(self, amount):
         """GIVEN valid amount / WHEN validated / THEN returns amount"""
-        assert validators.validate_amount_callback("100.00") == "100.00"
-        assert validators.validate_amount_callback("0") == "0"
-        assert validators.validate_amount_callback("1234.56") == "1234.56"
+        assert validators.validate_amount_callback(amount) == amount
 
-    def test_validate_amount_negative(self):
-        """GIVEN negative amount / WHEN validated / THEN raises BadParameter"""
+    @pytest.mark.parametrize(
+        "amount,reason",
+        [("-100", "negative"), ("abc", "invalid_format")],
+        ids=["negative", "invalid_format"],
+    )
+    def test_validate_amount_invalid(self, amount, reason):
+        """GIVEN invalid amount / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter):
-            validators.validate_amount_callback("-100")
-
-    def test_validate_amount_invalid_format(self):
-        """GIVEN invalid format / WHEN validated / THEN raises BadParameter"""
-        with pytest.raises(typer.BadParameter):
-            validators.validate_amount_callback("abc")
+            validators.validate_amount_callback(amount)
 
 
 class TestValidateDepartment:
     """Test validate_department_callback function."""
 
-    def test_validate_department_valid(self):
+    @pytest.mark.parametrize("choice", [1, 2, 3])
+    def test_validate_department_valid(self, choice):
         """GIVEN valid department choice / WHEN validated / THEN returns choice"""
-        # Department enum has 3 values: GESTION, COMMERCIAL, SUPPORT
-        assert validators.validate_department_callback(1) == 1
-        assert validators.validate_department_callback(2) == 2
-        assert validators.validate_department_callback(3) == 3
+        assert validators.validate_department_callback(choice) == choice
 
-    def test_validate_department_invalid(self):
+    @pytest.mark.parametrize("choice", [0, 4, -1])
+    def test_validate_department_invalid(self, choice):
         """GIVEN invalid department choice / WHEN validated / THEN raises BadParameter"""
         with pytest.raises(typer.BadParameter):
-            validators.validate_department_callback(0)
-        with pytest.raises(typer.BadParameter):
-            validators.validate_department_callback(4)
+            validators.validate_department_callback(choice)
 
 
 class TestValidateContractAmounts:
     """Test validate_contract_amounts business function."""
 
-    def test_validate_contract_amounts_valid(self):
+    @pytest.mark.parametrize(
+        "total,remaining",
+        [
+            (Decimal("10000"), Decimal("5000")),
+            (Decimal("10000"), Decimal("10000")),
+            (Decimal("10000"), Decimal("0")),
+        ],
+        ids=["partial", "full_remaining", "zero_remaining"],
+    )
+    def test_validate_contract_amounts_valid(self, total, remaining):
         """GIVEN valid amounts / WHEN validated / THEN no error"""
-        # Should not raise any exception
         BusinessValidator.validate_contract_amounts(
-            total_amount=Decimal("10000"), remaining_amount=Decimal("5000")
-        )
-        BusinessValidator.validate_contract_amounts(
-            total_amount=Decimal("10000"), remaining_amount=Decimal("10000")
-        )
-        BusinessValidator.validate_contract_amounts(
-            total_amount=Decimal("10000"), remaining_amount=Decimal("0")
+            total_amount=total, remaining_amount=remaining
         )
 
-    def test_validate_contract_amounts_negative_total(self):
-        """GIVEN negative total / WHEN validated / THEN raises ValueError"""
+    @pytest.mark.parametrize(
+        "total,remaining,error_msg",
+        [
+            (Decimal("-100"), Decimal("0"), "positif"),
+            (Decimal("1000"), Decimal("-100"), "positif"),
+            (Decimal("1000"), Decimal("1500"), "dépasser"),
+        ],
+        ids=["negative_total", "negative_remaining", "remaining_exceeds_total"],
+    )
+    def test_validate_contract_amounts_invalid(self, total, remaining, error_msg):
+        """GIVEN invalid amounts / WHEN validated / THEN raises ValueError"""
         with pytest.raises(ValueError) as exc_info:
             BusinessValidator.validate_contract_amounts(
-                total_amount=Decimal("-100"), remaining_amount=Decimal("0")
+                total_amount=total, remaining_amount=remaining
             )
-        assert "positif" in str(exc_info.value)
-
-    def test_validate_contract_amounts_negative_remaining(self):
-        """GIVEN negative remaining / WHEN validated / THEN raises ValueError"""
-        with pytest.raises(ValueError):
-            BusinessValidator.validate_contract_amounts(
-                total_amount=Decimal("1000"), remaining_amount=Decimal("-100")
-            )
-
-    def test_validate_contract_amounts_remaining_exceeds_total(self):
-        """GIVEN remaining > total / WHEN validated / THEN raises ValueError"""
-        with pytest.raises(ValueError) as exc_info:
-            BusinessValidator.validate_contract_amounts(
-                total_amount=Decimal("1000"), remaining_amount=Decimal("1500")
-            )
-        assert "dépasser" in str(exc_info.value)
+        assert error_msg in str(exc_info.value)
 
 
 class TestValidatePaymentAmount:
     """Test validate_payment_amount business function."""
 
-    def test_validate_payment_amount_valid(self):
+    @pytest.mark.parametrize(
+        "paid,remaining",
+        [(Decimal("500"), Decimal("1000")), (Decimal("1000"), Decimal("1000"))],
+        ids=["partial_payment", "full_payment"],
+    )
+    def test_validate_payment_amount_valid(self, paid, remaining):
         """GIVEN valid payment / WHEN validated / THEN no error"""
         BusinessValidator.validate_payment_amount(
-            amount_paid=Decimal("500"), remaining_amount=Decimal("1000")
-        )
-        BusinessValidator.validate_payment_amount(
-            amount_paid=Decimal("1000"), remaining_amount=Decimal("1000")
+            amount_paid=paid, remaining_amount=remaining
         )
 
-    def test_validate_payment_amount_zero(self):
-        """GIVEN payment = 0 / WHEN validated / THEN raises ValueError"""
-        with pytest.raises(ValueError):
-            BusinessValidator.validate_payment_amount(
-                amount_paid=Decimal("0"), remaining_amount=Decimal("1000")
-            )
-
-    def test_validate_payment_amount_negative(self):
-        """GIVEN negative payment / WHEN validated / THEN raises ValueError"""
-        with pytest.raises(ValueError):
-            BusinessValidator.validate_payment_amount(
-                amount_paid=Decimal("-100"), remaining_amount=Decimal("1000")
-            )
-
-    def test_validate_payment_amount_exceeds_remaining(self):
-        """GIVEN payment > remaining / WHEN validated / THEN raises ValueError"""
+    @pytest.mark.parametrize(
+        "paid,remaining,error_msg",
+        [
+            (Decimal("0"), Decimal("1000"), "positif"),
+            (Decimal("-100"), Decimal("1000"), "positif"),
+            (Decimal("1500"), Decimal("1000"), "dépasse"),
+        ],
+        ids=["zero_payment", "negative_payment", "exceeds_remaining"],
+    )
+    def test_validate_payment_amount_invalid(self, paid, remaining, error_msg):
+        """GIVEN invalid payment / WHEN validated / THEN raises ValueError"""
         with pytest.raises(ValueError) as exc_info:
             BusinessValidator.validate_payment_amount(
-                amount_paid=Decimal("1500"), remaining_amount=Decimal("1000")
+                amount_paid=paid, remaining_amount=remaining
             )
-        assert "dépasse" in str(exc_info.value)
+        assert error_msg in str(exc_info.value)
 
 
-class TestValidateUserIsCommercial:
-    """Test validate_user_is_commercial business function."""
+class TestValidateUserDepartment:
+    """Test validate_user_is_commercial and validate_user_is_support business functions."""
 
-    def test_validate_user_is_commercial_valid(self, mocker):
-        """GIVEN COMMERCIAL user / WHEN validated / THEN no error"""
+    @pytest.mark.parametrize(
+        "validator,valid_dept,invalid_dept",
+        [
+            (
+                BusinessValidator.validate_user_is_commercial,
+                Department.COMMERCIAL,
+                Department.GESTION,
+            ),
+            (
+                BusinessValidator.validate_user_is_support,
+                Department.SUPPORT,
+                Department.COMMERCIAL,
+            ),
+        ],
+        ids=["commercial", "support"],
+    )
+    def test_validate_user_department_valid(self, validator, valid_dept, invalid_dept, mocker):
+        """GIVEN user with correct department / WHEN validated / THEN no error"""
         user = mocker.Mock()
         user.id = 1
-        user.department = Department.COMMERCIAL
+        user.department = valid_dept
+        validator(user)  # Should not raise
 
-        # Should not raise any exception
-        BusinessValidator.validate_user_is_commercial(user)
-
-    def test_validate_user_is_commercial_invalid(self, mocker):
-        """GIVEN non-COMMERCIAL user / WHEN validated / THEN raises ValueError"""
+    @pytest.mark.parametrize(
+        "validator,valid_dept,invalid_dept,expected_msg",
+        [
+            (
+                BusinessValidator.validate_user_is_commercial,
+                Department.COMMERCIAL,
+                Department.GESTION,
+                "COMMERCIAL",
+            ),
+            (
+                BusinessValidator.validate_user_is_support,
+                Department.SUPPORT,
+                Department.COMMERCIAL,
+                "SUPPORT",
+            ),
+        ],
+        ids=["commercial", "support"],
+    )
+    def test_validate_user_department_invalid(
+        self, validator, valid_dept, invalid_dept, expected_msg, mocker
+    ):
+        """GIVEN user with wrong department / WHEN validated / THEN raises ValueError"""
         user = mocker.Mock()
         user.id = 1
-        user.department = Department.GESTION
-
+        user.department = invalid_dept
         with pytest.raises(ValueError) as exc_info:
-            BusinessValidator.validate_user_is_commercial(user)
-        assert "COMMERCIAL" in str(exc_info.value)
-
-
-class TestValidateUserIsSupport:
-    """Test validate_user_is_support business function."""
-
-    def test_validate_user_is_support_valid(self, mocker):
-        """GIVEN SUPPORT user / WHEN validated / THEN no error"""
-        user = mocker.Mock()
-        user.id = 1
-        user.department = Department.SUPPORT
-
-        # Should not raise any exception
-        BusinessValidator.validate_user_is_support(user)
-
-    def test_validate_user_is_support_invalid(self, mocker):
-        """GIVEN non-SUPPORT user / WHEN validated / THEN raises ValueError"""
-        user = mocker.Mock()
-        user.id = 1
-        user.department = Department.COMMERCIAL
-
-        with pytest.raises(ValueError) as exc_info:
-            BusinessValidator.validate_user_is_support(user)
-        assert "SUPPORT" in str(exc_info.value)
+            validator(user)
+        assert expected_msg in str(exc_info.value)
 
 
 class TestValidateEventDates:
@@ -524,55 +440,41 @@ class TestValidateEventDates:
 
     def test_validate_event_dates_valid(self):
         """GIVEN valid dates / WHEN validated / THEN no error"""
-        # Event in the future with valid end > start
         start = datetime.now() + timedelta(days=1)
         end = start + timedelta(hours=2)
-
         BusinessValidator.validate_event_dates(
             event_start=start, event_end=end, attendees=50
         )
 
-    def test_validate_event_dates_end_before_start(self):
-        """GIVEN end <= start / WHEN validated / THEN raises ValueError"""
-        start = datetime.now() + timedelta(days=1)
-        end = start - timedelta(hours=1)  # End before start
-
+    @pytest.mark.parametrize(
+        "start_offset,end_offset,attendees,error_msg",
+        [
+            (timedelta(days=1), timedelta(hours=-1), 50, "postérieure"),
+            (timedelta(days=1), timedelta(hours=2), -5, "positif"),
+            (timedelta(days=-1), timedelta(hours=2), 50, "futur"),
+        ],
+        ids=["end_before_start", "negative_attendees", "start_in_past"],
+    )
+    def test_validate_event_dates_invalid(
+        self, start_offset, end_offset, attendees, error_msg
+    ):
+        """GIVEN invalid event data / WHEN validated / THEN raises ValueError"""
+        start = datetime.now() + start_offset
+        end = start + end_offset
         with pytest.raises(ValueError) as exc_info:
             BusinessValidator.validate_event_dates(
-                event_start=start, event_end=end, attendees=50
+                event_start=start, event_end=end, attendees=attendees
             )
-        assert "postérieure" in str(exc_info.value)
-
-    def test_validate_event_dates_negative_attendees(self):
-        """GIVEN negative attendees / WHEN validated / THEN raises ValueError"""
-        start = datetime.now() + timedelta(days=1)
-        end = start + timedelta(hours=2)
-
-        with pytest.raises(ValueError):
-            BusinessValidator.validate_event_dates(
-                event_start=start, event_end=end, attendees=-5
-            )
-
-    def test_validate_event_dates_in_past(self):
-        """GIVEN start in past / WHEN validated / THEN raises ValueError"""
-        start = datetime.now() - timedelta(days=1)  # Yesterday
-        end = start + timedelta(hours=2)
-
-        with pytest.raises(ValueError) as exc_info:
-            BusinessValidator.validate_event_dates(
-                event_start=start, event_end=end, attendees=50
-            )
-        assert "futur" in str(exc_info.value)
+        assert error_msg in str(exc_info.value)
 
 
 class TestValidateAttendeesPositive:
     """Test validate_attendees_positive business function."""
 
-    def test_validate_attendees_positive_valid(self):
+    @pytest.mark.parametrize("value", [0, 1, 100])
+    def test_validate_attendees_positive_valid(self, value):
         """GIVEN positive attendees / WHEN validated / THEN no error"""
-        BusinessValidator.validate_attendees_positive(0)
-        BusinessValidator.validate_attendees_positive(1)
-        BusinessValidator.validate_attendees_positive(100)
+        BusinessValidator.validate_attendees_positive(value)
 
     def test_validate_attendees_positive_negative(self):
         """GIVEN negative attendees / WHEN validated / THEN raises ValueError"""

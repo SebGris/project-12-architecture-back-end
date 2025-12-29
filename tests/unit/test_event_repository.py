@@ -113,8 +113,8 @@ class TestEventRepositoryGetBySupportContact:
         assert result[0].support_contact_id == support1.id
 
 
-class TestEventRepositoryGetUpcomingEvents:
-    """Test get_upcoming_events method."""
+class TestEventRepositoryFilters:
+    """Test filtering methods for events."""
 
     def test_get_upcoming_events(self, event_repository, test_events):
         """GIVEN upcoming events / WHEN get_upcoming_events() / THEN returns future events"""
@@ -122,14 +122,8 @@ class TestEventRepositoryGetUpcomingEvents:
 
         result = event_repository.get_upcoming_events(from_date)
 
-        # Should return "Cool Startup Launch Event" (2025-11-15) and "Corporate Assembly" (2025-12-01)
-        # but NOT "Product Demo" (2025-10-20)
         assert len(result) == 2
         assert all(e.event_start >= from_date for e in result)
-
-
-class TestEventRepositoryGetUnassignedEvents:
-    """Test get_unassigned_events method."""
 
     def test_get_unassigned_events(self, event_repository, test_events):
         """GIVEN events without support contact / WHEN get_unassigned_events() / THEN returns unassigned"""
@@ -142,51 +136,39 @@ class TestEventRepositoryGetUnassignedEvents:
 class TestEventRepositoryExists:
     """Test exists method."""
 
-    def test_exists_returns_true_for_existing_event(
-        self, event_repository, test_events
+    @pytest.mark.parametrize(
+        "get_id,expected",
+        [("existing", True), ("nonexistent", False)],
+        ids=["existing", "nonexistent"],
+    )
+    def test_exists(self, event_repository, test_events, get_id, expected):
+        """Test exists returns correct boolean for existing/nonexistent events."""
+        event_id = test_events["launch"].id if get_id == "existing" else 99999
+        result = event_repository.exists(event_id)
+        assert result is expected
+
+
+class TestEventRepositoryPagination:
+    """Test get_all and count methods."""
+
+    @pytest.mark.parametrize(
+        "offset,limit,expected_len",
+        [(0, 100, None), (0, 1, 1), (1000, 10, 0)],
+        ids=["default", "limit_1", "beyond_data"],
+    )
+    def test_get_all_pagination(
+        self, event_repository, test_events, offset, limit, expected_len
     ):
-        """GIVEN existing event / WHEN exists() / THEN returns True"""
-        event = test_events["launch"]
+        """Test get_all with various pagination scenarios."""
+        result = event_repository.get_all(offset=offset, limit=limit)
 
-        result = event_repository.exists(event.id)
-
-        assert result is True
-
-    def test_exists_returns_false_for_nonexistent_event(self, event_repository):
-        """GIVEN nonexistent event_id / WHEN exists() / THEN returns False"""
-        result = event_repository.exists(99999)
-
-        assert result is False
-
-
-class TestEventRepositoryGetAll:
-    """Test get_all method with pagination."""
-
-    def test_get_all_default_pagination(self, event_repository, test_events):
-        """GIVEN events in database / WHEN get_all() / THEN returns paginated list"""
-        result = event_repository.get_all()
-
-        assert len(result) >= 1
-        assert isinstance(result, list)
-
-    def test_get_all_with_offset_and_limit(self, event_repository, test_events):
-        """GIVEN events in database / WHEN get_all(offset, limit) / THEN returns correct slice"""
-        result = event_repository.get_all(offset=0, limit=1)
-
-        assert len(result) == 1
-
-    def test_get_all_offset_beyond_data(self, event_repository, test_events):
-        """GIVEN offset beyond data / WHEN get_all() / THEN returns empty list"""
-        result = event_repository.get_all(offset=1000, limit=10)
-
-        assert result == []
-
-
-class TestEventRepositoryCount:
-    """Test count method."""
+        if expected_len is None:
+            assert len(result) >= 1
+        else:
+            assert len(result) == expected_len
 
     def test_count_returns_total(self, event_repository, test_events):
         """GIVEN events in database / WHEN count() / THEN returns total count"""
         result = event_repository.count()
 
-        assert result >= 3  # At least launch, demo, assembly from test_events
+        assert result >= 3

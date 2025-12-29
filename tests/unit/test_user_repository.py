@@ -44,37 +44,39 @@ class TestUserRepositoryGet:
 class TestUserRepositoryGetByUsername:
     """Test get_by_username method."""
 
-    def test_get_by_username_existing(self, user_repository, test_users):
-        """GIVEN existing username / WHEN get_by_username() / THEN returns user"""
-        result = user_repository.get_by_username("commercial1")
+    @pytest.mark.parametrize(
+        "username,expected_found",
+        [("commercial1", True), ("nonexistent", False)],
+        ids=["existing", "nonexistent"],
+    )
+    def test_get_by_username(self, user_repository, test_users, username, expected_found):
+        """Test get_by_username with existing and nonexistent usernames."""
+        result = user_repository.get_by_username(username)
 
-        assert result is not None
-        assert result.username == "commercial1"
-        assert result.department == Department.COMMERCIAL
-
-    def test_get_by_username_nonexistent(self, user_repository):
-        """GIVEN nonexistent username / WHEN get_by_username() / THEN returns None"""
-        result = user_repository.get_by_username("nonexistent")
-
-        assert result is None
+        if expected_found:
+            assert result is not None
+            assert result.username == username
+        else:
+            assert result is None
 
 
 class TestUserRepositoryGetByEmail:
     """Test get_by_email method."""
 
-    def test_get_by_email_existing(self, user_repository, test_users):
-        """GIVEN existing email / WHEN get_by_email() / THEN returns user"""
-        result = user_repository.get_by_email("admin@epicevents.com")
+    @pytest.mark.parametrize(
+        "email,expected_found",
+        [("admin@epicevents.com", True), ("nonexistent@example.com", False)],
+        ids=["existing", "nonexistent"],
+    )
+    def test_get_by_email(self, user_repository, test_users, email, expected_found):
+        """Test get_by_email with existing and nonexistent emails."""
+        result = user_repository.get_by_email(email)
 
-        assert result is not None
-        assert result.email == "admin@epicevents.com"
-        assert result.username == "admin"
-
-    def test_get_by_email_nonexistent(self, user_repository):
-        """GIVEN nonexistent email / WHEN get_by_email() / THEN returns None"""
-        result = user_repository.get_by_email("nonexistent@example.com")
-
-        assert result is None
+        if expected_found:
+            assert result is not None
+            assert result.email == email
+        else:
+            assert result is None
 
 
 class TestUserRepositoryAdd:
@@ -128,68 +130,55 @@ class TestUserRepositoryUpdate:
 class TestUserRepositoryExists:
     """Test exists method."""
 
-    def test_exists_returns_true_for_existing_user(self, user_repository, test_users):
-        """GIVEN existing user / WHEN exists() / THEN returns True"""
-        admin = test_users["admin"]
-
-        result = user_repository.exists(admin.id)
-
-        assert result is True
-
-    def test_exists_returns_false_for_nonexistent_user(self, user_repository):
-        """GIVEN nonexistent user_id / WHEN exists() / THEN returns False"""
-        result = user_repository.exists(99999)
-
-        assert result is False
+    @pytest.mark.parametrize(
+        "get_id,expected",
+        [("existing", True), ("nonexistent", False)],
+        ids=["existing", "nonexistent"],
+    )
+    def test_exists(self, user_repository, test_users, get_id, expected):
+        """Test exists returns correct boolean for existing/nonexistent users."""
+        user_id = test_users["admin"].id if get_id == "existing" else 99999
+        result = user_repository.exists(user_id)
+        assert result is expected
 
 
 class TestUserRepositoryUsernameExists:
     """Test username_exists method."""
 
-    def test_username_exists_returns_true(self, user_repository, test_users):
-        """GIVEN existing username / WHEN username_exists() / THEN returns True"""
-        result = user_repository.username_exists("admin")
-
-        assert result is True
-
-    def test_username_exists_returns_false(self, user_repository):
-        """GIVEN nonexistent username / WHEN username_exists() / THEN returns False"""
-        result = user_repository.username_exists("nonexistent_user")
-
-        assert result is False
-
-    def test_username_exists_excludes_id(self, user_repository, test_users):
-        """GIVEN existing username with exclude_id / WHEN username_exists() / THEN returns False"""
-        admin = test_users["admin"]
-
-        # Username exists but we exclude admin's ID (for update scenario)
-        result = user_repository.username_exists("admin", exclude_id=admin.id)
-
-        assert result is False
+    @pytest.mark.parametrize(
+        "username,exclude_id,expected",
+        [
+            ("admin", None, True),
+            ("nonexistent_user", None, False),
+            ("admin", "admin", False),  # exclude_id scenario
+        ],
+        ids=["exists", "not_exists", "excluded"],
+    )
+    def test_username_exists(
+        self, user_repository, test_users, username, exclude_id, expected
+    ):
+        """Test username_exists with various scenarios."""
+        exclude = test_users["admin"].id if exclude_id == "admin" else None
+        result = user_repository.username_exists(username, exclude_id=exclude)
+        assert result is expected
 
 
 class TestUserRepositoryEmailExists:
     """Test email_exists method."""
 
-    def test_email_exists_returns_true(self, user_repository, test_users):
-        """GIVEN existing email / WHEN email_exists() / THEN returns True"""
-        result = user_repository.email_exists("admin@epicevents.com")
-
-        assert result is True
-
-    def test_email_exists_returns_false(self, user_repository):
-        """GIVEN nonexistent email / WHEN email_exists() / THEN returns False"""
-        result = user_repository.email_exists("nonexistent@email.com")
-
-        assert result is False
-
-    def test_email_exists_excludes_id(self, user_repository, test_users):
-        """GIVEN existing email with exclude_id / WHEN email_exists() / THEN returns False"""
-        admin = test_users["admin"]
-
-        # Email exists but we exclude admin's ID (for update scenario)
-        result = user_repository.email_exists(
-            "admin@epicevents.com", exclude_id=admin.id
-        )
-
-        assert result is False
+    @pytest.mark.parametrize(
+        "email,exclude_id,expected",
+        [
+            ("admin@epicevents.com", None, True),
+            ("nonexistent@email.com", None, False),
+            ("admin@epicevents.com", "admin", False),  # exclude_id scenario
+        ],
+        ids=["exists", "not_exists", "excluded"],
+    )
+    def test_email_exists(
+        self, user_repository, test_users, email, exclude_id, expected
+    ):
+        """Test email_exists with various scenarios."""
+        exclude = test_users["admin"].id if exclude_id == "admin" else None
+        result = user_repository.email_exists(email, exclude_id=exclude)
+        assert result is expected
