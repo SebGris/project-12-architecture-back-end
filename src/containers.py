@@ -24,6 +24,7 @@ from src.services.auth_service import AuthService
 from src.services.client_service import ClientService
 from src.services.contract_service import ContractService
 from src.services.event_service import EventService
+from src.services.password_hashing_service import PasswordHashingService
 from src.services.token_service import TokenService
 from src.services.token_storage_service import TokenStorageService
 from src.services.user_service import UserService
@@ -65,7 +66,9 @@ class Container(containers.DeclarativeContainer):
         session=db_session,
     )
 
-    # Token services (SRP: separate token generation and storage)
+    # Utility services (SRP: separate concerns)
+    password_service = providers.Singleton(PasswordHashingService)
+
     token_service = providers.Singleton(TokenService)
 
     token_storage_service = providers.Singleton(TokenStorageService)
@@ -76,6 +79,7 @@ class Container(containers.DeclarativeContainer):
         repository=user_repository,
         token_service=token_service,
         token_storage=token_storage_service,
+        password_service=password_service,
     )
 
     client_service = providers.Factory(
@@ -86,6 +90,7 @@ class Container(containers.DeclarativeContainer):
     user_service = providers.Factory(
         UserService,
         repository=user_repository,
+        password_service=password_service,
     )
 
     contract_service = providers.Factory(

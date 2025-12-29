@@ -1,3 +1,9 @@
+"""User model for Epic Events CRM.
+
+This module contains the User model representing employees.
+Password hashing logic is in UserService (SRP compliance).
+"""
+
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, List
@@ -6,7 +12,6 @@ from sqlalchemy import DateTime, Enum as SQLEnum, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
-from src.services.password_hashing_service import PasswordHashingService
 
 if TYPE_CHECKING:
     from .client import Client
@@ -54,27 +59,6 @@ class User(Base):
     support_events: Mapped[List["Event"]] = relationship(
         "Event", back_populates="support_contact", lazy="select"
     )
-
-    def set_password(self, password: str) -> None:
-        """Hash and set password using the PasswordHashingService.
-
-        Args:
-            password: The plain text password to hash and set
-        """
-        password_service = PasswordHashingService()
-        self.password_hash = password_service.hash_password(password)
-
-    def verify_password(self, password: str) -> bool:
-        """Verify password against hash using the PasswordHashingService.
-
-        Args:
-            password: The plain text password to verify
-
-        Returns:
-            True if the password matches the stored hash, False otherwise
-        """
-        password_service = PasswordHashingService()
-        return password_service.verify_password(password, self.password_hash)
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, username='{self.username}', department={self.department})>"

@@ -9,6 +9,7 @@ from typing import Optional
 
 from src.models.user import User
 from src.repositories.user_repository import UserRepository
+from src.services.password_hashing_service import PasswordHashingService
 from src.services.token_service import TokenService
 from src.services.token_storage_service import TokenStorageService
 from src.sentry_config import add_breadcrumb, capture_message
@@ -23,6 +24,7 @@ class AuthService:
 
     Token generation/validation is delegated to TokenService.
     Token persistence is delegated to TokenStorageService.
+    Password verification is delegated to PasswordHashingService.
     """
 
     def __init__(
@@ -30,6 +32,7 @@ class AuthService:
         repository: UserRepository,
         token_service: TokenService,
         token_storage: TokenStorageService,
+        password_service: PasswordHashingService,
     ) -> None:
         """Initialize the authentication service.
 
@@ -37,10 +40,12 @@ class AuthService:
             repository: User repository for database access
             token_service: Service for JWT token operations
             token_storage: Service for token persistence
+            password_service: Service for password hashing/verification
         """
         self.repository = repository
         self.token_service = token_service
         self.token_storage = token_storage
+        self.password_service = password_service
 
     def authenticate(self, username: str, password: str) -> Optional[User]:
         """Authenticate a user with username and password.
@@ -70,7 +75,7 @@ class AuthService:
             )
             return None
 
-        if not user.verify_password(password):
+        if not self.password_service.verify_password(password, user.password_hash):
             # Log failed login attempt (wrong password)
             capture_message(
                 f"Tentative de connexion échouée - mot de passe incorrect: {username}",

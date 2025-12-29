@@ -8,6 +8,7 @@ from typing import Optional
 
 from src.models.user import Department, User
 from src.repositories.user_repository import UserRepository
+from src.services.password_hashing_service import PasswordHashingService
 
 
 class UserService:
@@ -15,10 +16,16 @@ class UserService:
 
     This service handles user operations including creation,
     retrieval, password hashing, and password verification.
+    Password hashing is delegated to PasswordHashingService (SRP).
     """
 
-    def __init__(self, repository: UserRepository):
+    def __init__(
+        self,
+        repository: UserRepository,
+        password_service: PasswordHashingService,
+    ):
         self.repository = repository
+        self.password_service = password_service
 
     def get_user(self, user_id: int) -> Optional[User]:
         """Get a user by ID.
@@ -58,13 +65,12 @@ class UserService:
         user = User(
             username=username,
             email=email,
-            password_hash="",  # Temporary, will be set by set_password
+            password_hash=self.password_service.hash_password(password),
             first_name=first_name,
             last_name=last_name,
             phone=phone,
             department=department,
         )
-        user.set_password(password)
         return self.repository.add(user)
 
     def verify_password(self, user: User, password: str) -> bool:
@@ -77,7 +83,16 @@ class UserService:
         Returns:
             True if password matches, False otherwise
         """
-        return user.verify_password(password)
+        return self.password_service.verify_password(password, user.password_hash)
+
+    def set_password(self, user: User, password: str) -> None:
+        """Set a new password for a user.
+
+        Args:
+            user: User instance to update
+            password: Plain text password to hash and set
+        """
+        user.password_hash = self.password_service.hash_password(password)
 
     def update_user(
         self,
