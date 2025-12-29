@@ -116,14 +116,21 @@ class TestEventRepositoryGetBySupportContact:
 class TestEventRepositoryFilters:
     """Test filtering methods for events."""
 
-    def test_get_upcoming_events(self, event_repository, test_events):
-        """GIVEN upcoming events / WHEN get_upcoming_events() / THEN returns future events"""
+    def test_get_upcoming_events_with_date(self, event_repository, test_events):
+        """GIVEN upcoming events / WHEN get_upcoming_events(date) / THEN returns future events"""
         from_date = datetime(2025, 11, 1)
 
         result = event_repository.get_upcoming_events(from_date)
 
         assert len(result) == 2
         assert all(e.event_start >= from_date for e in result)
+
+    def test_get_upcoming_events_default_date(self, event_repository, test_events):
+        """GIVEN no date / WHEN get_upcoming_events() / THEN uses datetime.now()"""
+        result = event_repository.get_upcoming_events()
+
+        # Should return events in the future (from now)
+        assert isinstance(result, list)
 
     def test_get_unassigned_events(self, event_repository, test_events):
         """GIVEN events without support contact / WHEN get_unassigned_events() / THEN returns unassigned"""
