@@ -129,3 +129,11 @@ class SqlAlchemyEventRepository(EventRepository):
         return (
             self.session.query(Event).filter_by(id=event_id).first() is not None
         )
+
+    def get_all(self) -> List[Event]:
+        """Get all events (read-only access for all departments).
+
+        Returns:
+            List of all Event instances
+        """
+        return self.session.query(Event).all()

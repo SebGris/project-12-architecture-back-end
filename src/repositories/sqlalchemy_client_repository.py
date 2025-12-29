@@ -96,3 +96,11 @@ class SqlAlchemyClientRepository(ClientRepository):
             .filter_by(sales_contact_id=sales_contact_id)
             .all()
         )
+
+    def get_all(self) -> List[Client]:
+        """Get all clients (read-only access for all departments).
+
+        Returns:
+            List of all Client instances
+        """
+        return self.session.query(Client).all()

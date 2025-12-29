@@ -135,3 +135,11 @@ class ClientService:
             List of Client instances assigned to this sales contact
         """
         return self.repository.get_by_sales_contact(sales_contact_id)
+
+    def get_all_clients(self) -> List[Client]:
+        """Get all clients (read-only access for all departments).
+
+        Returns:
+            List of all Client instances
+        """
+        return self.repository.get_all()

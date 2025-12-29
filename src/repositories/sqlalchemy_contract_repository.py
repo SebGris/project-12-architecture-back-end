@@ -111,3 +111,11 @@ class SqlAlchemyContractRepository(ContractRepository):
             self.session.query(Contract).filter_by(id=contract_id).first()
             is not None
         )
+
+    def get_all(self) -> List[Contract]:
+        """Get all contracts (read-only access for all departments).
+
+        Returns:
+            List of all Contract instances
+        """
+        return self.session.query(Contract).all()

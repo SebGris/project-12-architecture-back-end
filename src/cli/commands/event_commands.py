@@ -634,3 +634,62 @@ def filter_my_events(current_user=None):
     console.print_success(
         f"Total: {len(events)} événement(s) assigné(s) à {current_user.first_name} {current_user.last_name}"
     )
+
+
+@app.command()
+@require_department()
+def list_events():
+    """List all events in the system (read-only).
+
+    This command displays all events registered in the CRM system.
+    Available to all authenticated users (all departments) in read-only mode.
+
+    Returns:
+        None. Displays a list of all events or a message if none found.
+
+    Examples:
+        epicevents list-events
+    """
+    container = Container()
+    event_service = container.event_service()
+
+    console.print_command_header("Liste des événements")
+
+    events = event_service.get_all_events()
+
+    if not events:
+        console.print_separator()
+        console.print_field("Résultat", "Aucun événement trouvé")
+        console.print_separator()
+        return
+
+    console.print_separator()
+    console.print_success(f"{len(events)} événement(s) trouvé(s)")
+    console.print_separator()
+
+    for event in events:
+        console.print_field(LABEL_EVENT_ID, str(event.id))
+        console.print_field("Nom", event.name)
+        console.print_field(LABEL_CONTRACT_ID, str(event.contract_id))
+        console.print_field(
+            LABEL_CLIENT_NAME,
+            f"{event.contract.client.first_name} {event.contract.client.last_name}",
+        )
+        console.print_field(
+            LABEL_EVENT_DATE_START, format_event_datetime(event.event_start)
+        )
+        console.print_field(
+            LABEL_EVENT_DATE_END, format_event_datetime(event.event_end)
+        )
+        if event.support_contact:
+            console.print_field(
+                LABEL_SUPPORT_CONTACT,
+                f"{event.support_contact.first_name} {event.support_contact.last_name}",
+            )
+        else:
+            console.print_field(LABEL_SUPPORT_CONTACT, LABEL_NON_ASSIGNE)
+        console.print_field(LABEL_LOCATION, event.location)
+        console.print_field(LABEL_ATTENDEES, str(event.attendees))
+        if event.notes:
+            console.print_field(LABEL_NOTES, event.notes)
+        console.print_separator()

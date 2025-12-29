@@ -143,3 +143,11 @@ class ContractService:
             Updated Contract instance
         """
         return self.repository.update(contract)
+
+    def get_all_contracts(self) -> List[Contract]:
+        """Get all contracts (read-only access for all departments).
+
+        Returns:
+            List of all Contract instances
+        """
+        return self.repository.get_all()

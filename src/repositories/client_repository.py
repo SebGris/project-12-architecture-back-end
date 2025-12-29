@@ -79,3 +79,11 @@ class ClientRepository(ABC):
         Returns:
             List of Client instances assigned to this sales contact
         """
+
+    @abstractmethod
+    def get_all(self) -> List[Client]:
+        """Get all clients (read-only access for all departments).
+
+        Returns:
+            List of all Client instances
+        """

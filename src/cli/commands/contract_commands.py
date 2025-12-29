@@ -622,3 +622,58 @@ def filter_signed_contracts():
         console.print_separator()
 
     console.print_success(f"Total: {len(contracts)} contrat(s) signé(s)")
+
+
+@app.command()
+@require_department()
+def list_contracts():
+    """List all contracts in the system (read-only).
+
+    This command displays all contracts registered in the CRM system.
+    Available to all authenticated users (all departments) in read-only mode.
+
+    Returns:
+        None. Displays a list of all contracts or a message if none found.
+
+    Examples:
+        epicevents list-contracts
+    """
+    container = Container()
+    contract_service = container.contract_service()
+
+    console.print_command_header("Liste des contrats")
+
+    contracts = contract_service.get_all_contracts()
+
+    if not contracts:
+        console.print_separator()
+        console.print_field("Résultat", "Aucun contrat trouvé")
+        console.print_separator()
+        return
+
+    console.print_separator()
+    console.print_success(f"{len(contracts)} contrat(s) trouvé(s)")
+    console.print_separator()
+
+    for contract in contracts:
+        console.print_field(c.LABEL_ID, str(contract.id))
+        console.print_field(
+            LABEL_CLIENT,
+            f"{contract.client.first_name} {contract.client.last_name} ({contract.client.company_name})",
+        )
+        console.print_field(
+            c.LABEL_CONTACT_COMMERCIAL,
+            f"{contract.client.sales_contact.first_name} {contract.client.sales_contact.last_name}",
+        )
+        console.print_field(LABEL_MONTANT_TOTAL, f"{contract.total_amount} €")
+        console.print_field(
+            LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
+        )
+        console.print_field(
+            LABEL_STATUT,
+            STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED,
+        )
+        console.print_field(
+            c.LABEL_DATE_CREATION, contract.created_at.strftime(c.FORMAT_DATE)
+        )
+        console.print_separator()

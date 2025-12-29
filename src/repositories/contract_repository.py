@@ -90,3 +90,11 @@ class ContractRepository(ABC):
         Returns:
             True if the contract exists, False otherwise
         """
+
+    @abstractmethod
+    def get_all(self) -> List[Contract]:
+        """Get all contracts (read-only access for all departments).
+
+        Returns:
+            List of all Contract instances
+        """

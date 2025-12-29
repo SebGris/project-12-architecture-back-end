@@ -178,3 +178,11 @@ class EventService:
             event.notes = notes
 
         return self.repository.update(event)
+
+    def get_all_events(self) -> List[Event]:
+        """Get all events (read-only access for all departments).
+
+        Returns:
+            List of all Event instances
+        """
+        return self.repository.get_all()

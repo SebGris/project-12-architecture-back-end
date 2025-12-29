@@ -315,3 +315,50 @@ def my_clients(
             c.LABEL_DATE_CREATION, client.created_at.strftime(c.FORMAT_DATETIME)
         )
         console.print_separator()
+
+
+@app.command()
+@require_department()
+def list_clients():
+    """List all clients in the system (read-only).
+
+    This command displays all clients registered in the CRM system.
+    Available to all authenticated users (all departments) in read-only mode.
+
+    Returns:
+        None. Displays a list of all clients or a message if none found.
+
+    Examples:
+        epicevents list-clients
+    """
+    container = Container()
+    client_service = container.client_service()
+
+    console.print_command_header("Liste des clients")
+
+    clients = client_service.get_all_clients()
+
+    if not clients:
+        console.print_separator()
+        console.print_field("Résultat", "Aucun client trouvé")
+        console.print_separator()
+        return
+
+    console.print_separator()
+    console.print_success(f"{len(clients)} client(s) trouvé(s)")
+    console.print_separator()
+
+    for client in clients:
+        console.print_field(c.LABEL_ID, str(client.id))
+        console.print_field("Nom", f"{client.first_name} {client.last_name}")
+        console.print_field(c.LABEL_EMAIL, client.email)
+        console.print_field(c.LABEL_PHONE, client.phone)
+        console.print_field("Entreprise", client.company_name)
+        console.print_field(
+            c.LABEL_CONTACT_COMMERCIAL,
+            f"{client.sales_contact.first_name} {client.sales_contact.last_name}",
+        )
+        console.print_field(
+            c.LABEL_DATE_CREATION, client.created_at.strftime(c.FORMAT_DATETIME)
+        )
+        console.print_separator()

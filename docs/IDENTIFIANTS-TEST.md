@@ -102,19 +102,20 @@ poetry run python seed_database.py
 | Créer un client | ✅ | ✅ | ❌ |
 | Modifier un client | ✅ | ✅ (ses clients) | ❌ |
 | Supprimer un client | ✅ | ❌ | ❌ |
-| Lister les clients | ✅ | ✅ | ✅ (lecture seule) |
+| Lister tous les clients (list-clients) | ✅ | ✅ | ✅ |
+| Lister ses clients (my-clients) | ❌ | ✅ | ❌ |
 | **Contrats** |
 | Créer un contrat | ✅ | ✅ (pour ses clients) | ❌ |
 | Modifier un contrat | ✅ | ✅ (ses contrats) | ❌ |
 | Supprimer un contrat | ✅ | ❌ | ❌ |
-| Lister les contrats | ✅ | ✅ | ✅ (lecture seule) |
+| Lister tous les contrats (list-contracts) | ✅ | ✅ | ✅ |
 | Filtrer contrats non signés | ✅ | ✅ | ❌ |
 | Filtrer contrats non payés | ✅ | ✅ | ❌ |
 | **Événements** |
 | Créer un événement | ✅ | ❌ | ❌ |
 | Modifier un événement | ✅ | ❌ | ✅ (ses événements) |
 | Supprimer un événement | ✅ | ❌ | ❌ |
-| Lister les événements | ✅ | ✅ (lecture seule) | ✅ |
+| Lister tous les événements (list-events) | ✅ | ✅ | ✅ |
 | Assigner un support | ✅ | ❌ | ❌ |
 | Filtrer événements sans support | ✅ | ❌ | ✅ |
 
@@ -154,4 +155,4 @@ poetry run python seed_database.py
 2025-10-12
 
 ## Dernière mise à jour
-2025-10-12
+2025-12-29

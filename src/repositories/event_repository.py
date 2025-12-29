@@ -99,3 +99,11 @@ class EventRepository(ABC):
         Returns:
             True if the event exists, False otherwise
         """
+
+    @abstractmethod
+    def get_all(self) -> List[Event]:
+        """Get all events (read-only access for all departments).
+
+        Returns:
+            List of all Event instances
+        """
