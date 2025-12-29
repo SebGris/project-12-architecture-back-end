@@ -1,67 +1,46 @@
 """Authentication service for Epic Events CRM.
 
-This module handles user authentication, JWT token generation and validation.
+This module handles user authentication and session management.
+Token operations are delegated to TokenService and TokenStorageService
+following the Single Responsibility Principle (SRP).
 """
 
-import os
-import secrets
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Optional
-
-import jwt
-from dotenv import load_dotenv
 
 from src.models.user import User
 from src.repositories.user_repository import UserRepository
+from src.services.token_service import TokenService
+from src.services.token_storage_service import TokenStorageService
 from src.sentry_config import add_breadcrumb, capture_message
-
-# Load environment variables from .env file
-load_dotenv()
 
 
 class AuthService:
-    """Service for handling authentication and JWT tokens.
+    """Service for handling user authentication and session management.
 
     This service manages:
-    - User authentication (login)
-    - JWT token generation and validation
-    - Token storage and retrieval
-    - User session management
+    - User authentication (login/logout)
+    - Session state (current user)
+
+    Token generation/validation is delegated to TokenService.
+    Token persistence is delegated to TokenStorageService.
     """
 
-    # JWT Configuration
-    TOKEN_EXPIRATION_HOURS = 24
-    ALGORITHM = "HS256"
-    TOKEN_FILE = Path.home() / ".epicevents" / "token"
-
-    def __init__(self, repository: UserRepository) -> None:
+    def __init__(
+        self,
+        repository: UserRepository,
+        token_service: TokenService,
+        token_storage: TokenStorageService,
+    ) -> None:
         """Initialize the authentication service.
 
         Args:
             repository: User repository for database access
+            token_service: Service for JWT token operations
+            token_storage: Service for token persistence
         """
         self.repository = repository
-        self._secret_key = self._get_or_create_secret_key()
-
-    def _get_or_create_secret_key(self) -> str:
-        """Get or create a secure secret key for JWT signing.
-
-        The secret key is stored in an environment variable or generated
-        securely if not present.
-
-        Returns:
-            The secret key as a string
-        """
-        # Try to get from environment variable first (production)
-        secret_key = os.getenv("EPICEVENTS_SECRET_KEY")
-
-        if not secret_key:
-            # For development, generate a secure random key
-            # In production, this should ALWAYS be set via environment variable
-            secret_key = secrets.token_hex(32)  # 256 bits
-
-        return secret_key
+        self.token_service = token_service
+        self.token_storage = token_storage
 
     def authenticate(self, username: str, password: str) -> Optional[User]:
         """Authenticate a user with username and password.
@@ -73,7 +52,6 @@ class AuthService:
         Returns:
             User instance if authentication successful, None otherwise
         """
-
         # Add breadcrumb for login attempt
         add_breadcrumb(
             f"Tentative de connexion pour l'utilisateur: {username}",
@@ -111,92 +89,27 @@ class AuthService:
 
         return user
 
-    def generate_token(self, user: User) -> str:
-        """Generate a JWT token for an authenticated user.
-
-        The token contains:
-        - user_id: The user's database ID
-        - username: The user's username
-        - department: The user's department
-        - exp: Token expiration timestamp
-        - iat: Token issued at timestamp
+    def login(self, username: str, password: str) -> Optional[str]:
+        """Authenticate user and return a token.
 
         Args:
-            user: The authenticated user
+            username: The username
+            password: The plain text password
 
         Returns:
-            JWT token as a string
+            JWT token if authentication successful, None otherwise
         """
-        now = datetime.now(timezone.utc)
-        expiration = now + timedelta(hours=self.TOKEN_EXPIRATION_HOURS)
+        user = self.authenticate(username, password)
+        if not user:
+            return None
 
-        payload = {
-            "user_id": user.id,
-            "username": user.username,
-            "department": user.department.value,
-            "exp": expiration,
-            "iat": now,
-        }
-
-        token = jwt.encode(payload, self._secret_key, algorithm=self.ALGORITHM)
+        token = self.token_service.generate_token(user)
+        self.token_storage.save(token)
         return token
 
-    def validate_token(self, token: str) -> Optional[dict]:
-        """Validate a JWT token and return its payload.
-
-        Args:
-            token: The JWT token to validate
-
-        Returns:
-            Token payload as dict if valid, None otherwise
-        """
-        try:
-            payload = jwt.decode(
-                token, self._secret_key, algorithms=[self.ALGORITHM]
-            )
-            return payload
-        except jwt.ExpiredSignatureError:
-            # Token has expired
-            return None
-        except jwt.InvalidTokenError:
-            # Token is invalid
-            return None
-
-    def save_token(self, token: str) -> None:
-        """Save the JWT token to disk for persistent authentication.
-
-        The token is stored in the user's home directory in a hidden folder.
-
-        Args:
-            token: The JWT token to save
-        """
-        # Create directory if it doesn't exist
-        self.TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
-
-        # Write token to file with restricted permissions
-        self.TOKEN_FILE.write_text(token)
-
-        # Set file permissions to read/write for owner only (Unix-like systems)
-        try:
-            os.chmod(self.TOKEN_FILE, 0o600)
-        except Exception:
-            # On Windows, this might not work, but that's okay
-            pass
-
-    def load_token(self) -> Optional[str]:
-        """Load the JWT token from disk.
-
-        Returns:
-            The JWT token string if file exists, None otherwise
-        """
-        if not self.TOKEN_FILE.exists():
-            return None
-
-        return self.TOKEN_FILE.read_text().strip()
-
-    def delete_token(self) -> None:
-        """Delete the stored JWT token (logout)."""
-        self.TOKEN_FILE.unlink(missing_ok=True)
+    def logout(self) -> None:
+        """Logout the current user by deleting the stored token."""
+        self.token_storage.delete()
 
     def get_current_user(self) -> Optional[User]:
         """Get the currently authenticated user from the stored token.
@@ -204,16 +117,16 @@ class AuthService:
         Returns:
             User instance if authenticated, None otherwise
         """
-        token = self.load_token()
+        token = self.token_storage.load()
 
         if not token:
             return None
 
-        payload = self.validate_token(token)
+        payload = self.token_service.validate_token(token)
 
         if not payload:
             # Token is invalid or expired, delete it
-            self.delete_token()
+            self.token_storage.delete()
             return None
 
         # Get user from database
@@ -230,3 +143,47 @@ class AuthService:
             True if authenticated, False otherwise
         """
         return self.get_current_user() is not None
+
+    # Backward compatibility methods (delegate to services)
+
+    def generate_token(self, user: User) -> str:
+        """Generate a JWT token for an authenticated user.
+
+        Args:
+            user: The authenticated user
+
+        Returns:
+            JWT token as a string
+        """
+        return self.token_service.generate_token(user)
+
+    def validate_token(self, token: str) -> Optional[dict]:
+        """Validate a JWT token and return its payload.
+
+        Args:
+            token: The JWT token to validate
+
+        Returns:
+            Token payload as dict if valid, None otherwise
+        """
+        return self.token_service.validate_token(token)
+
+    def save_token(self, token: str) -> None:
+        """Save the JWT token to disk.
+
+        Args:
+            token: The JWT token to save
+        """
+        self.token_storage.save(token)
+
+    def load_token(self) -> Optional[str]:
+        """Load the JWT token from disk.
+
+        Returns:
+            The JWT token string if file exists, None otherwise
+        """
+        return self.token_storage.load()
+
+    def delete_token(self) -> None:
+        """Delete the stored JWT token."""
+        self.token_storage.delete()

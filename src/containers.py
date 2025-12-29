@@ -24,6 +24,8 @@ from src.services.auth_service import AuthService
 from src.services.client_service import ClientService
 from src.services.contract_service import ContractService
 from src.services.event_service import EventService
+from src.services.token_service import TokenService
+from src.services.token_storage_service import TokenStorageService
 from src.services.user_service import UserService
 
 
@@ -63,10 +65,17 @@ class Container(containers.DeclarativeContainer):
         session=db_session,
     )
 
+    # Token services (SRP: separate token generation and storage)
+    token_service = providers.Singleton(TokenService)
+
+    token_storage_service = providers.Singleton(TokenStorageService)
+
     # Services
     auth_service = providers.Factory(
         AuthService,
         repository=user_repository,
+        token_service=token_service,
+        token_storage=token_storage_service,
     )
 
     client_service = providers.Factory(
