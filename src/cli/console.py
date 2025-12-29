@@ -1,4 +1,8 @@
-"""Console utilities for colored and formatted output."""
+"""Console utilities for colored and formatted output.
+
+This module handles console display formatting only.
+Pagination logic is in src/cli/pagination.py (SRP compliance).
+"""
 
 from rich.console import Console
 from rich.panel import Panel

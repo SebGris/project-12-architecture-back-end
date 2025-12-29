@@ -3,6 +3,8 @@ import typer
 from src.cli import console
 from src.cli import validators
 from src.cli import constants as c
+from src.cli.business_validator import BusinessValidator
+from src.cli.pagination import paginate_display
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
@@ -94,7 +96,7 @@ def create_client(
         raise typer.Exit(code=1)
 
     try:
-        validators.validate_user_is_commercial(user)
+        BusinessValidator.validate_user_is_commercial(user)
     except ValueError as e:
         console.print_error(str(e))
         raise typer.Exit(code=1)
@@ -324,9 +326,10 @@ def list_clients():
 
     This command displays all clients registered in the CRM system.
     Available to all authenticated users (all departments) in read-only mode.
+    Results are paginated with interactive navigation.
 
     Returns:
-        None. Displays a list of all clients or a message if none found.
+        None. Displays a paginated list of all clients or a message if none found.
 
     Examples:
         epicevents list-clients
@@ -336,19 +339,7 @@ def list_clients():
 
     console.print_command_header("Liste des clients")
 
-    clients = client_service.get_all_clients()
-
-    if not clients:
-        console.print_separator()
-        console.print_field("Résultat", "Aucun client trouvé")
-        console.print_separator()
-        return
-
-    console.print_separator()
-    console.print_success(f"{len(clients)} client(s) trouvé(s)")
-    console.print_separator()
-
-    for client in clients:
+    def display_client(client):
         console.print_field(c.LABEL_ID, str(client.id))
         console.print_field("Nom", f"{client.first_name} {client.last_name}")
         console.print_field(c.LABEL_EMAIL, client.email)
@@ -361,4 +352,10 @@ def list_clients():
         console.print_field(
             c.LABEL_DATE_CREATION, client.created_at.strftime(c.FORMAT_DATETIME)
         )
-        console.print_separator()
+
+    paginate_display(
+        fetch_page=client_service.get_all_clients,
+        count_total=client_service.count_clients,
+        display_item=display_client,
+        item_name="client",
+    )

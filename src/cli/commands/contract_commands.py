@@ -5,6 +5,8 @@ import typer
 from src.cli import console
 from src.cli import validators
 from src.cli import constants as c
+from src.cli.business_validator import BusinessValidator
+from src.cli.pagination import paginate_display
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
@@ -90,7 +92,7 @@ def create_contract(
 
     # Business validation: validate contract amounts
     try:
-        validators.validate_contract_amounts(total_decimal, remaining_decimal)
+        BusinessValidator.validate_contract_amounts(total_decimal, remaining_decimal)
     except ValueError as e:
         console.print_error(str(e))
         raise typer.Exit(code=1)
@@ -297,7 +299,7 @@ def update_contract_payment(
 
     # Validate payment amount
     try:
-        validators.validate_payment_amount(amount_decimal, contract.remaining_amount)
+        BusinessValidator.validate_payment_amount(amount_decimal, contract.remaining_amount)
     except ValueError as e:
         console.print_error(str(e))
         raise typer.Exit(code=1)
@@ -631,9 +633,10 @@ def list_contracts():
 
     This command displays all contracts registered in the CRM system.
     Available to all authenticated users (all departments) in read-only mode.
+    Results are paginated with interactive navigation.
 
     Returns:
-        None. Displays a list of all contracts or a message if none found.
+        None. Displays a paginated list of all contracts or a message if none found.
 
     Examples:
         epicevents list-contracts
@@ -643,19 +646,7 @@ def list_contracts():
 
     console.print_command_header("Liste des contrats")
 
-    contracts = contract_service.get_all_contracts()
-
-    if not contracts:
-        console.print_separator()
-        console.print_field("Résultat", "Aucun contrat trouvé")
-        console.print_separator()
-        return
-
-    console.print_separator()
-    console.print_success(f"{len(contracts)} contrat(s) trouvé(s)")
-    console.print_separator()
-
-    for contract in contracts:
+    def display_contract(contract):
         console.print_field(c.LABEL_ID, str(contract.id))
         console.print_field(
             LABEL_CLIENT,
@@ -676,4 +667,10 @@ def list_contracts():
         console.print_field(
             c.LABEL_DATE_CREATION, contract.created_at.strftime(c.FORMAT_DATE)
         )
-        console.print_separator()
+
+    paginate_display(
+        fetch_page=contract_service.get_all_contracts,
+        count_total=contract_service.count_contracts,
+        display_item=display_contract,
+        item_name="contrat",
+    )

@@ -5,6 +5,8 @@ import typer
 from src.cli import console
 from src.cli import validators
 from src.cli import constants as c
+from src.cli.business_validator import BusinessValidator
+from src.cli.pagination import paginate_display
 from src.models.user import Department
 from src.containers import Container
 from src.cli.permissions import require_department
@@ -146,7 +148,7 @@ def create_event(
 
     # Business validation: validate event dates and attendees
     try:
-        validators.validate_event_dates(start_dt, end_dt, attendees)
+        BusinessValidator.validate_event_dates(start_dt, end_dt, attendees)
     except ValueError as e:
         console.print_error(str(e))
         raise typer.Exit(code=1)
@@ -161,7 +163,7 @@ def create_event(
             )
             raise typer.Exit(code=1)
         try:
-            validators.validate_user_is_support(user)
+            BusinessValidator.validate_user_is_support(user)
         except ValueError as e:
             console.print_error(str(e))
             raise typer.Exit(code=1)
@@ -351,7 +353,7 @@ def update_event(
     # Validate event dates if both are provided
     if start_dt and end_dt:
         try:
-            validators.validate_event_dates(start_dt, end_dt, attendees_value or 0)
+            BusinessValidator.validate_event_dates(start_dt, end_dt, attendees_value or 0)
         except ValueError as e:
             console.print_error(str(e))
             raise typer.Exit(code=1)
@@ -643,9 +645,10 @@ def list_events():
 
     This command displays all events registered in the CRM system.
     Available to all authenticated users (all departments) in read-only mode.
+    Results are paginated with interactive navigation.
 
     Returns:
-        None. Displays a list of all events or a message if none found.
+        None. Displays a paginated list of all events or a message if none found.
 
     Examples:
         epicevents list-events
@@ -655,19 +658,7 @@ def list_events():
 
     console.print_command_header("Liste des événements")
 
-    events = event_service.get_all_events()
-
-    if not events:
-        console.print_separator()
-        console.print_field("Résultat", "Aucun événement trouvé")
-        console.print_separator()
-        return
-
-    console.print_separator()
-    console.print_success(f"{len(events)} événement(s) trouvé(s)")
-    console.print_separator()
-
-    for event in events:
+    def display_event(event):
         console.print_field(LABEL_EVENT_ID, str(event.id))
         console.print_field("Nom", event.name)
         console.print_field(LABEL_CONTRACT_ID, str(event.contract_id))
@@ -692,4 +683,10 @@ def list_events():
         console.print_field(LABEL_ATTENDEES, str(event.attendees))
         if event.notes:
             console.print_field(LABEL_NOTES, event.notes)
-        console.print_separator()
+
+    paginate_display(
+        fetch_page=event_service.get_all_events,
+        count_total=event_service.count_events,
+        display_item=display_event,
+        item_name="événement",
+    )
