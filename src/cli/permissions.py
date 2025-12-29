@@ -30,7 +30,7 @@ def require_department(*valid_departments: Department):
     as an explicit parameter to the decorated function.
 
     Args:
-        *allowed_departments: Variable number of Department enums (optional)
+        *valid_departments: Variable number of Department enums (optional)
 
     Returns:
         A decorator function
