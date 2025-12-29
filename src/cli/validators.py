@@ -5,6 +5,7 @@ Business validation rules are in src/cli/business_validator.py (SRP compliance).
 """
 
 import re
+from decimal import Decimal, InvalidOperation
 
 import typer
 
@@ -131,11 +132,11 @@ def validate_amount_callback(value: str) -> str:
     """Validate monetary amount."""
     cleaned = value.strip()
     try:
-        amount = float(cleaned)
+        amount = Decimal(cleaned)
         if amount < 0:
             raise typer.BadParameter("Le montant doit être positif ou zéro")
         return cleaned
-    except ValueError:
+    except InvalidOperation:
         raise typer.BadParameter(f"Montant invalide: {value}")
 
 

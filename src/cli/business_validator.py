@@ -9,7 +9,6 @@ Validators in this module raise ValueError for invalid business rules.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Union
 
 from src.models.user import User, Department
 
@@ -25,8 +24,8 @@ class BusinessValidator:
 
     @staticmethod
     def validate_contract_amounts(
-        total_amount: Union[Decimal, float],
-        remaining_amount: Union[Decimal, float],
+        total_amount: Decimal,
+        remaining_amount: Decimal,
     ) -> None:
         """Validate contract amounts business rules.
 
@@ -51,8 +50,8 @@ class BusinessValidator:
 
     @staticmethod
     def validate_payment_amount(
-        amount_paid: Union[Decimal, float],
-        remaining_amount: Union[Decimal, float],
+        amount_paid: Decimal,
+        remaining_amount: Decimal,
     ) -> None:
         """Validate payment amount business rules.
 
