@@ -4,7 +4,7 @@ This module provides the concrete implementation of the ClientRepository
 interface using SQLAlchemy ORM for database persistence.
 """
 
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -81,3 +81,18 @@ class SqlAlchemyClientRepository(ClientRepository):
         if exclude_id is not None:
             query = query.filter(Client.id != exclude_id)
         return query.first() is not None
+
+    def get_by_sales_contact(self, sales_contact_id: int) -> List[Client]:
+        """Get all clients assigned to a specific sales contact.
+
+        Args:
+            sales_contact_id: The ID of the sales contact (commercial)
+
+        Returns:
+            List of Client instances assigned to this sales contact
+        """
+        return (
+            self.session.query(Client)
+            .filter_by(sales_contact_id=sales_contact_id)
+            .all()
+        )

@@ -5,7 +5,7 @@ following the Repository pattern to decouple business logic from data access.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Optional
 
 from src.models.client import Client
 
@@ -67,4 +67,15 @@ class ClientRepository(ABC):
 
         Returns:
             True if the email is already used, False otherwise
+        """
+
+    @abstractmethod
+    def get_by_sales_contact(self, sales_contact_id: int) -> List[Client]:
+        """Get all clients assigned to a specific sales contact.
+
+        Args:
+            sales_contact_id: The ID of the sales contact (commercial)
+
+        Returns:
+            List of Client instances assigned to this sales contact
         """

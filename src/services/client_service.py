@@ -3,7 +3,7 @@
 This module contains the business logic for managing clients.
 """
 
-from typing import Optional
+from typing import List, Optional
 
 from src.models.client import Client
 from src.repositories.client_repository import ClientRepository
@@ -124,3 +124,14 @@ class ClientService:
             True if the email is already used, False otherwise
         """
         return self.repository.email_exists(email, exclude_id)
+
+    def get_my_clients(self, sales_contact_id: int) -> List[Client]:
+        """Get all clients assigned to a specific sales contact.
+
+        Args:
+            sales_contact_id: The ID of the sales contact (commercial)
+
+        Returns:
+            List of Client instances assigned to this sales contact
+        """
+        return self.repository.get_by_sales_contact(sales_contact_id)

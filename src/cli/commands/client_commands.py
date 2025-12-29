@@ -270,3 +270,48 @@ def update_client(
         updated_client.updated_at.strftime(c.FORMAT_DATETIME),
     )
     console.print_separator()
+
+
+@app.command()
+@require_department(Department.COMMERCIAL)
+def my_clients(
+    current_user=None,
+):
+    """List all clients assigned to the current commercial user.
+
+    This command displays all clients that are assigned to the currently
+    logged-in commercial user. Only available for COMMERCIAL department users.
+
+    Returns:
+        None. Displays a list of clients or a message if none found.
+
+    Examples:
+        epicevents my-clients
+    """
+    container = Container()
+    client_service = container.client_service()
+
+    console.print_command_header("Mes clients")
+
+    clients = client_service.get_my_clients(current_user.id)
+
+    if not clients:
+        console.print_separator()
+        console.print_field("Résultat", "Aucun client trouvé")
+        console.print_separator()
+        return
+
+    console.print_separator()
+    console.print_success(f"{len(clients)} client(s) trouvé(s)")
+    console.print_separator()
+
+    for client in clients:
+        console.print_field(c.LABEL_ID, str(client.id))
+        console.print_field("Nom", f"{client.first_name} {client.last_name}")
+        console.print_field(c.LABEL_EMAIL, client.email)
+        console.print_field(c.LABEL_PHONE, client.phone)
+        console.print_field("Entreprise", client.company_name)
+        console.print_field(
+            c.LABEL_DATE_CREATION, client.created_at.strftime(c.FORMAT_DATETIME)
+        )
+        console.print_separator()
