@@ -32,9 +32,7 @@ class AuthService:
 
     # JWT Configuration
     TOKEN_EXPIRATION_HOURS = 24
-    ALGORITHM = (
-        "HS256"  # Secure algorithm (not HS512 which has vulnerabilities)
-    )
+    ALGORITHM = "HS256"
     TOKEN_FILE = Path.home() / ".epicevents" / "token"
 
     def __init__(self, repository: UserRepository) -> None:
