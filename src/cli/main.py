@@ -9,20 +9,10 @@ from src.sentry_config import init_sentry, capture_exception
 
 def main():
     """Main entry point for the application."""
-    # 1. Initialize Sentry for error tracking
     init_sentry()
-
-    # try:
-    #     raise ValueError("Test erreur Sentry - provoquée volontairement")
-    # except Exception as e:
-    #     capture_exception(e, context={"test": True, "source": "manual_test"})
-    #     print("Exception capturée et envoyée à Sentry!")
-
-    # 2. Launch the Typer application
     try:
         commands.app()
     except Exception as e:
-        # Capture unhandled exceptions in Sentry
         capture_exception(e, context={"location": "main"})
         raise
 
