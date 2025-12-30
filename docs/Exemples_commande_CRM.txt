@@ -1,0 +1,24 @@
+Commande 1 : Tentative sans authentification
+poetry run epicevents whoami
+
+Commande 2 : Connexion GESTION
+poetry run epicevents login
+# admin / Admin123!
+
+Commande 3 : Créer un utilisateur (connecté admin/GESTION)
+poetry run epicevents create-user
+# demo_user / Demo / User / demo@test.com / 0123456789 / Demo123! / 1
+
+Commande 4 : Test refus COMMERCIAL
+poetry run epicevents logout
+poetry run epicevents login
+# commercial1 / Commercial123!
+poetry run epicevents create-user
+
+Commande 5 : Créer un client (connecté commercial1)
+poetry run epicevents create-client
+# Jean / Test / jean@test.com / 0612345678 / TestCorp / (ENTRER)
+
+Commande 6 : Filtrer contrats non signés
+poetry run epicevents filter-unsigned-contracts
+
