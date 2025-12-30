@@ -134,7 +134,6 @@ class AuthService:
             self.token_storage.delete()
             return None
 
-        # Get user from database
         user_id = payload.get("user_id")
         if not user_id:
             return None

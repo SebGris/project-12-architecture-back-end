@@ -109,7 +109,6 @@ def create_client(
         raise typer.Exit(code=1)
 
     try:
-        # Create client via service
         client = client_service.create_client(
             first_name=first_name,
             last_name=last_name,

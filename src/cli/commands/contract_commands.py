@@ -98,7 +98,6 @@ def create_contract(
         raise typer.Exit(code=1)
 
     try:
-        # Create contract via service
         contract = contract_service.create_contract(
             client_id=client_id,
             total_amount=total_decimal,
@@ -166,27 +165,22 @@ def sign_contract(
         # or interactively
         epicevents sign-contract
     """
-    # Get container and services
     container = Container()
     contract_service = container.contract_service()
     client_service = container.client_service()
 
-    # Show header
     console.print_command_header("Signature d'un contrat")
 
-    # Get contract
     contract = contract_service.get_contract(contract_id)
     if not contract:
         console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
         raise typer.Exit(code=1)
 
-    # Check if already signed
     if contract.is_signed:
         console.print_error("Ce contrat est déjà signé")
         raise typer.Exit(code=1)
 
-    # Get client
-    client = client_service.get_client(contract.client_id)
+        client = client_service.get_client(contract.client_id)
     if not client:
         console.print_error(f"Client avec l'ID {contract.client_id} n'existe pas")
         raise typer.Exit(code=1)
@@ -262,34 +256,28 @@ def update_contract_payment(
         # or interactively
         epicevents update-contract-payment
     """
-    # Get container and services
     container = Container()
     contract_service = container.contract_service()
     client_service = container.client_service()
 
-    # Show header
     console.print_command_header("Enregistrement d'un paiement")
 
-    # Convert amount to Decimal
     try:
         amount_decimal = Decimal(amount_paid)
     except Exception:
         console.print_error("Erreur de conversion du montant")
         raise typer.Exit(code=1)
 
-    # Get contract
     contract = contract_service.get_contract(contract_id)
     if not contract:
         console.print_error(f"Contrat avec l'ID {contract_id} n'existe pas")
         raise typer.Exit(code=1)
 
-    # Get client
     client = client_service.get_client(contract.client_id)
     if not client:
         console.print_error(f"Client avec l'ID {contract.client_id} n'existe pas")
         raise typer.Exit(code=1)
 
-    # Check authorization: only the sales contact can update payment
     if client.sales_contact_id != current_user.id:
         console.print_error(
             f"Seul le commercial assigné au client peut enregistrer un paiement. "
@@ -297,14 +285,12 @@ def update_contract_payment(
         )
         raise typer.Exit(code=1)
 
-    # Validate payment amount
     try:
         BusinessValidator.validate_payment_amount(amount_decimal, contract.remaining_amount)
     except ValueError as e:
         console.print_error(str(e))
         raise typer.Exit(code=1)
 
-    # Update payment
     try:
         contract = contract_service.update_contract_payment(contract_id, amount_decimal)
     except Exception as e:

@@ -43,7 +43,6 @@ def login(
     # Generate JWT token
     token = auth_service.generate_token(user)
 
-    # Save token to disk
     auth_service.save_token(token)
 
     # Set Sentry user context
@@ -84,7 +83,6 @@ def logout():
         console.print_error("Vous n'êtes pas connecté")
         raise typer.Exit(code=1)
 
-    # Delete token
     auth_service.delete_token()
 
     # Clear Sentry user context
@@ -120,7 +118,6 @@ def whoami():
 
     console.print_command_header("Utilisateur actuel")
 
-    # Get current user
     user = auth_service.get_current_user()
 
     if not user:
@@ -129,7 +126,6 @@ def whoami():
         )
         raise typer.Exit(code=1)
 
-    # Display user info
     console.print_field(c.LABEL_ID, str(user.id))
     console.print_field(c.LABEL_USERNAME, user.username)
     console.print_field("Nom complet", f"{user.first_name} {user.last_name}")

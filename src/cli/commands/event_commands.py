@@ -169,7 +169,6 @@ def create_event(
             raise typer.Exit(code=1)
 
     try:
-        # Create event via service
         event = event_service.create_event(
             name=name,
             contract_id=contract_id,

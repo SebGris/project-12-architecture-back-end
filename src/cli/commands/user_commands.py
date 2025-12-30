@@ -94,7 +94,6 @@ def create_user(
         raise typer.Exit(code=1)
 
     try:
-        # Create user via service
         user = user_service.create_user(
             username=username,
             first_name=first_name,
@@ -305,7 +304,6 @@ def delete_user(
         console.print_error("Suppression annulée.")
         raise typer.Exit(code=1)
 
-    # Delete user
     try:
         success = user_service.delete_user(user_id)
         if not success:
