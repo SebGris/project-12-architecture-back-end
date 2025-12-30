@@ -496,6 +496,10 @@ def filter_unsigned_contracts():
             LABEL_MONTANT_RESTANT, f"{contract.remaining_amount} €"
         )
         console.print_field(
+            LABEL_STATUT,
+            STATUS_SIGNED if contract.is_signed else STATUS_UNSIGNED,
+        )
+        console.print_field(
             c.LABEL_DATE_CREATION, contract.created_at.strftime(c.FORMAT_DATE)
         )
         console.print_separator()
