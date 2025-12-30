@@ -27,30 +27,24 @@ def login(
     Examples:
         epicevents login
     """
-    # Manually get auth_service from container
     container = Container()
     auth_service = container.auth_service()
 
     console.print_command_header("Authentification")
 
-    # Authenticate user
     user = auth_service.authenticate(username, password)
 
     if not user:
         console.print_error("Nom d'utilisateur ou mot de passe incorrect")
         raise typer.Exit(code=1)
 
-    # Generate JWT token
     token = auth_service.generate_token(user)
 
     auth_service.save_token(token)
 
-    # Set Sentry user context
     from src.sentry_config import set_user_context
-
     set_user_context(user.id, user.username, user.department.value)
 
-    # Success message
     console.print_separator()
     console.print_success(f"Bienvenue {user.first_name} {user.last_name} !")
     console.print_field(c.LABEL_DEPARTMENT, user.department.value)
@@ -70,13 +64,11 @@ def logout():
     Examples:
         epicevents logout
     """
-    # Manually get auth_service from container
     container = Container()
     auth_service = container.auth_service()
 
     console.print_command_header("Déconnexion")
 
-    # Check if user is authenticated
     user = auth_service.get_current_user()
 
     if not user:
@@ -85,9 +77,7 @@ def logout():
 
     auth_service.delete_token()
 
-    # Clear Sentry user context
     from src.sentry_config import clear_user_context, add_breadcrumb
-
     add_breadcrumb(
         f"Déconnexion de l'utilisateur: {user.username}",
         category="auth",
@@ -95,7 +85,6 @@ def logout():
     )
     clear_user_context()
 
-    # Success message
     console.print_success(f"Au revoir {user.first_name} {user.last_name} !")
     console.print_separator()
 
@@ -112,7 +101,6 @@ def whoami():
     Examples:
         epicevents whoami
     """
-    # Manually get auth_service from container
     container = Container()
     auth_service = container.auth_service()
 

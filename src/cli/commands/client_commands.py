@@ -64,12 +64,10 @@ def create_client(
         epicevents create-client
         # Follow interactive prompts to enter information
     """
-    # Manually get services from container
     container = Container()
     client_service = container.client_service()
     user_service = container.user_service()
 
-    # Show header at the beginning
     console.print_command_header("Création d'un nouveau client")
 
     # Auto-assign for COMMERCIAL users if no sales_contact_id provided
@@ -122,7 +120,6 @@ def create_client(
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success(
         f"Client {client.first_name} {client.last_name} créé avec succès!"
@@ -189,7 +186,6 @@ def update_client(
     Examples:
         epicevents update-client
     """
-    # Manually get services from container
     container = Container()
     client_service = container.client_service()
 
@@ -248,7 +244,6 @@ def update_client(
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success("Client mis à jour avec succès!")
     console.print_field(c.LABEL_ID, str(updated_client.id))

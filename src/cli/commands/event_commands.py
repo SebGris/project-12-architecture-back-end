@@ -100,13 +100,11 @@ def create_event(
         epicevents create-event
         # Follow interactive prompts to enter information
     """
-    # Manually get services from container
     container = Container()
     event_service = container.event_service()
     contract_service = container.contract_service()
     user_service = container.user_service()
 
-    # Show header at the beginning
     console.print_command_header("Création d'un nouvel événement")
 
     # Business validation: check if contract exists
@@ -188,7 +186,6 @@ def create_event(
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success(f"Événement '{event.name}' créé avec succès!")
     console.print_field(LABEL_EVENT_ID, str(event.id))
@@ -275,7 +272,6 @@ def update_event(
     Examples:
         epicevents update-event
     """
-    # Manually get services from container
     container = Container()
     event_service = container.event_service()
 
@@ -391,7 +387,6 @@ def update_event(
         console.print_error(f"Erreur lors de la mise à jour: {e}")
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success("Événement mis à jour avec succès!")
     console.print_field(c.LABEL_ID, str(updated_event.id))
@@ -455,7 +450,6 @@ def assign_support(
     Examples:
         epicevents assign-support
     """
-    # Manually get services from container
     container = Container()
     event_service = container.event_service()
     user_service = container.user_service()
@@ -491,7 +485,6 @@ def assign_support(
         console.print_error(f"Erreur lors de l'assignation: {e}")
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success(
         f"Contact support assigné avec succès à l'événement '{updated_event.name}'!"
@@ -536,7 +529,6 @@ def filter_unassigned_events():
     Examples:
         epicevents filter-unassigned-events
     """
-    # Manually get services from container
     container = Container()
     event_service = container.event_service()
 
@@ -591,7 +583,6 @@ def filter_my_events(current_user=None):
     Examples:
         epicevents filter-my-events
     """
-    # Manually get services from container
     container = Container()
     event_service = container.event_service()
 

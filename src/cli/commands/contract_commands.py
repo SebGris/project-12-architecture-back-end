@@ -67,12 +67,10 @@ def create_contract(
         epicevents create-contract
         # Follow interactive prompts to enter information
     """
-    # Manually get services from container
     container = Container()
     contract_service = container.contract_service()
     client_service = container.client_service()
 
-    # Show header at the beginning
     console.print_command_header("Création d'un nouveau contrat")
 
     # Business validation: check if client exists
@@ -82,7 +80,6 @@ def create_contract(
         console.print_error(f"Client avec l'ID {client_id} n'existe pas")
         raise typer.Exit(code=1)
 
-    # Convert amounts to Decimal
     try:
         total_decimal = Decimal(total_amount)
         remaining_decimal = Decimal(remaining_amount)
@@ -109,7 +106,6 @@ def create_contract(
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success(
         f"Contrat créé avec succès pour le client {client.first_name} {client.last_name}!"
@@ -185,7 +181,6 @@ def sign_contract(
         console.print_error(f"Client avec l'ID {contract.client_id} n'existe pas")
         raise typer.Exit(code=1)
 
-    # Check authorization: only the sales contact can sign
     if client.sales_contact_id != current_user.id:
         console.print_error(
             f"Seul le commercial assigné au client peut signer ce contrat. "
@@ -193,14 +188,12 @@ def sign_contract(
         )
         raise typer.Exit(code=1)
 
-    # Sign the contract
     try:
         contract = contract_service.sign_contract(contract_id)
     except Exception as e:
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success(
         f"Contrat #{contract.id} signé avec succès pour {client.first_name} {client.last_name}!"
@@ -297,7 +290,6 @@ def update_contract_payment(
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success(
         f"Paiement de {amount_decimal} € enregistré avec succès!"
@@ -360,7 +352,6 @@ def update_contract(
     Examples:
         epicevents update-contract
     """
-    # Manually get services from container
     container = Container()
     contract_service = container.contract_service()
 
@@ -434,7 +425,6 @@ def update_contract(
         console.print_error(f"Erreur lors de la mise à jour: {e}")
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success("Contrat mis à jour avec succès!")
     console.print_field(c.LABEL_ID, str(updated_contract.id))
@@ -480,7 +470,6 @@ def filter_unsigned_contracts():
     Examples:
         epicevents filter-unsigned-contracts
     """
-    # Manually get services from container
     container = Container()
     contract_service = container.contract_service()
 
@@ -527,7 +516,6 @@ def filter_unpaid_contracts():
     Examples:
         epicevents filter-unpaid-contracts
     """
-    # Manually get services from container
     container = Container()
     contract_service = container.contract_service()
 
@@ -578,7 +566,6 @@ def filter_signed_contracts():
     Examples:
         epicevents filter-signed-contracts
     """
-    # Manually get services from container
     container = Container()
     contract_service = container.contract_service()
 

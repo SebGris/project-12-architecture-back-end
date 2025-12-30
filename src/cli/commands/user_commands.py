@@ -69,11 +69,9 @@ def create_user(
         epicevents create-user
         # Follow interactive prompts to enter information
     """
-    # Manually get services from container
     container = Container()
     user_service = container.user_service()
 
-    # Show header at the beginning
     console.print_command_header("Création d'un nouvel utilisateur")
 
     # Convert department choice (int) to Department enum
@@ -108,7 +106,6 @@ def create_user(
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success(f"Utilisateur {user.username} créé avec succès!")
     console.print_field(c.LABEL_ID, str(user.id))
@@ -169,7 +166,6 @@ def update_user(
     Examples:
         epicevents update-user
     """
-    # Manually get services from container
     container = Container()
     user_service = container.user_service()
 
@@ -234,7 +230,6 @@ def update_user(
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success("Utilisateur mis à jour avec succès!")
     console.print_field(c.LABEL_ID, str(updated_user.id))
@@ -274,7 +269,6 @@ def delete_user(
     Examples:
         epicevents delete-user
     """
-    # Manually get services from container
     container = Container()
     user_service = container.user_service()
 
@@ -314,7 +308,6 @@ def delete_user(
         console.print_error(c.ERROR_UNEXPECTED.format(e=e))
         raise typer.Exit(code=1)
 
-    # Success message
     console.print_separator()
     console.print_success(
         f"Utilisateur {user.username} (ID: {user_id}) supprimé avec succès!"
