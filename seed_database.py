@@ -13,6 +13,9 @@ from sqlalchemy.orm import sessionmaker
 import bcrypt
 
 from src.models.user import User, Department
+from src.models.client import Client  # noqa: F401
+from src.models.contract import Contract  # noqa: F401
+from src.models.event import Event  # noqa: F401
 
 
 def hash_password(password: str) -> str:
