@@ -176,7 +176,6 @@ project-12-architecture-back-end/
 ├── pyproject.toml            # Configuration Poetry + entry points CLI
 ├── poetry.lock
 ├── alembic.ini               # Configuration Alembic
-├── schema_de_la_base_de_donnees.png  # Schéma de la base de données
 ├── migrations/               # Migrations Alembic
 │   └── versions/
 ├── src/
@@ -231,6 +230,8 @@ project-12-architecture-back-end/
 │   ├── integration/          # Tests d'intégration
 │   └── fixtures/             # Fixtures de test
 └── docs/                     # Documentation du projet
+    ├── database_schema.png       # Schéma de la base de données (image)
+    ├── ARCHITECTURE_DIAGRAMS.md  # Diagramme ERD Mermaid
     └── IDENTIFIANTS-TEST.md
 ```
 
@@ -248,7 +249,7 @@ project-12-architecture-back-end/
 ### Event
 - id, name, contract_id, support_contact_id, event_start, event_end, location, attendees, notes, created_at, updated_at
 
-Pour plus de détails, voir le [schéma de la base de données](schema_de_la_base_de_donnees.png)
+Pour plus de détails, voir le [schéma de la base de données](docs/database_schema.png) ou le [diagramme ERD Mermaid](docs/ARCHITECTURE_DIAGRAMS.md)
 
 ## 🔒 Permissions granulaires
 
