@@ -34,8 +34,8 @@ erDiagram
 
     Contract {
         int id PK
-        decimal total_amount "NOT NULL, NUMERIC(10,2), >= 0"
-        decimal remaining_amount "NOT NULL, NUMERIC(10,2), >= 0, <= total_amount"
+        decimal total_amount "NOT NULL, NUMERIC(10,2), CHECK >= 0"
+        decimal remaining_amount "NOT NULL, NUMERIC(10,2), CHECK >= 0, CHECK <= total_amount"
         boolean is_signed "NOT NULL, DEFAULT FALSE"
         int client_id FK "NOT NULL -> clients.id"
         datetime created_at "DEFAULT NOW()"
@@ -46,9 +46,9 @@ erDiagram
         int id PK
         string name "NOT NULL, max 100"
         datetime event_start "NOT NULL"
-        datetime event_end "NOT NULL, > event_start"
+        datetime event_end "NOT NULL, CHECK > event_start"
         string location "NOT NULL, max 255"
-        int attendees "NOT NULL, >= 0"
+        int attendees "NOT NULL, CHECK >= 0"
         text notes "NULLABLE"
         int contract_id FK "NOT NULL -> contracts.id"
         int support_contact_id FK "NULLABLE -> users.id"
