@@ -2,10 +2,10 @@
 
 ```mermaid
 erDiagram
-    User ||--o{ Client : gère
-    User ||--o{ Event : supporte
-    Client ||--o{ Contract : possède
-    Contract ||--o{ Event : génère
+    User ||--o{ Client : manages
+    User ||--o{ Event : supports
+    Client ||--o{ Contract : has
+    Contract ||--o{ Event : contains
 
     User {
         int id PK
